@@ -25,7 +25,7 @@ export default function DealHeader({ deal, stages, killReasons, currentStage }: 
       setShowKillModal(true)
       return
     }
-    startTransition(() => updateDealStage(deal.id, newStageId, deal.stage_id))
+    startTransition(async () => { await updateDealStage(deal.id, newStageId, deal.stage_id) })
   }
 
   function handleKillConfirm(killReasonId: string, notes: string) {

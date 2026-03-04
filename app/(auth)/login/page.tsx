@@ -7,7 +7,7 @@ export default function LoginPage() {
         <h1 className="text-2xl font-semibold text-gray-900 mb-1">Sign in</h1>
         <p className="text-sm text-gray-500 mb-6">Capital Allocation OS</p>
 
-        <form action={loginAction} className="space-y-4">
+        <form action={loginAction as any} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
             <input name="email" type="email" required className="input-base" />

@@ -7,7 +7,7 @@ export default function SignupPage() {
         <h1 className="text-2xl font-semibold text-gray-900 mb-1">Create your workspace</h1>
         <p className="text-sm text-gray-500 mb-6">Capital Allocation OS</p>
 
-        <form action={signUpAction} className="space-y-4">
+        <form action={signUpAction as any} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Firm Name</label>
             <input name="firm_name" required placeholder="Acme Capital" className="input-base" />

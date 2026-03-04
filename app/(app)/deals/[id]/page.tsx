@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
+import { Deal, DealStage, KillReason, DealNote, DealFile } from '@/lib/types/database'
 import DealHeader from '@/components/deal/DealHeader'
 import NotesSection from '@/components/deal/NotesSection'
 import FilesSection from '@/components/deal/FilesSection'
@@ -14,12 +15,12 @@ export default async function DealPage({ params }: Props) {
   const supabase = await createClient()
 
   const [
-    { data: deal },
-    { data: stages },
-    { data: killReasons },
-    { data: notes },
-    { data: files },
-    { data: events }
+    { data: dealData },
+    { data: stagesData },
+    { data: killReasonsData },
+    { data: notesData },
+    { data: filesData },
+    { data: eventsData }
   ] = await Promise.all([
     supabase.from('deals').select('*').eq('id', id).single(),
     supabase.from('deal_stages').select('*').order('position'),
@@ -35,17 +36,24 @@ export default async function DealPage({ params }: Props) {
       .order('created_at', { ascending: false }),
   ])
 
-  if (!deal) notFound()
+  if (!dealData) notFound()
 
-  const currentStage = stages?.find(s => s.id === (deal as any).stage_id)
-  const getNote = (section: string) => notes?.find(n => n.section === section)?.content ?? ''
+  const deal = dealData as unknown as Deal
+  const stages = (stagesData ?? []) as DealStage[]
+  const killReasons = (killReasonsData ?? []) as KillReason[]
+  const notes = (notesData ?? []) as DealNote[]
+  const files = (filesData ?? []) as DealFile[]
+  const events = (eventsData ?? []) as any[]
+
+  const currentStage = stages.find(s => s.id === deal.stage_id)
+  const getNote = (section: string) => notes.find(n => n.section === section)?.content ?? ''
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
       <DealHeader
         deal={deal}
-        stages={stages ?? []}
-        killReasons={killReasons ?? []}
+        stages={stages}
+        killReasons={killReasons}
         currentStage={currentStage}
       />
 
@@ -72,9 +80,9 @@ export default async function DealPage({ params }: Props) {
         />
         <FilesSection
           dealId={deal.id}
-          files={files ?? []}
+          files={files}
         />
-        <DecisionLog events={events ?? []} />
+        <DecisionLog events={events} />
       </div>
     </div>
   )

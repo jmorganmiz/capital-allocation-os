@@ -15,7 +15,7 @@ export default function NotesSection({ dealId, section, title, initialContent, p
   const [content, setContent] = useState(initialContent)
   const [saved, setSaved] = useState(true)
   const [isPending, startTransition] = useTransition()
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   const save = useCallback((value: string) => {
     startTransition(async () => {

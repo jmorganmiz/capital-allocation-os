@@ -22,10 +22,10 @@ export default async function GraveyardPage({ searchParams }: { searchParams: Se
   if (searchParams.market)    query = query.eq('market', searchParams.market)
   if (searchParams.deal_type) query = query.eq('deal_type', searchParams.deal_type)
 
-  const { data: deals } = await query
+  const { data: dealsData } = await query
 
-  const filtered = (deals ?? [])
-    .map(d => ({
+  const filtered = ((dealsData ?? []) as any[])
+    .map((d: any) => ({
       ...d,
       killEvent: d.deal_events?.find((e: any) => e.event_type === 'killed'),
     }))
@@ -34,13 +34,13 @@ export default async function GraveyardPage({ searchParams }: { searchParams: Se
       d.title.toLowerCase().includes(searchParams.q.toLowerCase())
     )
 
-  const { data: markets } = await supabase
+  const { data: marketsData } = await supabase
     .from('deals')
     .select('market')
     .eq('is_archived', true)
     .not('market', 'is', null)
 
-  const uniqueMarkets = [...new Set((markets ?? []).map(d => d.market).filter(Boolean))]
+  const uniqueMarkets = [...new Set(((marketsData ?? []) as any[]).map((d: any) => d.market).filter(Boolean))]
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
