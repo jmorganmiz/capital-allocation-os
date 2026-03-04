@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(dir C:\\\\Users\\\\jmorg\\\\capital-allocation-os\\\\app\\\\\\(app\\)\\\\deals:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(taskkill:*)",
+      "Bash(cmd:*)"
+    ]
+  }
+}
