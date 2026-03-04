@@ -37,7 +37,7 @@ export default async function DealPage({ params }: Props) {
 
   if (!deal) notFound()
 
-  const currentStage = stages?.find(s => s.id === deal.stage_id)
+  const currentStage = stages?.find(s => s.id === (deal as any).stage_id)
   const getNote = (section: string) => notes?.find(n => n.section === section)?.content ?? ''
 
   return (
