@@ -23,17 +23,20 @@ export interface Database {
           id: string; firm_id: string; title: string; market: string | null
           deal_type: string | null; source_type: string | null; source_name: string | null
           stage_id: string | null; is_archived: boolean; archived_at: string | null
+          owner_user_id: string | null; intake_type: string | null
           created_by: string; created_at: string; updated_at: string
         }
         Insert: {
           id?: string; firm_id: string; title: string; market?: string | null
           deal_type?: string | null; source_type?: string | null; source_name?: string | null
-          stage_id?: string | null; is_archived?: boolean; created_by: string
+          stage_id?: string | null; is_archived?: boolean; owner_user_id?: string | null
+          intake_type?: string | null; created_by: string
         }
         Update: {
           title?: string; market?: string | null; deal_type?: string | null
           source_type?: string | null; source_name?: string | null; stage_id?: string | null
-          is_archived?: boolean; archived_at?: string | null; updated_at?: string
+          is_archived?: boolean; archived_at?: string | null; owner_user_id?: string | null
+          intake_type?: string | null; updated_at?: string
         }
       }
       kill_reasons: {

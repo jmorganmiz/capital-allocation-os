@@ -1,60 +1,58 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
-import { Deal, DealStage, KillReason, DealNote, DealFile } from '@/lib/types/database'
 import DealHeader from '@/components/deal/DealHeader'
 import NotesSection from '@/components/deal/NotesSection'
 import FilesSection from '@/components/deal/FilesSection'
 import DecisionLog from '@/components/deal/DecisionLog'
 
 interface Props {
-  params: Promise<{ id: string }>
+  params: { id: string }
 }
 
 export default async function DealPage({ params }: Props) {
-  const { id } = await params
   const supabase = await createClient()
 
   const [
-    { data: dealData },
-    { data: stagesData },
-    { data: killReasonsData },
-    { data: notesData },
-    { data: filesData },
-    { data: eventsData }
+    { data: deal },
+    { data: stages },
+    { data: killReasons },
+    { data: notes },
+    { data: files },
+    { data: events },
   ] = await Promise.all([
-    supabase.from('deals').select('*').eq('id', id).single(),
+    supabase.from('deals').select('*').eq('id', params.id).single(),
     supabase.from('deal_stages').select('*').order('position'),
     supabase.from('kill_reasons').select('*').order('position'),
-    supabase.from('deal_notes').select('*').eq('deal_id', id),
-    supabase.from('deal_files').select('*').eq('deal_id', id).order('created_at', { ascending: false }),
+    supabase.from('deal_notes').select('*').eq('deal_id', params.id),
+    supabase.from('deal_files').select('*').eq('deal_id', params.id).order('created_at', { ascending: false }),
     supabase
       .from('deal_events')
       .select(`*, profiles(full_name), kill_reasons(name),
                from_stage:deal_stages!from_stage_id(name),
                to_stage:deal_stages!to_stage_id(name)`)
-      .eq('deal_id', id)
+      .eq('deal_id', params.id)
       .order('created_at', { ascending: false }),
   ])
 
-  if (!dealData) notFound()
+  if (!deal) notFound()
 
-  const deal = dealData as unknown as Deal
-  const stages = (stagesData ?? []) as DealStage[]
-  const killReasons = (killReasonsData ?? []) as KillReason[]
-  const notes = (notesData ?? []) as DealNote[]
-  const files = (filesData ?? []) as DealFile[]
-  const events = (eventsData ?? []) as any[]
+  // Get firm users for owner dropdown
+  const { data: firmUsers } = await supabase
+    .from('profiles')
+    .select('id, full_name')
+    .eq('firm_id', deal.firm_id)
 
-  const currentStage = stages.find(s => s.id === deal.stage_id)
-  const getNote = (section: string) => notes.find(n => n.section === section)?.content ?? ''
+  const currentStage = stages?.find(s => s.id === deal.stage_id)
+  const getNote = (section: string) => notes?.find(n => n.section === section)?.content ?? ''
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
       <DealHeader
         deal={deal}
-        stages={stages}
-        killReasons={killReasons}
+        stages={stages ?? []}
+        killReasons={killReasons ?? []}
         currentStage={currentStage}
+        firmUsers={firmUsers ?? []}
       />
 
       <div className="mt-8 space-y-8">
@@ -80,9 +78,9 @@ export default async function DealPage({ params }: Props) {
         />
         <FilesSection
           dealId={deal.id}
-          files={files}
+          files={files ?? []}
         />
-        <DecisionLog events={events} />
+        <DecisionLog events={events ?? []} />
       </div>
     </div>
   )

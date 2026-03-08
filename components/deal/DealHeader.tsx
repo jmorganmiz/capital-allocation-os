@@ -11,10 +11,12 @@ interface Props {
   stages: DealStage[]
   killReasons: KillReason[]
   currentStage?: DealStage
+  firmUsers: { id: string; full_name: string | null }[]
 }
 
-export default function DealHeader({ deal, stages, killReasons, currentStage }: Props) {
+export default function DealHeader({ deal, stages, killReasons, currentStage, firmUsers }: Props) {
   const [showKillModal, setShowKillModal] = useState(false)
+  const [ownerId, setOwnerId] = useState(deal.owner_user_id ?? '')
   const [isPending, startTransition] = useTransition()
 
   const killedStage = stages.find(s => s.name === 'Killed')
@@ -25,16 +27,27 @@ export default function DealHeader({ deal, stages, killReasons, currentStage }: 
       setShowKillModal(true)
       return
     }
-    startTransition(async () => { await updateDealStage(deal.id, newStageId, deal.stage_id) })
+    startTransition(async () => { await updateDealStage(deal.id, newStageId, deal.stage_id ?? '') })
+  }
+
+  function handleOwnerChange(newOwnerId: string) {
+    setOwnerId(newOwnerId)
+    startTransition(async () => {
+      const { createClient } = await import('@/lib/supabase/client')
+      const supabase = createClient()
+      await supabase.from('deals').update({ owner_user_id: newOwnerId }).eq('id', deal.id)
+    })
   }
 
   function handleKillConfirm(killReasonId: string, notes: string) {
     if (!killedStage) return
     startTransition(async () => {
-      await killDeal(deal.id, killReasonId, notes || null, deal.stage_id, killedStage.id)
+      await killDeal(deal.id, killReasonId, notes || null, deal.stage_id ?? '', killedStage.id)
       setShowKillModal(false)
     })
   }
+
+  const currentOwner = firmUsers.find(u => u.id === ownerId)
 
   return (
     <div>
@@ -47,14 +60,29 @@ export default function DealHeader({ deal, stages, killReasons, currentStage }: 
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">{deal.title}</h1>
-          <div className="flex items-center gap-3 mt-2 text-sm text-gray-500">
+          <div className="flex items-center gap-3 mt-2 text-sm text-gray-500 flex-wrap">
             {deal.market && <span>{deal.market}</span>}
             {deal.deal_type && <span className="before:content-['·'] before:mr-3">{deal.deal_type}</span>}
             {deal.source_name && <span className="before:content-['·'] before:mr-3">via {deal.source_name}</span>}
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap justify-end">
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-gray-500">Owner</label>
+            <select
+              value={ownerId}
+              onChange={e => handleOwnerChange(e.target.value)}
+              disabled={deal.is_archived || isPending}
+              className="text-sm border border-gray-200 rounded-md px-2 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            >
+              <option value="">Unassigned</option>
+              {firmUsers.map(u => (
+                <option key={u.id} value={u.id}>{u.full_name ?? u.id}</option>
+              ))}
+            </select>
+          </div>
+
           <select
             value={deal.stage_id ?? ''}
             onChange={e => handleStageChange(e.target.value)}
@@ -67,10 +95,7 @@ export default function DealHeader({ deal, stages, killReasons, currentStage }: 
           </select>
 
           {!deal.is_archived && (
-            <button
-              onClick={() => setShowKillModal(true)}
-              className="btn-danger-outline text-sm"
-            >
+            <button onClick={() => setShowKillModal(true)} className="btn-danger-outline text-sm">
               Kill Deal
             </button>
           )}
