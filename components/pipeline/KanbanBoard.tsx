@@ -15,6 +15,7 @@ import DealColumn from './DealColumn'
 import DealCard from './DealCard'
 import KillModal from './KillModal'
 import CreateDealModal from './CreateDealModal'
+import UploadOMModal from './UploadOMModal'
 
 interface Props {
   initialStages: DealStage[]
@@ -28,6 +29,7 @@ export default function KanbanBoard({ initialStages, initialDeals, killReasons, 
   const [activeId, setActiveId] = useState<string | null>(null)
   const [killTarget, setKillTarget] = useState<Deal | null>(null)
   const [showCreate, setShowCreate] = useState(false)
+  const [showUploadOM, setShowUploadOM] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   const sensors = useSensors(useSensor(PointerSensor, {
@@ -68,7 +70,10 @@ export default function KanbanBoard({ initialStages, initialDeals, killReasons, 
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex justify-end px-6 pb-3">
+      <div className="flex justify-end gap-2 px-6 pb-3">
+        <button onClick={() => setShowUploadOM(true)} className="btn-secondary">
+          Upload OM
+        </button>
         <button onClick={() => setShowCreate(true)} className="btn-primary">
           + Add Deal
         </button>
@@ -119,6 +124,17 @@ export default function KanbanBoard({ initialStages, initialDeals, killReasons, 
             setShowCreate(false)
           }}
           onCancel={() => setShowCreate(false)}
+        />
+      )}
+      {showUploadOM && (
+        <UploadOMModal
+          stages={activeStages}
+          existingDeals={deals}
+          onCreated={deal => {
+            setDeals(prev => [{ ...deal, latest_stage_event_at: deal.created_at }, ...prev])
+            setShowUploadOM(false)
+          }}
+          onCancel={() => setShowUploadOM(false)}
         />
       )}
     </div>

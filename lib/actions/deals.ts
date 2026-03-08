@@ -212,6 +212,92 @@ export async function uploadFileMetadata(params: {
   return { file }
 }
 
+export async function createDealFromUpload({
+  mode,
+  dealName,
+  existingDealId,
+  storagePath,
+  filename,
+  mimeType,
+  sizeBytes,
+  stageId,
+}: {
+  mode: 'new' | 'existing'
+  dealName: string
+  existingDealId: string | null
+  storagePath: string
+  filename: string
+  mimeType: string
+  sizeBytes: number
+  stageId: string
+}) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('firm_id')
+    .eq('id', user.id)
+    .single()
+  if (!profile) return { error: 'Profile not found' }
+
+  let dealId = existingDealId
+
+  if (mode === 'new') {
+    const { data: deal, error: dealError } = await supabase
+      .from('deals')
+      .insert({
+        firm_id: profile.firm_id,
+        title: dealName,
+        stage_id: stageId,
+        owner_user_id: user.id,
+        intake_type: 'upload',
+        created_by: user.id,
+      })
+      .select()
+      .single()
+
+    if (dealError) return { error: dealError.message }
+    dealId = deal.id
+
+    await supabase.from('deal_events').insert({
+      deal_id: dealId,
+      firm_id: profile.firm_id,
+      actor_user_id: user.id,
+      event_type: 'deal_created',
+      notes: `Deal created via OM upload: ${filename}`,
+    })
+  }
+
+  const { error: fileError } = await supabase.from('deal_files').insert({
+    deal_id: dealId,
+    firm_id: profile.firm_id,
+    storage_path: storagePath,
+    filename,
+    mime_type: mimeType,
+    size_bytes: sizeBytes,
+    uploaded_by: user.id,
+  })
+
+  if (fileError) return { error: fileError.message }
+
+  await supabase.from('deal_events').insert({
+    deal_id: dealId,
+    firm_id: profile.firm_id,
+    actor_user_id: user.id,
+    event_type: 'file_added',
+    notes: filename,
+  })
+
+  if (mode === 'new') {
+    const { data: deal } = await supabase.from('deals').select('*').eq('id', dealId).single()
+    return { deal }
+  }
+
+  return { deal: { id: dealId } }
+}
+
 export async function listArchivedDeals(filters?: {
   market?: string
   dealType?: string
