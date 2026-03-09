@@ -63,7 +63,10 @@ export default function BillingSettings({ isSubscribed }: Props) {
             >
               {loading ? 'Redirecting…' : 'Subscribe — $90/month'}
             </button>
-            <p className="text-xs text-gray-400 mt-2">Billed monthly. Cancel anytime.</p>
+            <p className="text-xs text-gray-400 mt-2">
+              You will be charged $90/month on a recurring basis. Cancel anytime by emailing{' '}
+              <a href="mailto:jack@getdealstash.com" className="hover:underline">jack@getdealstash.com</a>.
+            </p>
           </div>
         )}
 
