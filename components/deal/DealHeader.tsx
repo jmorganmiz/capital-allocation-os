@@ -89,7 +89,7 @@ export default function DealHeader({ deal, stages, killReasons, currentStage, fi
             disabled={deal.is_archived || isPending}
             className="text-sm border border-gray-200 rounded-md px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
           >
-            {stages.map(s => (
+            {stages.filter(s => s.name !== 'Killed').map(s => (
               <option key={s.id} value={s.id}>{s.name}</option>
             ))}
           </select>
