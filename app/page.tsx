@@ -109,7 +109,7 @@ export default async function HomePage() {
               <p className="text-sm text-gray-500 mt-1">For small investment teams</p>
             </div>
             <div className="text-right">
-              <p className="text-3xl font-bold text-gray-900">$99<span className="text-lg font-normal text-gray-500">/mo</span></p>
+              <p className="text-3xl font-bold text-gray-900">$90<span className="text-lg font-normal text-gray-500">/mo</span></p>
               <p className="text-xs text-gray-400 mt-1">per firm</p>
             </div>
           </div>

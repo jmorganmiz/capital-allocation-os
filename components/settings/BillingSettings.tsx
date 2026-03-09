@@ -40,7 +40,7 @@ export default function BillingSettings({ isSubscribed }: Props) {
               {isSubscribed ? 'Team Plan' : 'Free Beta'}
             </p>
             <p className="text-xs text-gray-400 mt-0.5">
-              {isSubscribed ? '$99 / month · All features included' : 'All features available during beta'}
+              {isSubscribed ? '$90 / month · All features included' : 'All features available during beta'}
             </p>
           </div>
           {isSubscribed ? (
@@ -61,7 +61,7 @@ export default function BillingSettings({ isSubscribed }: Props) {
               disabled={loading}
               className="btn-primary disabled:opacity-50"
             >
-              {loading ? 'Redirecting…' : 'Subscribe — $99/month'}
+              {loading ? 'Redirecting…' : 'Subscribe — $90/month'}
             </button>
             <p className="text-xs text-gray-400 mt-2">Billed monthly. Cancel anytime.</p>
           </div>
