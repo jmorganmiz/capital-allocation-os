@@ -18,6 +18,7 @@ export async function POST() {
   const firmId = profile.firm_id
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 
+  console.log('STRIPE_SECRET_KEY present:', !!process.env.STRIPE_SECRET_KEY, 'prefix:', process.env.STRIPE_SECRET_KEY?.slice(0, 7))
   const stripe = getStripe()
   const session = await stripe.checkout.sessions.create({
     mode: 'subscription',
