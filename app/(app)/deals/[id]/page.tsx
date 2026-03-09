@@ -7,10 +7,11 @@ import DecisionLog from '@/components/deal/DecisionLog'
 import FinancialSnapshot from '@/components/deal/FinancialSnapshot'
 
 interface Props {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export default async function DealPage({ params }: Props) {
+  const { id } = await params
   const supabase = await createClient()
 
   const [
@@ -22,22 +23,22 @@ export default async function DealPage({ params }: Props) {
     { data: events },
     { data: snapshots },
   ] = await Promise.all([
-    supabase.from('deals').select('*').eq('id', params.id).single(),
+    supabase.from('deals').select('*').eq('id', id).single(),
     supabase.from('deal_stages').select('*').order('position'),
     supabase.from('kill_reasons').select('*').order('position'),
-    supabase.from('deal_notes').select('*').eq('deal_id', params.id),
-    supabase.from('deal_files').select('*').eq('deal_id', params.id).order('created_at', { ascending: false }),
+    supabase.from('deal_notes').select('*').eq('deal_id', id),
+    supabase.from('deal_files').select('*').eq('deal_id', id).order('created_at', { ascending: false }),
     supabase
       .from('deal_events')
       .select(`*, profiles(full_name), kill_reasons(name),
                from_stage:deal_stages!from_stage_id(name),
                to_stage:deal_stages!to_stage_id(name)`)
-      .eq('deal_id', params.id)
+      .eq('deal_id', id)
       .order('created_at', { ascending: false }),
     supabase
       .from('deal_financial_snapshots')
       .select('*')
-      .eq('deal_id', params.id)
+      .eq('deal_id', id)
       .order('created_at', { ascending: false }),
   ])
 
