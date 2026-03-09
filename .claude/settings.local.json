@@ -11,7 +11,8 @@
       "Bash(sed:*)",
       "Bash(kill:*)",
       "Bash(node:*)",
-      "Bash(notepad:*)"
+      "Bash(notepad:*)",
+      "Bash(npm i:*)"
     ]
   }
 }
