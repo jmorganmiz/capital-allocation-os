@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
 export async function createDealStage(name: string, position: number) {
@@ -115,7 +115,8 @@ export async function inviteTeamMember(email: string) {
   const firmName = (profile.firms as any)?.name ?? 'your team'
   const inviteUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://getdealstash.com'}/signup?invite=${invite.token}&email=${encodeURIComponent(email)}`
 
-  const { error: emailError } = await supabase.auth.admin.inviteUserByEmail(email, {
+  const adminClient = createAdminClient()
+  const { error: emailError } = await adminClient.auth.admin.inviteUserByEmail(email, {
     data: {
       firm_id: profile.firm_id,
       invite_token: invite.token,
