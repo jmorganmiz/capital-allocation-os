@@ -12,6 +12,7 @@ interface Props {
 
 const navLinks = [
   { href: '/pipeline', label: 'Pipeline' },
+  { href: '/dashboard', label: 'Dashboard' },
   { href: '/graveyard', label: 'Graveyard' },
   { href: '/settings', label: 'Settings' },
 ]
