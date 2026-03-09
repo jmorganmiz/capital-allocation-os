@@ -1,4 +1,5 @@
 import { loginAction } from './actions'
+import GoogleButton from '@/components/auth/GoogleButton'
 
 export default function LoginPage() {
   return (
@@ -6,6 +7,14 @@ export default function LoginPage() {
       <div className="w-full max-w-md bg-white border border-gray-200 rounded-lg p-8 shadow-sm">
         <h1 className="text-2xl font-semibold text-gray-900 mb-1">Sign in</h1>
         <p className="text-sm text-gray-500 mb-6">Dealstash</p>
+
+        <GoogleButton />
+
+        <div className="flex items-center gap-3 my-5">
+          <div className="flex-1 border-t border-gray-100" />
+          <span className="text-xs text-gray-400">or</span>
+          <div className="flex-1 border-t border-gray-100" />
+        </div>
 
         <form action={loginAction as any} className="space-y-4">
           <div>

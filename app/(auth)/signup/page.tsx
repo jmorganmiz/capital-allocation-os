@@ -1,4 +1,5 @@
 import { signUpAction } from './actions'
+import GoogleButton from '@/components/auth/GoogleButton'
 
 interface Props {
   searchParams: { invite?: string; email?: string }
@@ -16,6 +17,17 @@ export default function SignupPage({ searchParams }: Props) {
             {isInvite ? "You've been invited to join a team." : 'Create your workspace.'}
           </p>
         </div>
+
+        {!isInvite && (
+          <>
+            <GoogleButton />
+            <div className="flex items-center gap-3 my-5">
+              <div className="flex-1 border-t border-gray-100" />
+              <span className="text-xs text-gray-400">or</span>
+              <div className="flex-1 border-t border-gray-100" />
+            </div>
+          </>
+        )}
 
         <form action={signUpAction as any} className="space-y-4">
           <input type="hidden" name="invite_token" value={searchParams.invite ?? ''} />
