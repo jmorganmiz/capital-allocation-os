@@ -322,3 +322,62 @@ export async function listArchivedDeals(filters?: {
   if (error) return { error: error.message }
   return { deals: data }
 }
+
+export async function searchDeals(query: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: profile } = await supabase
+    .from('profiles').select('firm_id').eq('id', user.id).single()
+  if (!profile) return { error: 'Profile not found' }
+
+  const term = `%${query}%`
+
+  // Search deals by title, market, source_name
+  const { data: dealMatches } = await supabase
+    .from('deals')
+    .select('id, title, market, stage_id, deal_stages(name)')
+    .eq('firm_id', profile.firm_id)
+    .eq('is_archived', false)
+    .or(`title.ilike.${term},market.ilike.${term},source_name.ilike.${term}`)
+    .limit(10)
+
+  // Search deal_notes content
+  const { data: noteMatches } = await supabase
+    .from('deal_notes')
+    .select('deal_id')
+    .eq('firm_id', profile.firm_id)
+    .ilike('content', term)
+    .limit(10)
+
+  const noteIds = (noteMatches ?? []).map(n => n.deal_id)
+  let extra: typeof dealMatches = []
+  if (noteIds.length > 0) {
+    const { data } = await supabase
+      .from('deals')
+      .select('id, title, market, stage_id, deal_stages(name)')
+      .eq('firm_id', profile.firm_id)
+      .eq('is_archived', false)
+      .in('id', noteIds)
+      .limit(5)
+    extra = data ?? []
+  }
+
+  // Merge, deduplicate
+  const seen = new Set<string>()
+  const all = [...(dealMatches ?? []), ...extra].filter(d => {
+    if (seen.has(d.id)) return false
+    seen.add(d.id)
+    return true
+  })
+
+  const deals = all.map(d => ({
+    id: d.id,
+    title: d.title,
+    market: d.market,
+    stage_name: (d.deal_stages as any)?.name ?? null,
+  }))
+
+  return { deals }
+}

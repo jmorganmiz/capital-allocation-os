@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import SearchModal from '@/components/search/SearchModal'
 
 interface Props {
   firmName: string
@@ -36,8 +37,28 @@ function NavLinks({ onClick }: { onClick?: () => void }) {
   )
 }
 
+function SearchIcon() {
+  return (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+    </svg>
+  )
+}
+
 export default function MobileSidebar({ firmName, userEmail }: Props) {
   const [open, setOpen] = useState(false)
+  const [showSearch, setShowSearch] = useState(false)
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        setShowSearch(true)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   return (
     <>
@@ -51,6 +72,14 @@ export default function MobileSidebar({ firmName, userEmail }: Props) {
         </div>
 
         <div className="flex-1 px-3 py-4 space-y-0.5">
+          <button
+            onClick={() => setShowSearch(true)}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors mb-1"
+          >
+            <SearchIcon />
+            <span className="flex-1 text-left">Search</span>
+            <kbd className="text-xs border border-gray-200 rounded px-1 py-0.5 leading-none">⌘K</kbd>
+          </button>
           <NavLinks />
         </div>
 
@@ -67,15 +96,24 @@ export default function MobileSidebar({ firmName, userEmail }: Props) {
       {/* Mobile top bar */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 flex items-center justify-between px-4 h-14">
         <p className="text-sm font-semibold text-gray-800 truncate">{firmName}</p>
-        <button
-          onClick={() => setOpen(true)}
-          className="p-2 rounded-md text-gray-500 hover:bg-gray-100"
-          aria-label="Open menu"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setShowSearch(true)}
+            className="p-2 rounded-md text-gray-500 hover:bg-gray-100"
+            aria-label="Search"
+          >
+            <SearchIcon />
+          </button>
+          <button
+            onClick={() => setOpen(true)}
+            className="p-2 rounded-md text-gray-500 hover:bg-gray-100"
+            aria-label="Open menu"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* Mobile drawer overlay */}
@@ -116,6 +154,8 @@ export default function MobileSidebar({ firmName, userEmail }: Props) {
           </div>
         </div>
       )}
+
+      {showSearch && <SearchModal onClose={() => setShowSearch(false)} />}
     </>
   )
 }
