@@ -42,6 +42,12 @@ export default async function GraveyardPage({ searchParams }: { searchParams: Se
 
   const uniqueMarkets = [...new Set(((marketsData ?? []) as any[]).map((d: any) => d.market).filter(Boolean))]
 
+  const { data: killStats } = await supabase
+    .from('deal_events')
+    .select('kill_reasons(name)')
+    .eq('event_type', 'killed')
+    .not('kill_reason_id', 'is', null)
+
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
       <div className="mb-6">
@@ -69,6 +75,26 @@ export default async function GraveyardPage({ searchParams }: { searchParams: Se
           )}
         </form>
       </div>
+
+      {killStats && killStats.length > 0 && (() => {
+        const counts: Record<string, number> = {}
+        killStats.forEach((e: any) => {
+          const name = e.kill_reasons?.name
+          if (name) counts[name] = (counts[name] ?? 0) + 1
+        })
+        return (
+          <div className="flex gap-3 flex-wrap mb-6">
+            {Object.entries(counts)
+              .sort((a, b) => b[1] - a[1])
+              .map(([name, count]) => (
+                <div key={name} className="bg-white border border-gray-200 rounded-lg px-4 py-2 flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-800">{name}</span>
+                  <span className="text-xs bg-red-50 text-red-600 rounded-full px-2 py-0.5 font-medium">{count}</span>
+                </div>
+              ))}
+          </div>
+        )
+      })()}
 
       {filtered.length === 0 ? (
         <div className="text-center text-gray-400 py-16 text-sm">

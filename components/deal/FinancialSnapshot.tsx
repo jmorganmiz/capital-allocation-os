@@ -30,6 +30,7 @@ function fmt(val: number | null, isPercent = false): string {
 export default function FinancialSnapshot({ dealId, firmId, snapshots: initial }: Props) {
   const [snapshots, setSnapshots] = useState<Snapshot[]>(initial)
   const [showForm, setShowForm] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [form, setForm] = useState({
     purchase_price: '',
@@ -152,6 +153,45 @@ export default function FinancialSnapshot({ dealId, firmId, snapshots: initial }
             Last updated {new Date(latest.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             {snapshots.length > 1 && ` · ${snapshots.length} versions`}
           </p>
+
+          {snapshots.length > 1 && (
+            <div className="mt-4">
+              <button
+                onClick={() => setShowHistory(!showHistory)}
+                className="text-xs text-blue-600 hover:underline"
+              >
+                {showHistory ? 'Hide' : 'Show'} version history ({snapshots.length - 1} previous)
+              </button>
+
+              {showHistory && (
+                <div className="mt-3 space-y-3">
+                  {snapshots.slice(1).map((snap, i) => (
+                    <div key={snap.id} className="border border-gray-100 rounded-lg p-3 bg-gray-50">
+                      <p className="text-xs text-gray-400 mb-2">
+                        {new Date(snap.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { label: 'Purchase Price', value: fmt(snap.purchase_price) },
+                          { label: 'NOI', value: fmt(snap.noi) },
+                          { label: 'Cap Rate', value: fmt(snap.cap_rate, true) },
+                          { label: 'Debt Rate', value: fmt(snap.debt_rate, true) },
+                          { label: 'LTV', value: fmt(snap.ltv, true) },
+                          { label: 'IRR', value: fmt(snap.projected_irr, true) },
+                        ].map(({ label, value }) => (
+                          <div key={label}>
+                            <p className="text-xs text-gray-400">{label}</p>
+                            <p className="text-xs font-medium text-gray-700">{value}</p>
+                          </div>
+                        ))}
+                      </div>
+                      {snap.notes && <p className="text-xs text-gray-500 italic mt-2">{snap.notes}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       ) : (
         <div className="border border-dashed border-gray-200 rounded-lg p-8 text-center text-sm text-gray-400">
