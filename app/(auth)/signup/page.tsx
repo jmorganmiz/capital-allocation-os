@@ -66,7 +66,14 @@ export default function SignupPage({ searchParams }: Props) {
           </button>
         </form>
 
-        <p className="text-sm text-gray-500 mt-6 text-center">
+        <p className="text-xs text-gray-400 mt-4 text-center">
+          By signing up, you agree to our{' '}
+          <a href="/terms" className="text-blue-600 hover:underline">Terms of Service</a>
+          {' '}and{' '}
+          <a href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</a>.
+        </p>
+
+        <p className="text-sm text-gray-500 mt-4 text-center">
           Already have an account?{' '}
           <a href="/login" className="text-blue-600 hover:underline">Sign in</a>
         </p>

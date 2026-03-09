@@ -137,7 +137,11 @@ export default async function HomePage() {
 
       {/* Footer */}
       <footer className="border-t border-gray-100 px-8 py-6 text-center">
-        <p className="text-xs text-gray-400">© 2025 Dealstash. Built for investment teams.</p>
+        <p className="text-xs text-gray-400 mb-2">© 2026 Dealstash. Built for investment teams.</p>
+        <div className="flex items-center justify-center gap-4">
+          <Link href="/terms" className="text-xs text-gray-400 hover:text-gray-600">Terms of Service</Link>
+          <Link href="/privacy" className="text-xs text-gray-400 hover:text-gray-600">Privacy Policy</Link>
+        </div>
       </footer>
     </div>
   )
