@@ -35,7 +35,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-base font-semibold text-gray-900 mb-2">5. Subscription and Payment</h2>
-            <p>Dealstash is offered on a subscription basis at <strong>$99 per month per firm</strong>, billed monthly. Payments are processed securely through Stripe. By subscribing, you authorize us to charge your payment method on a recurring monthly basis until you cancel. All fees are non-refundable except as required by applicable law. We reserve the right to change pricing with 30 days' notice to subscribers.</p>
+            <p>Dealstash is offered on a subscription basis at <strong>$90 per month per firm</strong>, billed monthly. Payments are processed securely through Stripe. By subscribing, you authorize us to charge your payment method on a recurring monthly basis until you cancel. All fees are non-refundable except as required by applicable law. We reserve the right to change pricing with 30 days' notice to subscribers.</p>
           </section>
 
           <section>
