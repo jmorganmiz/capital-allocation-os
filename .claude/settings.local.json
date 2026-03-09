@@ -9,7 +9,9 @@
       "Bash(cmd:*)",
       "Bash(npm install:*)",
       "Bash(sed:*)",
-      "Bash(kill:*)"
+      "Bash(kill:*)",
+      "Bash(node:*)",
+      "Bash(notepad:*)"
     ]
   }
 }
