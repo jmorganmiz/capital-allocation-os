@@ -45,7 +45,7 @@ export default function MobileSidebar({ firmName, userEmail }: Props) {
       <nav className="hidden md:flex w-52 flex-shrink-0 bg-white border-r border-gray-200 flex-col">
         <div className="px-4 py-5 border-b border-gray-100">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-0.5">
-            Capital Allocation OS
+            Dealstash
           </p>
           <p className="text-sm font-semibold text-gray-800 truncate">{firmName}</p>
         </div>
@@ -86,7 +86,7 @@ export default function MobileSidebar({ firmName, userEmail }: Props) {
             <div className="px-4 py-5 border-b border-gray-100 flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-0.5">
-                  Capital Allocation OS
+                  Dealstash
                 </p>
                 <p className="text-sm font-semibold text-gray-800 truncate">{firmName}</p>
               </div>
