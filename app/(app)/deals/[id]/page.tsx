@@ -64,6 +64,11 @@ export default async function DealPage({ params }: Props) {
       />
 
       <div className="mt-8 space-y-8">
+        <FinancialSnapshot
+          dealId={deal.id}
+          firmId={deal.firm_id}
+          snapshots={snapshots ?? []}
+        />
         <NotesSection
           dealId={deal.id}
           section="overview"
@@ -87,11 +92,6 @@ export default async function DealPage({ params }: Props) {
         <FilesSection
           dealId={deal.id}
           files={files ?? []}
-        />
-        <FinancialSnapshot
-          dealId={deal.id}
-          firmId={deal.firm_id}
-          snapshots={snapshots ?? []}
         />
         <DecisionLog events={events ?? []} />
       </div>
