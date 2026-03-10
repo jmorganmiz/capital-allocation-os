@@ -4,31 +4,35 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 
-export async function signUpAction(formData: FormData) {
+export async function signUpAction(prevState: any, formData: FormData) {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
   const fullName = formData.get('full_name') as string
   const firmName = formData.get('firm_name') as string
   const inviteToken = formData.get('invite_token') as string | null
 
-  const supabase = await createClient()
+  console.log('[signup] attempting signup for:', email, 'invite:', !!inviteToken)
+
   const adminClient = createAdminClient()
 
-  const { data: authData, error: authError } = await supabase.auth.signUp({
+  // Use admin to create user so email confirmation is bypassed
+  const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
     email,
     password,
-    options: {
-      data: { full_name: fullName },
-    },
+    email_confirm: true,
+    user_metadata: { full_name: fullName },
   })
 
-  if (authError) return { error: authError.message }
-  if (!authData.user) return { error: 'Signup failed' }
+  if (authError) {
+    console.error('[signup] auth error:', authError.message)
+    return { error: authError.message }
+  }
+  if (!authData.user) return { error: 'Signup failed — no user returned.' }
 
   const userId = authData.user.id
+  console.log('[signup] user created:', userId)
 
   if (inviteToken) {
-    // Join existing firm via invite
     const { data: invite } = await adminClient
       .from('invites')
       .select('firm_id')
@@ -52,14 +56,16 @@ export async function signUpAction(formData: FormData) {
       .eq('token', inviteToken)
 
   } else {
-    // Create new firm
-    const { data: firm } = await adminClient
+    const { data: firm, error: firmError } = await adminClient
       .from('firms')
       .insert({ name: firmName })
       .select()
       .single()
 
-    if (!firm) return { error: 'Failed to create firm' }
+    if (firmError || !firm) {
+      console.error('[signup] firm error:', firmError?.message)
+      return { error: firmError?.message ?? 'Failed to create firm' }
+    }
 
     await adminClient.from('profiles').upsert({
       id: userId,
@@ -69,27 +75,32 @@ export async function signUpAction(formData: FormData) {
       role: 'admin',
     })
 
-    // Seed default stages
-    const defaultStages = [
+    await adminClient.from('deal_stages').insert([
       { firm_id: firm.id, name: 'New', position: 0, is_terminal: false },
       { firm_id: firm.id, name: 'Screening', position: 1, is_terminal: false },
       { firm_id: firm.id, name: 'Underwriting', position: 2, is_terminal: false },
       { firm_id: firm.id, name: 'LOI', position: 3, is_terminal: false },
       { firm_id: firm.id, name: 'Closed', position: 4, is_terminal: true },
       { firm_id: firm.id, name: 'Killed', position: 5, is_terminal: true },
-    ]
-    await adminClient.from('deal_stages').insert(defaultStages)
+    ])
 
-    // Seed default kill reasons
-    const defaultKillReasons = [
+    await adminClient.from('kill_reasons').insert([
       { firm_id: firm.id, name: 'Price Too High', position: 0 },
       { firm_id: firm.id, name: 'Market Concerns', position: 1 },
       { firm_id: firm.id, name: 'Due Diligence Issues', position: 2 },
       { firm_id: firm.id, name: 'Financing Fell Through', position: 3 },
       { firm_id: firm.id, name: 'Passed on Returns', position: 4 },
-    ]
-    await adminClient.from('kill_reasons').insert(defaultKillReasons)
+    ])
   }
 
+  // Sign in with the new credentials to establish the session
+  const supabase = await createClient()
+  const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+  if (signInError) {
+    console.error('[signup] sign in after signup failed:', signInError.message)
+    return { error: `Account created but sign-in failed: ${signInError.message}` }
+  }
+
+  console.log('[signup] complete, redirecting to /pipeline')
   redirect('/pipeline')
 }

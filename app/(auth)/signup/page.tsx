@@ -1,12 +1,18 @@
+'use client'
+
+import { Suspense } from 'react'
+import { useActionState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { signUpAction } from './actions'
 import GoogleButton from '@/components/auth/GoogleButton'
 
-interface Props {
-  searchParams: { invite?: string; email?: string }
-}
+function SignupForm() {
+  const searchParams = useSearchParams()
+  const invite = searchParams.get('invite') ?? ''
+  const email = searchParams.get('email') ?? ''
+  const isInvite = !!invite
 
-export default function SignupPage({ searchParams }: Props) {
-  const isInvite = !!searchParams.invite
+  const [state, action, isPending] = useActionState(signUpAction, null)
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
@@ -29,8 +35,14 @@ export default function SignupPage({ searchParams }: Props) {
           </>
         )}
 
-        <form action={signUpAction as any} className="space-y-4">
-          <input type="hidden" name="invite_token" value={searchParams.invite ?? ''} />
+        {state?.error && (
+          <div className="mb-4 px-3 py-2 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-sm text-red-700">{state.error}</p>
+          </div>
+        )}
+
+        <form action={action} className="space-y-4">
+          <input type="hidden" name="invite_token" value={invite} />
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
@@ -43,7 +55,7 @@ export default function SignupPage({ searchParams }: Props) {
               name="email"
               type="email"
               required
-              defaultValue={searchParams.email ?? ''}
+              defaultValue={email}
               className="input-base"
               placeholder="jack@firm.com"
             />
@@ -61,8 +73,10 @@ export default function SignupPage({ searchParams }: Props) {
             </div>
           )}
 
-          <button type="submit" className="btn-primary w-full mt-2">
-            {isInvite ? 'Accept Invite & Join Team' : 'Create Workspace'}
+          <button type="submit" disabled={isPending} className="btn-primary w-full mt-2 disabled:opacity-50">
+            {isPending
+              ? (isInvite ? 'Joining…' : 'Creating…')
+              : (isInvite ? 'Accept Invite & Join Team' : 'Create Workspace')}
           </button>
         </form>
 
@@ -79,5 +93,13 @@ export default function SignupPage({ searchParams }: Props) {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense>
+      <SignupForm />
+    </Suspense>
   )
 }

@@ -1,7 +1,12 @@
+'use client'
+
+import { useActionState } from 'react'
 import { loginAction } from './actions'
 import GoogleButton from '@/components/auth/GoogleButton'
 
 export default function LoginPage() {
+  const [state, action, isPending] = useActionState(loginAction, null)
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-full max-w-md bg-white border border-gray-200 rounded-lg p-8 shadow-sm">
@@ -16,16 +21,24 @@ export default function LoginPage() {
           <div className="flex-1 border-t border-gray-100" />
         </div>
 
-        <form action={loginAction as any} className="space-y-4">
+        {state?.error && (
+          <div className="mb-4 px-3 py-2 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-sm text-red-700">{state.error}</p>
+          </div>
+        )}
+
+        <form action={action} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input name="email" type="email" required className="input-base" />
+            <input name="email" type="email" required className="input-base" autoComplete="email" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <input name="password" type="password" required className="input-base" />
+            <input name="password" type="password" required className="input-base" autoComplete="current-password" />
           </div>
-          <button type="submit" className="w-full btn-primary">Sign In</button>
+          <button type="submit" disabled={isPending} className="w-full btn-primary disabled:opacity-50">
+            {isPending ? 'Signing in…' : 'Sign In'}
+          </button>
         </form>
 
         <p className="mt-4 text-sm text-gray-500 text-center">
