@@ -7,8 +7,18 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) {
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+    if (!error && data.user) {
+      // Check if user has a profile — if not, send to onboarding
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('firm_id')
+        .eq('id', data.user.id)
+        .single()
+
+      if (!profile?.firm_id) {
+        return NextResponse.redirect(`${origin}/onboarding`)
+      }
       return NextResponse.redirect(`${origin}/pipeline`)
     }
   }

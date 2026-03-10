@@ -13,6 +13,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     .eq('id', user.id)
     .single()
 
+  if (!profile?.firm_id) redirect('/onboarding')
+
   const firmName = (profile?.firms as any)?.name ?? 'My Firm'
   const userEmail = user.email ?? ''
 

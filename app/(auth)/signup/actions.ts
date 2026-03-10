@@ -42,13 +42,17 @@ export async function signUpAction(prevState: any, formData: FormData) {
 
     if (!invite) return { error: 'Invalid or expired invite link.' }
 
-    await adminClient.from('profiles').upsert({
+    const { error: profileError } = await adminClient.from('profiles').upsert({
       id: userId,
       firm_id: invite.firm_id,
       full_name: fullName,
       email,
       role: 'member',
     })
+    if (profileError) {
+      console.error('[signup] profile error:', profileError.message)
+      return { error: profileError.message }
+    }
 
     await adminClient
       .from('invites')
@@ -67,13 +71,17 @@ export async function signUpAction(prevState: any, formData: FormData) {
       return { error: firmError?.message ?? 'Failed to create firm' }
     }
 
-    await adminClient.from('profiles').upsert({
+    const { error: profileError } = await adminClient.from('profiles').upsert({
       id: userId,
       firm_id: firm.id,
       full_name: fullName,
       email,
       role: 'admin',
     })
+    if (profileError) {
+      console.error('[signup] profile error:', profileError.message)
+      return { error: profileError.message }
+    }
 
     await adminClient.from('deal_stages').insert([
       { firm_id: firm.id, name: 'New', position: 0, is_terminal: false },
