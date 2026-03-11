@@ -6,6 +6,8 @@ import FilesSection from '@/components/deal/FilesSection'
 import DecisionLog from '@/components/deal/DecisionLog'
 import FinancialSnapshot from '@/components/deal/FinancialSnapshot'
 import ContactsSection from '@/components/deal/ContactsSection'
+import ScoringSection from '@/components/deal/ScoringSection'
+import { getScoringCriteria, getDealScores } from '@/lib/actions/scoring'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -48,6 +50,11 @@ export default async function DealPage({ params }: Props) {
       .eq('deal_id', id),
   ])
 
+  const [scoringCriteriaResult, dealScoresResult] = await Promise.all([
+    getScoringCriteria(),
+    getDealScores(id),
+  ])
+
   if (!deal) notFound()
 
   // Get firm users for owner dropdown
@@ -74,6 +81,11 @@ export default async function DealPage({ params }: Props) {
           dealId={deal.id}
           firmId={deal.firm_id}
           snapshots={snapshots ?? []}
+        />
+        <ScoringSection
+          dealId={deal.id}
+          criteria={(scoringCriteriaResult.criteria ?? []) as any}
+          initialScores={(dealScoresResult.scores ?? []) as any}
         />
         <NotesSection
           dealId={deal.id}

@@ -80,6 +80,28 @@ export interface Database {
         }
         Update: never
       }
+      scoring_criteria: {
+        Row: {
+          id: string; firm_id: string; name: string; description: string | null
+          position: number; is_active: boolean; created_at: string
+        }
+        Insert: {
+          id?: string; firm_id: string; name: string; description?: string | null
+          position?: number; is_active?: boolean
+        }
+        Update: { name?: string; description?: string | null; position?: number; is_active?: boolean }
+      }
+      deal_scores: {
+        Row: {
+          id: string; deal_id: string; criteria_id: string; firm_id: string | null
+          score: number; notes: string | null; scored_by: string | null; updated_at: string
+        }
+        Insert: {
+          id?: string; deal_id: string; criteria_id: string; firm_id?: string | null
+          score: number; notes?: string | null; scored_by?: string | null
+        }
+        Update: { score?: number; notes?: string | null; scored_by?: string | null; updated_at?: string }
+      }
       contacts: {
         Row: {
           id: string; firm_id: string; name: string; email: string | null
@@ -143,3 +165,5 @@ export type DealFile = Database['public']['Tables']['deal_files']['Row']
 export type DealFinancialSnapshot = Database['public']['Tables']['deal_financial_snapshots']['Row']
 export type Contact = Database['public']['Tables']['contacts']['Row']
 export type DealContact = Database['public']['Tables']['deal_contacts']['Row']
+export type ScoringCriteria = Database['public']['Tables']['scoring_criteria']['Row']
+export type DealScore = Database['public']['Tables']['deal_scores']['Row']

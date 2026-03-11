@@ -3,6 +3,8 @@ import StagesSettings from '@/components/settings/StagesSettings'
 import KillReasonsSettings from '@/components/settings/KillReasonsSettings'
 import TeamSettings from '@/components/settings/TeamSettings'
 import BillingSettings from '@/components/settings/BillingSettings'
+import ScoringCriteriaSettings from '@/components/settings/ScoringCriteriaSettings'
+import { getAllScoringCriteria } from '@/lib/actions/scoring'
 
 interface Props {
   searchParams: Promise<{ success?: string }>
@@ -29,11 +31,13 @@ export default async function SettingsPage({ searchParams }: Props) {
     { data: killReasons },
     { data: members },
     { data: invites },
+    scoringResult,
   ] = await Promise.all([
     supabase.from('deal_stages').select('*').order('position'),
     supabase.from('kill_reasons').select('*').order('position'),
     supabase.from('profiles').select('id, full_name, email, role, created_at').eq('firm_id', firmId),
     supabase.from('invites').select('id, email, created_at, accepted_at').eq('firm_id', firmId).order('created_at', { ascending: false }),
+    getAllScoringCriteria(),
   ])
 
   return (
@@ -57,6 +61,7 @@ export default async function SettingsPage({ searchParams }: Props) {
       />
       <StagesSettings stages={stages ?? []} />
       <KillReasonsSettings killReasons={killReasons ?? []} />
+      <ScoringCriteriaSettings criteria={(scoringResult.criteria ?? []) as any} />
     </div>
   )
 }
