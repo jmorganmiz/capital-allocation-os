@@ -29,8 +29,7 @@ export default async function HomePage() {
           Your deal pipeline.<br />Your decision history.
         </h1>
         <p className="text-xl text-gray-500 max-w-2xl mx-auto mb-10 leading-relaxed">
-          Dealstash is the operating system for small investment teams. Track deals, log decisions,
-          capture why you passed — and never lose institutional memory again.
+          Track deals, score opportunities, manage broker relationships — and never lose institutional memory again.
         </p>
         <div className="flex items-center justify-center gap-4">
           <Link href="/signup" className="bg-gray-900 text-white px-8 py-3 rounded-md text-sm font-semibold hover:bg-gray-800 transition-colors">
@@ -40,7 +39,8 @@ export default async function HomePage() {
             Already have an account →
           </Link>
         </div>
-        <p className="text-xs text-gray-400 mt-4">No credit card required. 30-day free trial.</p>
+        <p className="text-sm text-gray-400 mt-4 font-medium">Built by a CRE investor, for CRE investment teams.</p>
+        <p className="text-xs text-gray-400 mt-2">No credit card required. 30-day free trial.</p>
       </div>
 
       {/* Features */}
@@ -73,6 +73,18 @@ export default async function HomePage() {
             {
               title: "Team Workspaces",
               desc: "Each deal has its own workspace — overview, risks, notes, files, and full history."
+            },
+            {
+              title: "Contact & Relationship Tracking",
+              desc: "Know which brokers send your best deals. Link contacts to deals, track sources, and build a relationship database your whole team can use."
+            },
+            {
+              title: "Deal Scoring",
+              desc: "Score every deal on your own criteria — location, tenant quality, debt coverage, and more. Get an instant go/no-go score out of 100."
+            },
+            {
+              title: "Weekly Activity Digest",
+              desc: "Get a weekly email summary of deal activity — what moved, what's stale, what needs attention. Stay on top of your pipeline without logging in."
             },
           ].map(({ title, desc }) => (
             <div key={title} className="p-6 bg-gray-50 rounded-xl">
@@ -121,6 +133,9 @@ export default async function HomePage() {
               'Financial snapshots',
               'OM upload intake',
               'Graveyard & kill reason analytics',
+              'Contact & broker relationship tracking',
+              'Deal scoring & underwriting checklist',
+              'Weekly activity digest',
             ].map(item => (
               <li key={item} className="flex items-center gap-3 text-sm text-gray-700">
                 <span className="text-green-500 font-bold">✓</span>
