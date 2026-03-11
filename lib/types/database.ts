@@ -80,6 +80,36 @@ export interface Database {
         }
         Update: never
       }
+      contacts: {
+        Row: {
+          id: string; firm_id: string; name: string; email: string | null
+          phone: string | null; company: string | null
+          contact_type: 'broker' | 'seller' | 'lender' | null
+          notes: string | null; created_by: string; created_at: string
+        }
+        Insert: {
+          id?: string; firm_id: string; name: string; email?: string | null
+          phone?: string | null; company?: string | null
+          contact_type?: 'broker' | 'seller' | 'lender' | null
+          notes?: string | null; created_by: string
+        }
+        Update: {
+          name?: string; email?: string | null; phone?: string | null
+          company?: string | null; contact_type?: 'broker' | 'seller' | 'lender' | null
+          notes?: string | null
+        }
+      }
+      deal_contacts: {
+        Row: {
+          id: string; deal_id: string; contact_id: string
+          firm_id: string | null; is_source: boolean; created_at: string
+        }
+        Insert: {
+          id?: string; deal_id: string; contact_id: string
+          firm_id?: string | null; is_source?: boolean
+        }
+        Update: { is_source?: boolean }
+      }
       deal_financial_snapshots: {
         Row: {
           id: string; deal_id: string; firm_id: string; version: number
@@ -111,3 +141,5 @@ export type DealEvent = Database['public']['Tables']['deal_events']['Row']
 export type DealNote = Database['public']['Tables']['deal_notes']['Row']
 export type DealFile = Database['public']['Tables']['deal_files']['Row']
 export type DealFinancialSnapshot = Database['public']['Tables']['deal_financial_snapshots']['Row']
+export type Contact = Database['public']['Tables']['contacts']['Row']
+export type DealContact = Database['public']['Tables']['deal_contacts']['Row']

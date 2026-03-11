@@ -5,6 +5,7 @@ import NotesSection from '@/components/deal/NotesSection'
 import FilesSection from '@/components/deal/FilesSection'
 import DecisionLog from '@/components/deal/DecisionLog'
 import FinancialSnapshot from '@/components/deal/FinancialSnapshot'
+import ContactsSection from '@/components/deal/ContactsSection'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -22,6 +23,7 @@ export default async function DealPage({ params }: Props) {
     { data: files },
     { data: events },
     { data: snapshots },
+    { data: dealContacts },
   ] = await Promise.all([
     supabase.from('deals').select('*').eq('id', id).single(),
     supabase.from('deal_stages').select('*').order('position'),
@@ -40,6 +42,10 @@ export default async function DealPage({ params }: Props) {
       .select('*')
       .eq('deal_id', id)
       .order('created_at', { ascending: false }),
+    supabase
+      .from('deal_contacts')
+      .select('*, contacts(*)')
+      .eq('deal_id', id),
   ])
 
   if (!deal) notFound()
@@ -92,6 +98,10 @@ export default async function DealPage({ params }: Props) {
         <FilesSection
           dealId={deal.id}
           files={files ?? []}
+        />
+        <ContactsSection
+          dealId={deal.id}
+          initialDealContacts={(dealContacts ?? []) as any}
         />
         <DecisionLog events={events ?? []} />
       </div>
