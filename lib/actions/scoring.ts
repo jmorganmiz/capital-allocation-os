@@ -55,7 +55,10 @@ export async function getScoringCriteria() {
   return { criteria: data ?? [] }
 }
 
-export async function getAllScoringCriteria() {
+// Alias used by settings page — same as getScoringCriteria
+export const getAllScoringCriteria = getScoringCriteria
+
+export async function getDealScores(dealId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
@@ -65,35 +68,10 @@ export async function getAllScoringCriteria() {
   if (!profile) return { error: 'Profile not found' }
 
   const { data, error } = await supabase
-    .from('scoring_criteria')
-    .select('*')
-    .eq('firm_id', profile.firm_id)
-    .order('position')
-
-  if (error) return { error: error.message }
-
-  if ((data ?? []).length === 0) {
-    await seedDefaultCriteria(profile.firm_id, supabase)
-    const { data: seeded } = await supabase
-      .from('scoring_criteria')
-      .select('*')
-      .eq('firm_id', profile.firm_id)
-      .order('position')
-    return { criteria: seeded ?? [] }
-  }
-
-  return { criteria: data ?? [] }
-}
-
-export async function getDealScores(dealId: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'Not authenticated' }
-
-  const { data, error } = await supabase
     .from('deal_scores')
     .select('*')
     .eq('deal_id', dealId)
+    .eq('firm_id', profile.firm_id)
 
   if (error) return { error: error.message }
   return { scores: data ?? [] }
@@ -105,6 +83,10 @@ export async function upsertDealScore(
   score: number,
   notes: string | null
 ) {
+  if (score < 1 || score > 5 || !Number.isInteger(score)) {
+    return { error: 'Score must be an integer between 1 and 5' }
+  }
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
@@ -118,6 +100,7 @@ export async function upsertDealScore(
     .select('id')
     .eq('deal_id', dealId)
     .eq('criteria_id', criteriaId)
+    .eq('firm_id', profile.firm_id)
     .maybeSingle()
 
   if (existing) {
@@ -142,25 +125,6 @@ export async function upsertDealScore(
 
   revalidatePath(`/deals/${dealId}`)
   return { success: true }
-}
-
-export async function getOverallScore(dealId: string): Promise<{ score: number | null; error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { score: null, error: 'Not authenticated' }
-
-  const { data: scores, error } = await supabase
-    .from('deal_scores')
-    .select('score')
-    .eq('deal_id', dealId)
-
-  if (error) return { score: null, error: error.message }
-  if (!scores || scores.length === 0) return { score: null }
-
-  const avg = scores.reduce((sum: number, s: any) => sum + (s.score ?? 0), 0) / scores.length
-  // Convert 1-5 scale to 0-100
-  const pct = Math.round(((avg - 1) / 4) * 100)
-  return { score: pct }
 }
 
 export async function createScoringCriteria(name: string, position: number) {
@@ -189,10 +153,15 @@ export async function updateScoringCriteria(id: string, updates: { name?: string
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
+  const { data: profile } = await supabase
+    .from('profiles').select('firm_id').single()
+  if (!profile) return { error: 'Profile not found' }
+
   const { error } = await supabase
     .from('scoring_criteria')
     .update(updates)
     .eq('id', id)
+    .eq('firm_id', profile.firm_id)
 
   if (error) return { error: error.message }
 
@@ -205,10 +174,15 @@ export async function deleteScoringCriteria(id: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
+  const { data: profile } = await supabase
+    .from('profiles').select('firm_id').single()
+  if (!profile) return { error: 'Profile not found' }
+
   const { error } = await supabase
     .from('scoring_criteria')
     .delete()
     .eq('id', id)
+    .eq('firm_id', profile.firm_id)
 
   if (error) return { error: error.message }
 

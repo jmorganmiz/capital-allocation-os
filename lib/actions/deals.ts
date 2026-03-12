@@ -381,3 +381,24 @@ export async function searchDeals(query: string) {
 
   return { deals }
 }
+
+export async function updateDealOwner(dealId: string, ownerUserId: string | null) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: profile } = await supabase
+    .from('profiles').select('firm_id').single()
+  if (!profile) return { error: 'Profile not found' }
+
+  const { error } = await supabase
+    .from('deals')
+    .update({ owner_user_id: ownerUserId || null })
+    .eq('id', dealId)
+    .eq('firm_id', profile.firm_id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath(`/deals/${dealId}`)
+  return { success: true }
+}

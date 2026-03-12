@@ -37,7 +37,9 @@ export async function middleware(request: NextRequest) {
   const isAppRoute = request.nextUrl.pathname.startsWith('/pipeline') ||
                      request.nextUrl.pathname.startsWith('/deals') ||
                      request.nextUrl.pathname.startsWith('/graveyard') ||
-                     request.nextUrl.pathname.startsWith('/settings')
+                     request.nextUrl.pathname.startsWith('/settings') ||
+                     request.nextUrl.pathname.startsWith('/contacts') ||
+                     request.nextUrl.pathname.startsWith('/dashboard')
 
   if (isAppRoute && !user) {
     return NextResponse.redirect(new URL('/login', request.url))

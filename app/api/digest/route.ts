@@ -166,7 +166,6 @@ export async function POST(request: Request) {
   const supabase = createAdminClient()
   const now = new Date()
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
-  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString()
 
   // Get all firms
   const { data: firms, error: firmsError } = await supabase
@@ -268,12 +267,17 @@ export async function POST(request: Request) {
     })
 
     try {
-      await resend.emails.send({
-        from:    FROM,
-        to:      emails,
-        subject: SUBJECT,
-        html,
-      })
+      // Send individually so recipients cannot see each other's email addresses
+      await Promise.all(
+        emails.map(email =>
+          resend.emails.send({
+            from:    FROM,
+            to:      email,
+            subject: SUBJECT,
+            html,
+          })
+        )
+      )
       results.push({ firm: firm.name, emails, status: 'sent' })
     } catch (err: any) {
       results.push({ firm: firm.name, emails, status: `error: ${err.message}` })

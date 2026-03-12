@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { Deal, DealStage, KillReason } from '@/lib/types/database'
-import { updateDealStage, killDeal } from '@/lib/actions/deals'
+import { updateDealStage, killDeal, updateDealOwner } from '@/lib/actions/deals'
 import KillModal from '@/components/pipeline/KillModal'
 
 interface Props {
@@ -33,9 +33,7 @@ export default function DealHeader({ deal, stages, killReasons, currentStage, fi
   function handleOwnerChange(newOwnerId: string) {
     setOwnerId(newOwnerId)
     startTransition(async () => {
-      const { createClient } = await import('@/lib/supabase/client')
-      const supabase = createClient()
-      await supabase.from('deals').update({ owner_user_id: newOwnerId }).eq('id', deal.id)
+      await updateDealOwner(deal.id, newOwnerId || null)
     })
   }
 
