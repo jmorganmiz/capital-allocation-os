@@ -5,6 +5,7 @@ import TeamSettings from '@/components/settings/TeamSettings'
 import BillingSettings from '@/components/settings/BillingSettings'
 import ScoringCriteriaSettings from '@/components/settings/ScoringCriteriaSettings'
 import { getAllScoringCriteria } from '@/lib/actions/scoring'
+import { getStripe } from '@/lib/stripe'
 
 interface Props {
   searchParams: Promise<{ success?: string }>
@@ -24,7 +25,22 @@ export default async function SettingsPage({ searchParams }: Props) {
 
   const firmId = profile?.firm_id ?? ''
   const firmName = (profile?.firms as any)?.name ?? 'My Firm'
-  const isSubscribed = !!((profile?.firms as any)?.stripe_subscription_id)
+  const subscriptionId = (profile?.firms as any)?.stripe_subscription_id as string | null
+  const isSubscribed = !!subscriptionId
+
+  // Check if cancellation is already scheduled
+  let cancelAtPeriodEnd = false
+  let currentPeriodEnd: number | null = null
+  if (subscriptionId) {
+    try {
+      const stripe = getStripe()
+      const sub = await stripe.subscriptions.retrieve(subscriptionId)
+      cancelAtPeriodEnd = sub.cancel_at_period_end
+      currentPeriodEnd = sub.current_period_end
+    } catch {
+      // Stripe unavailable or invalid subscription — degrade gracefully
+    }
+  }
 
   const [
     { data: stages },
@@ -53,7 +69,11 @@ export default async function SettingsPage({ searchParams }: Props) {
         </div>
       )}
 
-      <BillingSettings isSubscribed={isSubscribed} />
+      <BillingSettings
+        isSubscribed={isSubscribed}
+        cancelAtPeriodEnd={cancelAtPeriodEnd}
+        currentPeriodEnd={currentPeriodEnd}
+      />
       <TeamSettings
         members={members ?? []}
         invites={invites ?? []}

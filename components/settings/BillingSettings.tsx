@@ -4,11 +4,16 @@ import { useState } from 'react'
 
 interface Props {
   isSubscribed: boolean
+  cancelAtPeriodEnd: boolean
+  currentPeriodEnd: number | null
 }
 
-export default function BillingSettings({ isSubscribed }: Props) {
+export default function BillingSettings({ isSubscribed, cancelAtPeriodEnd: initialCancelAtPeriodEnd, currentPeriodEnd: initialPeriodEnd }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false)
+  const [cancelAtPeriodEnd, setCancelAtPeriodEnd] = useState(initialCancelAtPeriodEnd)
+  const [currentPeriodEnd, setCurrentPeriodEnd] = useState(initialPeriodEnd)
 
   async function handleSubscribe() {
     setLoading(true)
@@ -28,6 +33,30 @@ export default function BillingSettings({ isSubscribed }: Props) {
     }
   }
 
+  async function handleCancel() {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/stripe/cancel', { method: 'POST' })
+      const data = await res.json()
+      if (data.ok) {
+        setCancelAtPeriodEnd(true)
+        setCurrentPeriodEnd(data.currentPeriodEnd ?? null)
+        setShowCancelConfirm(false)
+      } else {
+        setError(data.error ?? 'Failed to cancel subscription.')
+      }
+    } catch {
+      setError('Failed to cancel subscription.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const periodEndDate = currentPeriodEnd
+    ? new Date(currentPeriodEnd * 1000).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : null
+
   return (
     <section>
       <h2 className="text-base font-semibold text-gray-900 mb-1">Billing</h2>
@@ -44,8 +73,12 @@ export default function BillingSettings({ isSubscribed }: Props) {
             </p>
           </div>
           {isSubscribed ? (
-            <span className="text-xs bg-green-50 text-green-700 border border-green-200 rounded px-2 py-1 font-medium">
-              Active
+            <span className={`text-xs border rounded px-2 py-1 font-medium ${
+              cancelAtPeriodEnd
+                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                : 'bg-green-50 text-green-700 border-green-200'
+            }`}>
+              {cancelAtPeriodEnd ? 'Canceling' : 'Active'}
             </span>
           ) : (
             <span className="text-xs bg-gray-100 text-gray-500 rounded px-2 py-1 font-medium">
@@ -54,7 +87,18 @@ export default function BillingSettings({ isSubscribed }: Props) {
           )}
         </div>
 
-        {!isSubscribed && (
+        {/* Pending cancellation notice */}
+        {isSubscribed && cancelAtPeriodEnd && (
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2.5">
+              Your subscription will cancel at the end of your billing period.
+              {periodEndDate && ` You'll keep access until ${periodEndDate}.`}
+            </p>
+          </div>
+        )}
+
+        {/* Subscribe button — only show if not subscribed and not pending cancel */}
+        {!isSubscribed && !cancelAtPeriodEnd && (
           <div className="mt-4 pt-4 border-t border-gray-100">
             <button
               onClick={handleSubscribe}
@@ -67,6 +111,43 @@ export default function BillingSettings({ isSubscribed }: Props) {
               You will be charged $90/month on a recurring basis. Cancel anytime by emailing{' '}
               <a href="mailto:jack@getdealstash.com" className="hover:underline">jack@getdealstash.com</a>.
             </p>
+          </div>
+        )}
+
+        {/* Cancel button — only show if active and not already pending cancel */}
+        {isSubscribed && !cancelAtPeriodEnd && !showCancelConfirm && (
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <button
+              onClick={() => setShowCancelConfirm(true)}
+              className="text-sm text-red-600 hover:text-red-700"
+            >
+              Cancel subscription
+            </button>
+          </div>
+        )}
+
+        {/* Confirmation prompt */}
+        {showCancelConfirm && (
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <p className="text-sm text-gray-700 mb-3">
+              Are you sure? You'll keep access until the end of your billing period.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={handleCancel}
+                disabled={loading}
+                className="text-sm bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 disabled:opacity-50 font-medium"
+              >
+                {loading ? 'Canceling…' : 'Yes, cancel subscription'}
+              </button>
+              <button
+                onClick={() => setShowCancelConfirm(false)}
+                disabled={loading}
+                className="btn-ghost text-sm"
+              >
+                Never mind
+              </button>
+            </div>
           </div>
         )}
 
