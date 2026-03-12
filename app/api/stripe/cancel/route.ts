@@ -30,6 +30,6 @@ export async function POST() {
   return NextResponse.json({
     ok: true,
     cancelAtPeriodEnd: subscription.cancel_at_period_end,
-    currentPeriodEnd: subscription.current_period_end,
+    currentPeriodEnd: subscription.items.data[0]?.current_period_end ?? null,
   })
 }

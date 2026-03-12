@@ -36,7 +36,8 @@ export default async function SettingsPage({ searchParams }: Props) {
       const stripe = getStripe()
       const sub = await stripe.subscriptions.retrieve(subscriptionId)
       cancelAtPeriodEnd = sub.cancel_at_period_end
-      currentPeriodEnd = sub.current_period_end
+      // current_period_end moved to subscription item level in Stripe v16+
+      currentPeriodEnd = sub.items.data[0]?.current_period_end ?? null
     } catch {
       // Stripe unavailable or invalid subscription — degrade gracefully
     }
