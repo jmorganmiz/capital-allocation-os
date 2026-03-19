@@ -11,10 +11,9 @@ export default function DemoBanner() {
           You're exploring a live demo with sample data. Changes are local only.
         </span>
       </div>
-      {/* Hidden on mobile — top bar has its own Sign up button */}
       <Link
         href="/signup"
-        className="hidden md:inline-flex flex-shrink-0 bg-white text-gray-900 text-xs font-semibold px-4 py-1.5 rounded-md hover:bg-gray-100 transition-colors"
+        className="flex-shrink-0 bg-white text-gray-900 text-xs font-semibold px-4 py-1.5 rounded-md hover:bg-gray-100 transition-colors"
       >
         Sign up free →
       </Link>

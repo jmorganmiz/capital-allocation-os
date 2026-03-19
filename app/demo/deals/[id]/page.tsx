@@ -93,24 +93,20 @@ export default async function DemoDealPage({ params }: Props) {
       </div>
 
       {/* Header */}
-      <div className="flex items-start justify-between mb-8">
-        <div>
+      <div className="mb-8">
+        <div className="flex items-start justify-between gap-3">
           <h1 className="text-2xl font-semibold text-gray-900">{deal.title}</h1>
-          <div className="flex items-center gap-3 mt-2 text-sm text-gray-500 flex-wrap">
-            {deal.market && <span>{deal.market}</span>}
-            {deal.deal_type && <span className="before:content-['·'] before:mr-3">{deal.deal_type}</span>}
-            {deal.source_name && <span className="before:content-['·'] before:mr-3">via {deal.source_name}</span>}
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          {stage && (
-            <span className="text-sm border border-gray-200 rounded-md px-3 py-1.5 text-gray-700 bg-white">
-              {stage.name}
-            </span>
-          )}
-          <span className="text-xs bg-blue-50 text-blue-600 border border-blue-200 rounded px-2 py-1 font-medium">
-            Demo — read only
+          <span className="flex-shrink-0 mt-1 text-[10px] bg-blue-50 text-blue-600 border border-blue-200 rounded px-1.5 py-0.5 font-medium whitespace-nowrap">
+            Demo
           </span>
+        </div>
+        <div className="flex items-center gap-3 mt-2 text-sm text-gray-500 flex-wrap">
+          {deal.market && <span>{deal.market}</span>}
+          {deal.deal_type && <span className="before:content-['·'] before:mr-3">{deal.deal_type}</span>}
+          {deal.source_name && <span className="before:content-['·'] before:mr-3">via {deal.source_name}</span>}
+          {stage && (
+            <span className="before:content-['·'] before:mr-3 text-gray-700 font-medium">{stage.name}</span>
+          )}
         </div>
       </div>
 

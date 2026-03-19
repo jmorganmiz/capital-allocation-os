@@ -149,20 +149,15 @@ export default function DemoSidebar() {
       </nav>
 
       {/* ── Mobile top bar (fixed, below banner ~40px) ────────── */}
-      <div className="md:hidden fixed top-10 left-0 right-0 z-40 bg-white border-b border-gray-200 flex items-center justify-between px-4 h-14">
+      <div className="md:hidden fixed top-10 left-0 right-0 z-40 bg-white border-b border-gray-200 flex items-center gap-3 px-4 h-14">
+        <button
+          onClick={() => setDrawerOpen(true)}
+          className="p-2 -ml-2 rounded-md text-gray-500 hover:bg-gray-100"
+          aria-label="Open menu"
+        >
+          <HamburgerIcon />
+        </button>
         <p className="text-sm font-semibold text-gray-800">Acme Capital</p>
-        <div className="flex items-center gap-2">
-          <Link href="/signup" className="text-sm font-medium text-blue-600 hover:underline">
-            Sign up free →
-          </Link>
-          <button
-            onClick={() => setDrawerOpen(true)}
-            className="p-2 rounded-md text-gray-500 hover:bg-gray-100"
-            aria-label="Open menu"
-          >
-            <HamburgerIcon />
-          </button>
-        </div>
       </div>
 
       {/* ── Mobile slide-out drawer ───────────────────────────── */}
@@ -188,10 +183,13 @@ export default function DemoSidebar() {
               <NavLinks pathname={pathname} onClick={() => setDrawerOpen(false)} />
             </div>
 
-            <div className="px-4 py-4 border-t border-gray-100">
+            <div className="px-4 py-4 border-t border-gray-100 space-y-3">
               <p className="text-xs text-gray-400">demo@acmecapital.com</p>
-              <Link href="/signup" className="text-xs text-blue-600 hover:underline mt-1 block">
-                Create your account →
+              <Link
+                href="/signup"
+                className="block w-full text-center bg-gray-900 text-white text-sm font-semibold py-2.5 rounded-md hover:bg-gray-800 transition-colors"
+              >
+                Sign up free →
               </Link>
             </div>
           </div>
