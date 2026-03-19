@@ -2,10 +2,10 @@ import Link from 'next/link'
 import DemoBanner from '@/components/demo/DemoBanner'
 
 const navLinks = [
-  { href: '/demo',     label: 'Pipeline' },
-  { href: '/signup',   label: 'Contacts ↗' },
-  { href: '/signup',   label: 'Dashboard ↗' },
-  { href: '/signup',   label: 'Settings ↗' },
+  { href: '/demo',           label: 'Pipeline' },
+  { href: '/demo/dashboard', label: 'Dashboard' },
+  { href: '/signup',         label: 'Contacts ↗' },
+  { href: '/signup',         label: 'Settings ↗' },
 ]
 
 export default function DemoLayout({ children }: { children: React.ReactNode }) {

@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { formatDistanceToNow } from 'date-fns'
 import {
   getDemoDeal,
   getDemoStage,
@@ -9,6 +10,7 @@ import {
   DEMO_DEAL_CONTACTS,
   DEMO_SCORING_CRITERIA,
   DEMO_DEAL_SCORES,
+  DEMO_DEAL_EVENTS,
 } from '@/lib/demo-data'
 
 interface Props {
@@ -19,6 +21,14 @@ const TYPE_COLORS: Record<string, string> = {
   broker: 'bg-blue-50 text-blue-700',
   seller: 'bg-green-50 text-green-700',
   lender: 'bg-purple-50 text-purple-700',
+}
+
+const EVENT_STYLES: Record<string, { label: string; dot: string }> = {
+  deal_created:  { label: 'Deal Created',  dot: 'bg-blue-500'   },
+  stage_changed: { label: 'Stage Changed', dot: 'bg-gray-400'   },
+  killed:        { label: 'Deal Killed',   dot: 'bg-red-500'    },
+  note_added:    { label: 'Note Updated',  dot: 'bg-green-400'  },
+  file_added:    { label: 'File Uploaded', dot: 'bg-purple-400' },
 }
 
 function fmt(val: number | null, isPercent = false): string {
@@ -39,6 +49,18 @@ function scoreToBg(pct: number) {
   return 'bg-green-50 border-green-200'
 }
 
+function DemoLabel() {
+  return (
+    <span className="flex items-center gap-1 text-xs text-gray-400 font-normal">
+      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+      </svg>
+      Demo data
+    </span>
+  )
+}
+
 export default async function DemoDealPage({ params }: Props) {
   const { id } = await params
   const deal = getDemoDeal(id)
@@ -53,11 +75,15 @@ export default async function DemoDealPage({ params }: Props) {
   }))
   const criteria = DEMO_SCORING_CRITERIA
   const scores = DEMO_DEAL_SCORES[id] ?? {}
+  const events = DEMO_DEAL_EVENTS[id] ?? []
 
   const scoredVals = Object.values(scores)
-  const overallScore = scoredVals.length > 0
-    ? Math.round(((scoredVals.reduce((a, b) => a + b, 0) / scoredVals.length) - 1) / 4 * 100)
-    : null
+  // Hardcode overall score for maplewood to show a realistic 68/100 display
+  const overallScore = id === 'deal-maplewood'
+    ? 68
+    : scoredVals.length > 0
+      ? Math.round(((scoredVals.reduce((a, b) => a + b, 0) / scoredVals.length) - 1) / 4 * 100)
+      : null
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
@@ -94,7 +120,10 @@ export default async function DemoDealPage({ params }: Props) {
         {/* Financial Snapshot */}
         {snapshot && (
           <section>
-            <h2 className="text-base font-semibold text-gray-900 mb-3">Financial Snapshot</h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-semibold text-gray-900">Financial Snapshot</h2>
+              <DemoLabel />
+            </div>
             <div className="grid grid-cols-3 gap-3 mb-3">
               {[
                 { label: 'Purchase Price', value: fmt(snapshot.purchase_price) },
@@ -121,9 +150,12 @@ export default async function DemoDealPage({ params }: Props) {
           <section>
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-base font-semibold text-gray-900">Underwriting Score</h2>
-              <span className={`text-xs font-medium px-2 py-0.5 rounded border ${scoreToBg(overallScore)}`}>
-                <span className={scoreToColor(overallScore)}>{overallScore}/100</span>
-              </span>
+              <div className="flex items-center gap-3">
+                <DemoLabel />
+                <span className={`text-xs font-medium px-2 py-0.5 rounded border ${scoreToBg(overallScore)}`}>
+                  <span className={scoreToColor(overallScore)}>{overallScore}/100</span>
+                </span>
+              </div>
             </div>
             <div className={`rounded-lg border px-4 py-3 mb-4 flex items-center gap-4 ${scoreToBg(overallScore)}`}>
               <div>
@@ -172,7 +204,10 @@ export default async function DemoDealPage({ params }: Props) {
           <>
             {notes.overview && (
               <section>
-                <h2 className="text-base font-semibold text-gray-900 mb-2">Overview</h2>
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-base font-semibold text-gray-900">Overview</h2>
+                  <DemoLabel />
+                </div>
                 <div className="w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-800 font-mono leading-relaxed whitespace-pre-wrap bg-white min-h-[80px]">
                   {notes.overview}
                 </div>
@@ -180,7 +215,10 @@ export default async function DemoDealPage({ params }: Props) {
             )}
             {notes.risks && (
               <section>
-                <h2 className="text-base font-semibold text-gray-900 mb-2">Risks</h2>
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-base font-semibold text-gray-900">Risks</h2>
+                  <DemoLabel />
+                </div>
                 <div className="w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-800 font-mono leading-relaxed whitespace-pre-wrap bg-white min-h-[80px]">
                   {notes.risks}
                 </div>
@@ -188,7 +226,10 @@ export default async function DemoDealPage({ params }: Props) {
             )}
             {notes.notes && (
               <section>
-                <h2 className="text-base font-semibold text-gray-900 mb-2">Notes</h2>
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-base font-semibold text-gray-900">Notes</h2>
+                  <DemoLabel />
+                </div>
                 <div className="w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-800 font-mono leading-relaxed whitespace-pre-wrap bg-white min-h-[80px]">
                   {notes.notes}
                 </div>
@@ -213,7 +254,10 @@ export default async function DemoDealPage({ params }: Props) {
         {/* Contacts */}
         {linkedContacts.length > 0 && (
           <section>
-            <h2 className="text-base font-semibold text-gray-900 mb-3">Contacts</h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-semibold text-gray-900">Contacts</h2>
+              <DemoLabel />
+            </div>
             <div className="border border-gray-200 rounded-lg divide-y divide-gray-100">
               {linkedContacts.map(dc => {
                 const c = dc.contact
@@ -235,6 +279,43 @@ export default async function DemoDealPage({ params }: Props) {
                       <p className="text-xs text-gray-400 mt-0.5">{c.company}</p>
                     </div>
                     <span className="text-xs text-gray-400">{c.email}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* Decision Log */}
+        {events.length > 0 && (
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-semibold text-gray-900">Decision Log</h2>
+              <DemoLabel />
+            </div>
+            <div className="relative border-l-2 border-gray-100 pl-5 space-y-5">
+              {events.map(event => {
+                const style = EVENT_STYLES[event.event_type] ?? { label: event.event_type, dot: 'bg-gray-300' }
+                return (
+                  <div key={event.id} className="relative">
+                    <div className={`absolute -left-[23px] top-1 w-3 h-3 rounded-full border-2 border-white ${style.dot}`} />
+                    <div className="bg-white border border-gray-100 rounded-lg px-4 py-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium text-gray-800">{style.label}</span>
+                        <span className="text-xs text-gray-400">
+                          {formatDistanceToNow(new Date(event.created_at), { addSuffix: true })}
+                        </span>
+                      </div>
+                      {event.event_type === 'stage_changed' && event.from_stage && event.to_stage && (
+                        <p className="text-xs text-gray-500 mb-1">
+                          {event.from_stage} → {event.to_stage}
+                        </p>
+                      )}
+                      {event.event_type === 'file_added' && event.notes && (
+                        <p className="text-xs text-gray-500">{event.notes}</p>
+                      )}
+                      <p className="text-xs text-gray-400 mt-1">by {event.actor}</p>
+                    </div>
                   </div>
                 )
               })}
