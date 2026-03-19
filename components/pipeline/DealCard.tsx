@@ -11,6 +11,7 @@ interface Props {
   }
   stage: DealStage
   onKill: (deal: Deal) => void
+  onMove: (deal: Deal) => void
 }
 
 function timeInStage(sinceDate: string | null | undefined): string {
@@ -29,7 +30,7 @@ function initials(name: string | null | undefined): string {
   return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 }
 
-export default function DealCard({ deal, stage, onKill }: Props) {
+export default function DealCard({ deal, stage, onKill, onMove }: Props) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: deal.id,
     data: { deal, fromStageId: stage.id },
@@ -45,7 +46,7 @@ export default function DealCard({ deal, stage, onKill }: Props) {
       style={style}
       {...listeners}
       {...attributes}
-      className={`bg-white border border-gray-200 rounded-lg p-3 cursor-grab active:cursor-grabbing
+      className={`bg-white border border-gray-200 rounded-lg p-3 md:cursor-grab md:active:cursor-grabbing
                   shadow-sm hover:shadow-md transition-shadow select-none
                   ${isDragging ? 'opacity-50 shadow-lg' : ''}`}
     >
@@ -57,10 +58,11 @@ export default function DealCard({ deal, stage, onKill }: Props) {
         >
           {deal.title}
         </Link>
+        {/* Kill button — desktop only */}
         <button
           onPointerDown={e => e.stopPropagation()}
           onClick={e => { e.preventDefault(); e.stopPropagation(); onKill(deal) }}
-          className="text-gray-300 hover:text-red-400 transition-colors flex-shrink-0 text-xs mt-0.5"
+          className="hidden md:block text-gray-300 hover:text-red-400 transition-colors flex-shrink-0 text-xs mt-0.5"
           title="Kill deal"
         >
           ✕
@@ -94,6 +96,14 @@ export default function DealCard({ deal, stage, onKill }: Props) {
               {initials(deal.owner.full_name)}
             </div>
           )}
+          {/* Move button — mobile only */}
+          <button
+            onPointerDown={e => e.stopPropagation()}
+            onClick={e => { e.preventDefault(); e.stopPropagation(); onMove(deal) }}
+            className="md:hidden text-xs text-blue-600 border border-blue-200 bg-blue-50 rounded px-2 py-0.5 font-medium"
+          >
+            Move
+          </button>
         </div>
       </div>
     </div>

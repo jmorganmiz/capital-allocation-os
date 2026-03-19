@@ -8,15 +8,16 @@ interface Props {
   stage: DealStage
   deals: (Deal & { owner?: { full_name: string | null } | null, latest_stage_event_at?: string | null })[]
   onKill: (deal: Deal) => void
+  onMove: (deal: Deal) => void
 }
 
-export default function DealColumn({ stage, deals, onKill }: Props) {
+export default function DealColumn({ stage, deals, onKill, onMove }: Props) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.id })
 
   const isTerminal = stage.name === 'Closed'
 
   return (
-    <div className="flex-shrink-0 w-64">
+    <div className="flex-shrink-0 w-[85vw] md:w-64 snap-start">
       <div className="flex items-center justify-between mb-3">
         <h3 className={`text-xs font-semibold uppercase tracking-wider ${isTerminal ? 'text-green-600' : 'text-gray-500'}`}>
           {stage.name}
@@ -33,7 +34,8 @@ export default function DealColumn({ stage, deals, onKill }: Props) {
       >
         {deals.length === 0 ? (
           <div className="text-xs text-gray-300 text-center py-6">
-            Drop deals here
+            <span className="hidden md:block">Drop deals here</span>
+            <span className="md:hidden">No deals</span>
           </div>
         ) : (
           deals.map(deal => (
@@ -42,6 +44,7 @@ export default function DealColumn({ stage, deals, onKill }: Props) {
               deal={deal}
               stage={stage}
               onKill={onKill}
+              onMove={onMove}
             />
           ))
         )}

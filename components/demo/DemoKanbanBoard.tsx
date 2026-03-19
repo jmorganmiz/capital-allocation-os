@@ -278,6 +278,7 @@ export default function DemoKanbanBoard({ initialDeals, searchQuery = '' }: Prop
   const [activeId, setActiveId] = useState<string | null>(null)
   const [moveTarget, setMoveTarget] = useState<DemoDeal | null>(null)
   const [nudgeMessage, setNudgeMessage] = useState<string | null>(null)
+  const [showSaveNudge, setShowSaveNudge] = useState(false)
 
   const sensors = useSensors(useSensor(PointerSensor, {
     activationConstraint: { distance: 8 },
@@ -302,6 +303,8 @@ export default function DemoKanbanBoard({ initialDeals, searchQuery = '' }: Prop
           : d
       )
     )
+    setShowSaveNudge(true)
+    setTimeout(() => setShowSaveNudge(false), 4000)
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -373,6 +376,16 @@ export default function DemoKanbanBoard({ initialDeals, searchQuery = '' }: Prop
 
       {nudgeMessage && (
         <SignupNudge message={nudgeMessage} onClose={() => setNudgeMessage(null)} />
+      )}
+
+      {/* Save nudge toast — shown briefly after a move */}
+      {showSaveNudge && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-gray-900 text-white text-sm px-4 py-2.5 rounded-full shadow-lg flex items-center gap-2 whitespace-nowrap">
+          <span className="text-gray-400">Changes won't be saved.</span>
+          <Link href="/signup" className="text-blue-400 font-medium hover:text-blue-300">
+            Sign up to save →
+          </Link>
+        </div>
       )}
     </div>
   )
