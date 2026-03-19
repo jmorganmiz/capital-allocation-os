@@ -191,9 +191,10 @@ function SignupNudge({ message, onClose }: { message: string; onClose: () => voi
 // ── Main Demo Board ────────────────────────────────────────────────
 interface Props {
   initialDeals: DemoDeal[]
+  searchQuery?: string
 }
 
-export default function DemoKanbanBoard({ initialDeals }: Props) {
+export default function DemoKanbanBoard({ initialDeals, searchQuery = '' }: Props) {
   const [deals, setDeals] = useState<DemoDeal[]>(initialDeals)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [nudgeMessage, setNudgeMessage] = useState<string | null>(null)
@@ -204,6 +205,14 @@ export default function DemoKanbanBoard({ initialDeals }: Props) {
 
   const activeStages = DEMO_STAGES
   const activeDeal = activeId ? deals.find(d => d.id === activeId) : null
+
+  const q = searchQuery.trim().toLowerCase()
+  const visibleDeals = q
+    ? deals.filter(d =>
+        d.title.toLowerCase().includes(q) ||
+        (d.market ?? '').toLowerCase().includes(q)
+      )
+    : deals
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
@@ -252,7 +261,7 @@ export default function DemoKanbanBoard({ initialDeals }: Props) {
             <DemoColumn
               key={stage.id}
               stage={stage}
-              deals={deals.filter(d => d.stage_id === stage.id)}
+              deals={visibleDeals.filter(d => d.stage_id === stage.id)}
               onKill={() => setNudgeMessage('Kill a deal and log the reason why. Over time this becomes your most valuable dataset.')}
             />
           ))}
