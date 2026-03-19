@@ -1,0 +1,256 @@
+import { notFound } from 'next/navigation'
+import Link from 'next/link'
+import {
+  getDemoDeal,
+  getDemoStage,
+  getDemoContact,
+  DEMO_DEAL_SNAPSHOTS,
+  DEMO_DEAL_NOTES,
+  DEMO_DEAL_CONTACTS,
+  DEMO_SCORING_CRITERIA,
+  DEMO_DEAL_SCORES,
+} from '@/lib/demo-data'
+
+interface Props {
+  params: Promise<{ id: string }>
+}
+
+const TYPE_COLORS: Record<string, string> = {
+  broker: 'bg-blue-50 text-blue-700',
+  seller: 'bg-green-50 text-green-700',
+  lender: 'bg-purple-50 text-purple-700',
+}
+
+function fmt(val: number | null, isPercent = false): string {
+  if (val === null || val === undefined) return '—'
+  if (isPercent) return `${val.toFixed(2)}%`
+  return `$${val.toLocaleString()}`
+}
+
+function scoreToColor(pct: number) {
+  if (pct < 40) return 'text-red-600'
+  if (pct < 70) return 'text-amber-500'
+  return 'text-green-600'
+}
+
+function scoreToBg(pct: number) {
+  if (pct < 40) return 'bg-red-50 border-red-200'
+  if (pct < 70) return 'bg-amber-50 border-amber-200'
+  return 'bg-green-50 border-green-200'
+}
+
+export default async function DemoDealPage({ params }: Props) {
+  const { id } = await params
+  const deal = getDemoDeal(id)
+  if (!deal) notFound()
+
+  const stage = getDemoStage(deal.stage_id ?? '')
+  const snapshot = DEMO_DEAL_SNAPSHOTS[id] ?? null
+  const notes = DEMO_DEAL_NOTES[id] ?? null
+  const linkedContacts = (DEMO_DEAL_CONTACTS[id] ?? []).map(dc => ({
+    ...dc,
+    contact: getDemoContact(dc.contact_id),
+  }))
+  const criteria = DEMO_SCORING_CRITERIA
+  const scores = DEMO_DEAL_SCORES[id] ?? {}
+
+  const scoredVals = Object.values(scores)
+  const overallScore = scoredVals.length > 0
+    ? Math.round(((scoredVals.reduce((a, b) => a + b, 0) / scoredVals.length) - 1) / 4 * 100)
+    : null
+
+  return (
+    <div className="max-w-4xl mx-auto px-6 py-8">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
+        <Link href="/demo" className="hover:text-gray-700">Pipeline</Link>
+        <span>/</span>
+        <span className="text-gray-800">{deal.title}</span>
+      </div>
+
+      {/* Header */}
+      <div className="flex items-start justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">{deal.title}</h1>
+          <div className="flex items-center gap-3 mt-2 text-sm text-gray-500 flex-wrap">
+            {deal.market && <span>{deal.market}</span>}
+            {deal.deal_type && <span className="before:content-['·'] before:mr-3">{deal.deal_type}</span>}
+            {deal.source_name && <span className="before:content-['·'] before:mr-3">via {deal.source_name}</span>}
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          {stage && (
+            <span className="text-sm border border-gray-200 rounded-md px-3 py-1.5 text-gray-700 bg-white">
+              {stage.name}
+            </span>
+          )}
+          <span className="text-xs bg-blue-50 text-blue-600 border border-blue-200 rounded px-2 py-1 font-medium">
+            Demo — read only
+          </span>
+        </div>
+      </div>
+
+      <div className="space-y-8">
+        {/* Financial Snapshot */}
+        {snapshot && (
+          <section>
+            <h2 className="text-base font-semibold text-gray-900 mb-3">Financial Snapshot</h2>
+            <div className="grid grid-cols-3 gap-3 mb-3">
+              {[
+                { label: 'Purchase Price', value: fmt(snapshot.purchase_price) },
+                { label: 'NOI',            value: fmt(snapshot.noi) },
+                { label: 'Cap Rate',       value: fmt(snapshot.cap_rate, true) },
+                { label: 'Debt Rate',      value: fmt(snapshot.debt_rate, true) },
+                { label: 'LTV',            value: fmt(snapshot.ltv, true) },
+                { label: 'Projected IRR',  value: fmt(snapshot.projected_irr, true) },
+              ].map(({ label, value }) => (
+                <div key={label} className="bg-white border border-gray-100 rounded-lg p-3">
+                  <p className="text-xs text-gray-400 mb-1">{label}</p>
+                  <p className="text-sm font-semibold text-gray-900">{value}</p>
+                </div>
+              ))}
+            </div>
+            {snapshot.notes && (
+              <p className="text-xs text-gray-500 italic">{snapshot.notes}</p>
+            )}
+          </section>
+        )}
+
+        {/* Underwriting Score */}
+        {scoredVals.length > 0 && overallScore !== null && (
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-semibold text-gray-900">Underwriting Score</h2>
+              <span className={`text-xs font-medium px-2 py-0.5 rounded border ${scoreToBg(overallScore)}`}>
+                <span className={scoreToColor(overallScore)}>{overallScore}/100</span>
+              </span>
+            </div>
+            <div className={`rounded-lg border px-4 py-3 mb-4 flex items-center gap-4 ${scoreToBg(overallScore)}`}>
+              <div>
+                <p className={`text-3xl font-bold ${scoreToColor(overallScore)}`}>{overallScore}</p>
+                <p className="text-xs text-gray-500 mt-0.5">out of 100</p>
+              </div>
+              <div className="flex-1">
+                <div className="h-2 bg-white/60 rounded-full overflow-hidden border border-gray-200">
+                  <div
+                    className={`h-full rounded-full ${overallScore < 40 ? 'bg-red-500' : overallScore < 70 ? 'bg-amber-400' : 'bg-green-500'}`}
+                    style={{ width: `${overallScore}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">{scoredVals.length} of {criteria.length} criteria scored</p>
+              </div>
+            </div>
+            <div className="border border-gray-200 rounded-lg divide-y divide-gray-100">
+              {criteria.map(c => {
+                const score = scores[c.id]
+                return (
+                  <div key={c.id} className="flex items-center justify-between px-4 py-3">
+                    <p className="text-sm font-medium text-gray-800">{c.name}</p>
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map(val => (
+                        <div
+                          key={val}
+                          className={`w-8 h-8 rounded text-sm font-medium border flex items-center justify-center ${
+                            score === val
+                              ? 'bg-gray-900 text-white border-gray-900'
+                              : 'bg-white text-gray-300 border-gray-200'
+                          }`}
+                        >
+                          {val}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* Notes */}
+        {notes && (
+          <>
+            {notes.overview && (
+              <section>
+                <h2 className="text-base font-semibold text-gray-900 mb-2">Overview</h2>
+                <div className="w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-800 font-mono leading-relaxed whitespace-pre-wrap bg-white min-h-[80px]">
+                  {notes.overview}
+                </div>
+              </section>
+            )}
+            {notes.risks && (
+              <section>
+                <h2 className="text-base font-semibold text-gray-900 mb-2">Risks</h2>
+                <div className="w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-800 font-mono leading-relaxed whitespace-pre-wrap bg-white min-h-[80px]">
+                  {notes.risks}
+                </div>
+              </section>
+            )}
+            {notes.notes && (
+              <section>
+                <h2 className="text-base font-semibold text-gray-900 mb-2">Notes</h2>
+                <div className="w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-800 font-mono leading-relaxed whitespace-pre-wrap bg-white min-h-[80px]">
+                  {notes.notes}
+                </div>
+              </section>
+            )}
+          </>
+        )}
+
+        {/* Files */}
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-semibold text-gray-900">Files</h2>
+            <Link href="/signup" className="btn-secondary text-sm">+ Upload File</Link>
+          </div>
+          <div className="border border-dashed border-gray-300 rounded-lg p-8 text-center">
+            <p className="text-sm text-gray-400">
+              <Link href="/signup" className="text-blue-600 hover:underline">Sign up</Link> to upload OMs, financials, and due diligence docs.
+            </p>
+          </div>
+        </section>
+
+        {/* Contacts */}
+        {linkedContacts.length > 0 && (
+          <section>
+            <h2 className="text-base font-semibold text-gray-900 mb-3">Contacts</h2>
+            <div className="border border-gray-200 rounded-lg divide-y divide-gray-100">
+              {linkedContacts.map(dc => {
+                const c = dc.contact
+                if (!c) return null
+                return (
+                  <div key={dc.contact_id} className="flex items-center justify-between px-4 py-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-900">{c.name}</span>
+                        {c.contact_type && (
+                          <span className={`text-xs px-2 py-0.5 rounded font-medium capitalize ${TYPE_COLORS[c.contact_type] ?? ''}`}>
+                            {c.contact_type}
+                          </span>
+                        )}
+                        {dc.is_source && (
+                          <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded font-medium">Source</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-400 mt-0.5">{c.company}</p>
+                    </div>
+                    <span className="text-xs text-gray-400">{c.email}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* Sign-up CTA */}
+        <div className="bg-gray-900 rounded-xl p-6 text-center">
+          <p className="text-white font-semibold mb-1">Ready to track your real deals?</p>
+          <p className="text-gray-400 text-sm mb-4">Set up your pipeline in minutes. 30-day free trial, no credit card required.</p>
+          <Link href="/signup" className="inline-block bg-white text-gray-900 text-sm font-semibold px-6 py-2.5 rounded-md hover:bg-gray-100 transition-colors">
+            Get started free →
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
+}

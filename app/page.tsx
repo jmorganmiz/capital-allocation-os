@@ -31,16 +31,19 @@ export default async function HomePage() {
         <p className="text-xl text-gray-500 max-w-2xl mx-auto mb-10 leading-relaxed">
           Track deals, score opportunities, manage broker relationships — and never lose institutional memory again.
         </p>
-        <div className="flex items-center justify-center gap-4">
+        <div className="flex items-center justify-center gap-4 flex-wrap">
           <Link href="/signup" className="bg-gray-900 text-white px-8 py-3 rounded-md text-sm font-semibold hover:bg-gray-800 transition-colors">
             Start free for 30 days
           </Link>
-          <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900">
-            Already have an account →
+          <Link href="/demo" className="border border-gray-300 text-gray-700 px-8 py-3 rounded-md text-sm font-semibold hover:border-gray-400 hover:text-gray-900 transition-colors">
+            Try demo →
           </Link>
         </div>
+        <p className="text-xs text-gray-400 mt-3">
+          <Link href="/login" className="hover:underline">Already have an account?</Link>
+        </p>
         <p className="text-sm text-gray-400 mt-4 font-medium">Built by a CRE investor, for CRE investment teams.</p>
-        <p className="text-xs text-gray-400 mt-2">No credit card required. 30-day free trial.</p>
+        <p className="text-xs text-gray-400 mt-1">No credit card required. 30-day free trial.</p>
       </div>
 
       {/* Features */}
