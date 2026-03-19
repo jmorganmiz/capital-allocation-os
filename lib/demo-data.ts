@@ -376,6 +376,57 @@ export const DEMO_DEAL_SCORES: Record<string, Record<string, number>> = {
   },
 }
 
+export const DEMO_KILLED_DEALS = [
+  {
+    id: 'killed-sunset-lakes',
+    title: 'Sunset Lakes Apartments',
+    market: 'Phoenix, AZ',
+    deal_type: 'Multifamily',
+    kill_reason: 'Pricing / Return Threshold Not Met',
+    archived_at: '2026-02-15T10:00:00Z',
+  },
+  {
+    id: 'killed-oakwood-plaza',
+    title: 'Oakwood Plaza',
+    market: 'Houston, TX',
+    deal_type: 'Retail',
+    kill_reason: 'Market / Location Concerns',
+    archived_at: '2026-03-01T14:00:00Z',
+  },
+  {
+    id: 'killed-meridian-tower',
+    title: 'The Meridian Tower',
+    market: 'Chicago, IL',
+    deal_type: 'Office',
+    kill_reason: 'Environmental Issues',
+    archived_at: '2026-02-02T09:00:00Z',
+  },
+  {
+    id: 'killed-parkside-retail',
+    title: 'Parkside Retail Strip',
+    market: 'Dallas, TX',
+    deal_type: 'Retail',
+    kill_reason: 'Pricing / Return Threshold Not Met',
+    archived_at: '2026-03-07T11:00:00Z',
+  },
+  {
+    id: 'killed-harbor-point',
+    title: 'Harbor Point Industrial',
+    market: 'Seattle, WA',
+    deal_type: 'Industrial',
+    kill_reason: 'Financing Fell Through',
+    archived_at: '2026-03-12T15:00:00Z',
+  },
+  {
+    id: 'killed-westview',
+    title: 'Westview Multifamily',
+    market: 'Atlanta, GA',
+    deal_type: 'Multifamily',
+    kill_reason: 'Pricing / Return Threshold Not Met',
+    archived_at: '2026-01-18T08:00:00Z',
+  },
+]
+
 export const DEMO_KILL_BREAKDOWN = [
   { name: 'Pricing / Return Threshold Not Met', count: 3 },
   { name: 'Market / Location Concerns',         count: 2 },
