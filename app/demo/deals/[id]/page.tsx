@@ -10,6 +10,7 @@ import {
   DEMO_DEAL_CONTACTS,
   DEMO_SCORING_CRITERIA,
   DEMO_DEAL_SCORES,
+  DEMO_DEAL_OVERALL_SCORES,
   DEMO_DEAL_EVENTS,
 } from '@/lib/demo-data'
 
@@ -78,12 +79,9 @@ export default async function DemoDealPage({ params }: Props) {
   const events = DEMO_DEAL_EVENTS[id] ?? []
 
   const scoredVals = Object.values(scores)
-  // Hardcode overall score for maplewood to show a realistic 68/100 display
-  const overallScore = id === 'deal-maplewood'
-    ? 68
-    : scoredVals.length > 0
-      ? Math.round(((scoredVals.reduce((a, b) => a + b, 0) / scoredVals.length) - 1) / 4 * 100)
-      : null
+  const overallScore = scoredVals.length > 0
+    ? (DEMO_DEAL_OVERALL_SCORES[id] ?? Math.round(((scoredVals.reduce((a, b) => a + b, 0) / scoredVals.length) - 1) / 4 * 100))
+    : null
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
