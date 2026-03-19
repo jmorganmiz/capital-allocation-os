@@ -137,7 +137,7 @@ function DemoColumn({
   const isTerminal = stage.name === 'Closed'
 
   return (
-    <div className="flex-shrink-0 w-64">
+    <div className="flex-shrink-0 w-[85vw] md:w-64 snap-start">
       <div className="flex items-center justify-between mb-3">
         <h3 className={`text-xs font-semibold uppercase tracking-wider ${isTerminal ? 'text-green-600' : 'text-gray-500'}`}>
           {stage.name}
@@ -235,7 +235,8 @@ export default function DemoKanbanBoard({ initialDeals, searchQuery = '' }: Prop
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex justify-end gap-2 px-6 pb-3">
+      {/* Hidden on mobile — nudge buttons aren't useful in demo on small screens */}
+      <div className="hidden md:flex justify-end gap-2 px-6 pb-3">
         <button
           onClick={() => setNudgeMessage('Upload an OM PDF to instantly create a deal in your pipeline.')}
           className="btn-secondary"
@@ -256,7 +257,7 @@ export default function DemoKanbanBoard({ initialDeals, searchQuery = '' }: Prop
         onDragEnd={handleDragEnd}
         onDragCancel={() => setActiveId(null)}
       >
-        <div className="flex gap-4 px-6 pb-6 overflow-x-auto flex-1 items-start">
+        <div className="flex gap-4 px-4 md:px-6 pb-6 overflow-x-auto flex-1 items-start snap-x snap-mandatory md:snap-none">
           {activeStages.map(stage => (
             <DemoColumn
               key={stage.id}
