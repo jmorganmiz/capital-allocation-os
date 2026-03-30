@@ -298,6 +298,137 @@ export async function createDealFromUpload({
   return { deal: { id: dealId } }
 }
 
+export async function createDealFromOM(params: {
+  title: string
+  market: string | null
+  deal_type: string | null
+  source_name: string | null
+  storagePath: string
+  filename: string
+  mimeType: string
+  sizeBytes: number
+  stageId: string
+  financials: {
+    asking_price: number | null
+    noi: number | null
+    cap_rate: number | null
+  }
+  addBrokerContact: boolean
+  brokerName: string | null       // raw broker name for contact record
+  brokerCompany: string | null    // brokerage for contact company field
+  snapshotNotes: string | null    // additional property details summary
+}) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('firm_id')
+    .eq('id', user.id)
+    .single()
+  if (!profile) return { error: 'Profile not found' }
+
+  const { data: deal, error: dealError } = await supabase
+    .from('deals')
+    .insert({
+      firm_id:       profile.firm_id,
+      title:         params.title,
+      market:        params.market,
+      deal_type:     params.deal_type,
+      source_type:   params.source_name ? 'Broker' : null,
+      source_name:   params.source_name,
+      stage_id:      params.stageId,
+      owner_user_id: user.id,
+      intake_type:   'upload',
+      created_by:    user.id,
+    })
+    .select()
+    .single()
+
+  if (dealError) return { error: dealError.message }
+
+  await supabase.from('deal_events').insert({
+    deal_id:       deal.id,
+    firm_id:       profile.firm_id,
+    actor_user_id: user.id,
+    event_type:    'deal_created',
+    notes:         `Deal created via OM upload: ${params.filename}`,
+  })
+
+  // Create financial snapshot if any data was extracted
+  const { asking_price, noi, cap_rate } = params.financials
+  if (asking_price !== null || noi !== null || cap_rate !== null) {
+    await supabase.from('deal_financial_snapshots').insert({
+      deal_id:        deal.id,
+      firm_id:        profile.firm_id,
+      purchase_price: asking_price,
+      noi,
+      cap_rate,
+      created_by:     user.id,
+    })
+  }
+
+  // Record uploaded file
+  await supabase.from('deal_files').insert({
+    deal_id:      deal.id,
+    firm_id:      profile.firm_id,
+    storage_path: params.storagePath,
+    filename:     params.filename,
+    mime_type:    params.mimeType,
+    size_bytes:   params.sizeBytes,
+    uploaded_by:  user.id,
+  })
+
+  await supabase.from('deal_events').insert({
+    deal_id:       deal.id,
+    firm_id:       profile.firm_id,
+    actor_user_id: user.id,
+    event_type:    'file_added',
+    notes:         params.filename,
+  })
+
+  // Save additional property details (SF, year built, units, occupancy) as a deal note
+  if (params.snapshotNotes) {
+    await supabase.from('deal_notes').insert({
+      deal_id:    deal.id,
+      firm_id:    profile.firm_id,
+      section:    'overview',
+      content:    `Property details from OM: ${params.snapshotNotes}`,
+      created_by: user.id,
+    })
+  }
+
+  // Optionally create broker contact and link to deal
+  // Use the raw broker name (not the combined source_name string) for the contact record
+  if (params.addBrokerContact && params.brokerName) {
+    const { data: contact } = await supabase
+      .from('contacts')
+      .insert({
+        firm_id:      profile.firm_id,
+        name:         params.brokerName,
+        company:      params.brokerCompany,
+        contact_type: 'broker',
+        created_by:   user.id,
+      })
+      .select()
+      .single()
+
+    if (contact) {
+      await supabase.from('deal_contacts').insert({
+        deal_id:    deal.id,
+        contact_id: contact.id,
+        firm_id:    profile.firm_id,
+        is_source:  true,
+      })
+    }
+  }
+
+  revalidatePath('/pipeline')
+  revalidatePath('/contacts')
+  return { deal }
+}
+
 export async function listArchivedDeals(filters?: {
   market?: string
   dealType?: string
