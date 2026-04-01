@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import type Stripe from 'stripe'
 
-export const config = { api: { bodyParser: false } }
+export const dynamic = 'force-dynamic'
 
 export async function POST(request: Request) {
   const body = await request.text()
