@@ -3,7 +3,7 @@
 import { useDraggable } from '@dnd-kit/core'
 import { Deal, DealStage } from '@/lib/types/database'
 import Link from 'next/link'
-import { FileText } from 'lucide-react'
+import { FileText, MapPin } from 'lucide-react'
 
 interface Props {
   deal: Deal & {
@@ -83,6 +83,19 @@ export default function DealCard({ deal, stage, onKill, onMove }: Props) {
           )}
           {deal.source_name && (
             <span className="text-xs text-gray-400">· {deal.source_name}</span>
+          )}
+          {deal.address && (
+            <a
+              href={`https://www.google.com/maps/search/?q=${encodeURIComponent(deal.address)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onPointerDown={e => e.stopPropagation()}
+              onClick={e => e.stopPropagation()}
+              className="text-gray-400 hover:text-blue-500 transition-colors"
+              title={deal.address}
+            >
+              <MapPin size={12} strokeWidth={1.8} />
+            </a>
           )}
         </div>
 
