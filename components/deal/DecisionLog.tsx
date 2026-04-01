@@ -12,8 +12,20 @@ interface EventRow {
   to_stage:   { name: string } | null
 }
 
+interface SnapshotRow {
+  id: string
+  created_at: string
+  purchase_price: number | null
+  noi: number | null
+  cap_rate: number | null
+  debt_rate: number | null
+  ltv: number | null
+  irr: number | null
+}
+
 interface Props {
   events: EventRow[]
+  snapshots?: SnapshotRow[]
 }
 
 const EVENT_STYLES: Record<string, { label: string; dot: string }> = {
@@ -24,7 +36,29 @@ const EVENT_STYLES: Record<string, { label: string; dot: string }> = {
   file_added:    { label: 'File Uploaded',   dot: 'bg-purple-400' },
 }
 
-export default function DecisionLog({ events }: Props) {
+function fmt(n: number | null, type: 'currency' | 'percent' | 'raw'): string | null {
+  if (n == null) return null
+  if (type === 'currency') return '$' + n.toLocaleString('en-US', { maximumFractionDigits: 0 })
+  if (type === 'percent') return (n * 100).toFixed(2) + '%'
+  return String(n)
+}
+
+// Find the snapshot created closest to (and after) a given ISO timestamp, within 10 seconds
+function findKillSnapshot(snapshots: SnapshotRow[], eventCreatedAt: string): SnapshotRow | null {
+  const eventMs = new Date(eventCreatedAt).getTime()
+  let best: SnapshotRow | null = null
+  let bestDiff = Infinity
+  for (const s of snapshots) {
+    const diff = Math.abs(new Date(s.created_at).getTime() - eventMs)
+    if (diff < bestDiff && diff < 10_000) {
+      bestDiff = diff
+      best = s
+    }
+  }
+  return best
+}
+
+export default function DecisionLog({ events, snapshots = [] }: Props) {
   if (events.length === 0) {
     return (
       <section>
@@ -41,6 +75,9 @@ export default function DecisionLog({ events }: Props) {
         {events.map(event => {
           const style = EVENT_STYLES[event.event_type] ?? { label: event.event_type, dot: 'bg-gray-300' }
           const actor = event.profiles?.full_name ?? 'Unknown'
+          const killSnapshot = event.event_type === 'killed'
+            ? findKillSnapshot(snapshots, event.created_at)
+            : null
 
           return (
             <div key={event.id} className="relative">
@@ -67,6 +104,31 @@ export default function DecisionLog({ events }: Props) {
                 )}
                 {event.event_type === 'file_added' && event.notes && (
                   <p className="text-xs text-gray-500">{event.notes}</p>
+                )}
+                {killSnapshot && (
+                  <div className="mt-2 pt-2 border-t border-gray-100">
+                    <p className="text-xs text-gray-400 mb-1 font-medium">Snapshot at time of kill</p>
+                    <div className="flex flex-wrap gap-x-4 gap-y-0.5">
+                      {fmt(killSnapshot.purchase_price, 'currency') && (
+                        <span className="text-xs text-gray-600">Price: {fmt(killSnapshot.purchase_price, 'currency')}</span>
+                      )}
+                      {fmt(killSnapshot.noi, 'currency') && (
+                        <span className="text-xs text-gray-600">NOI: {fmt(killSnapshot.noi, 'currency')}</span>
+                      )}
+                      {fmt(killSnapshot.cap_rate, 'percent') && (
+                        <span className="text-xs text-gray-600">Cap: {fmt(killSnapshot.cap_rate, 'percent')}</span>
+                      )}
+                      {fmt(killSnapshot.debt_rate, 'percent') && (
+                        <span className="text-xs text-gray-600">Debt: {fmt(killSnapshot.debt_rate, 'percent')}</span>
+                      )}
+                      {fmt(killSnapshot.ltv, 'percent') && (
+                        <span className="text-xs text-gray-600">LTV: {fmt(killSnapshot.ltv, 'percent')}</span>
+                      )}
+                      {fmt(killSnapshot.irr, 'percent') && (
+                        <span className="text-xs text-gray-600">IRR: {fmt(killSnapshot.irr, 'percent')}</span>
+                      )}
+                    </div>
+                  </div>
                 )}
                 <p className="text-xs text-gray-400 mt-1">by {actor}</p>
               </div>

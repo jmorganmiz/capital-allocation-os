@@ -41,6 +41,7 @@ export default function CreateDealModal({ stages, onCreated, onCancel }: Props) 
             </label>
             <input name="title" required autoFocus className="input-base" placeholder="123 Main St, Austin TX" />
           </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Market</label>
@@ -51,6 +52,7 @@ export default function CreateDealModal({ stages, onCreated, onCancel }: Props) 
               <input name="deal_type" className="input-base" placeholder="Multifamily" />
             </div>
           </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Source Type</label>
@@ -65,6 +67,50 @@ export default function CreateDealModal({ stages, onCreated, onCancel }: Props) 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Source Name</label>
               <input name="source_name" className="input-base" placeholder="CBRE / John Smith" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Asking Price</label>
+              <input
+                name="asking_price"
+                type="number"
+                min="0"
+                step="1"
+                className="input-base"
+                placeholder="5000000"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Property Size</label>
+              <input name="property_size" className="input-base" placeholder="45,000 SF" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Deal Structure</label>
+              <select name="deal_structure" className="input-base">
+                <option value="">Select…</option>
+                <option>Acquisition</option>
+                <option>Joint Venture</option>
+                <option>Sale-Leaseback</option>
+                <option>Recapitalization</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Financing Type</label>
+              <select name="financing_type" className="input-base">
+                <option value="">Select…</option>
+                <option>Conventional</option>
+                <option>Bridge</option>
+                <option>CMBS</option>
+                <option>Agency</option>
+                <option>All Cash</option>
+                <option>Other</option>
+              </select>
             </div>
           </div>
 

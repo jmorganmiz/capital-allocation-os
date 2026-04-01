@@ -68,6 +68,7 @@ function DemoDealCard({
       style={style}
       {...listeners}
       {...attributes}
+      data-tour="deal-card"
       className={`bg-white border border-gray-200 rounded-lg p-3 md:cursor-grab md:active:cursor-grabbing
                   shadow-sm hover:shadow-md transition-shadow select-none
                   ${isDragging ? 'opacity-50 shadow-lg' : ''}`}
@@ -82,6 +83,7 @@ function DemoDealCard({
         </Link>
         {/* Kill button — desktop only */}
         <button
+          data-tour="kill-btn"
           onPointerDown={e => e.stopPropagation()}
           onClick={e => { e.preventDefault(); e.stopPropagation(); onKill(deal) }}
           className="hidden md:block text-gray-300 hover:text-red-400 transition-colors flex-shrink-0 text-xs mt-0.5"
@@ -341,7 +343,7 @@ export default function DemoKanbanBoard({ initialDeals, searchQuery = '' }: Prop
         onDragEnd={handleDragEnd}
         onDragCancel={() => setActiveId(null)}
       >
-        <div className="flex gap-4 px-4 md:px-6 pb-6 overflow-x-auto flex-1 items-start snap-x snap-mandatory md:snap-none">
+        <div data-tour="board" className="flex gap-4 px-4 md:px-6 pb-6 overflow-x-auto flex-1 items-start snap-x snap-mandatory md:snap-none">
           {activeStages.map(stage => (
             <DemoColumn
               key={stage.id}

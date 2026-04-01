@@ -18,7 +18,8 @@ export default async function PipelinePage() {
       .select(`
         *,
         owner:profiles!owner_user_id(full_name),
-        latest_stage_event:deal_events(created_at)
+        latest_stage_event:deal_events(created_at),
+        deal_notes(section, content)
       `)
       .eq('is_archived', false)
       .order('created_at', { ascending: false }),
@@ -33,10 +34,14 @@ export default async function PipelinePage() {
         )[0].created_at
       : deal.created_at
 
+    const hasNotes = (deal.deal_notes ?? []).some((n: any) => n.content?.trim().length > 0)
+
     return {
       ...deal,
       latest_stage_event_at: latest,
       latest_stage_event: undefined,
+      deal_notes: undefined,
+      hasNotes,
     }
   })
 

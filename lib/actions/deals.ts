@@ -22,17 +22,24 @@ export async function createDeal(formData: FormData) {
     .limit(1)
     .single()
 
+  const askingPriceRaw = (formData.get('asking_price') as string) || ''
+  const askingPrice = askingPriceRaw ? parseFloat(askingPriceRaw.replace(/[^0-9.]/g, '')) : null
+
   const { data: deal, error } = await supabase
     .from('deals')
     .insert({
-      firm_id:     profile.firm_id,
-      title:       formData.get('title') as string,
-      market:      (formData.get('market') as string) || null,
-      deal_type:   (formData.get('deal_type') as string) || null,
-      source_type: (formData.get('source_type') as string) || null,
-      source_name: (formData.get('source_name') as string) || null,
-      stage_id:    firstStage?.id ?? null,
-      created_by:  user.id,
+      firm_id:          profile.firm_id,
+      title:            formData.get('title') as string,
+      market:           (formData.get('market') as string) || null,
+      deal_type:        (formData.get('deal_type') as string) || null,
+      source_type:      (formData.get('source_type') as string) || null,
+      source_name:      (formData.get('source_name') as string) || null,
+      deal_structure:   (formData.get('deal_structure') as string) || null,
+      financing_type:   (formData.get('financing_type') as string) || null,
+      asking_price:     Number.isFinite(askingPrice) ? askingPrice : null,
+      property_size:    (formData.get('property_size') as string) || null,
+      stage_id:         firstStage?.id ?? null,
+      created_by:       user.id,
     })
     .select()
     .single()
@@ -108,6 +115,28 @@ export async function killDeal(
     })
     .eq('id', dealId)
   if (dealError) return { error: dealError.message }
+
+  // Copy most recent financial snapshot so the numbers at kill time are preserved
+  const { data: latestSnapshot } = await supabase
+    .from('deal_financial_snapshots')
+    .select('purchase_price, noi, cap_rate, debt_rate, ltv, irr')
+    .eq('deal_id', dealId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (latestSnapshot) {
+    await supabase.from('deal_financial_snapshots').insert({
+      firm_id:       profile.firm_id,
+      deal_id:       dealId,
+      purchase_price: latestSnapshot.purchase_price,
+      noi:           latestSnapshot.noi,
+      cap_rate:      latestSnapshot.cap_rate,
+      debt_rate:     latestSnapshot.debt_rate,
+      ltv:           latestSnapshot.ltv,
+      irr:           latestSnapshot.irr,
+    })
+  }
 
   await supabase.from('deal_events').insert({
     firm_id:        profile.firm_id,
@@ -525,6 +554,35 @@ export async function updateDealOwner(dealId: string, ownerUserId: string | null
   const { error } = await supabase
     .from('deals')
     .update({ owner_user_id: ownerUserId || null })
+    .eq('id', dealId)
+    .eq('firm_id', profile.firm_id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath(`/deals/${dealId}`)
+  return { success: true }
+}
+
+export async function updateDealFields(
+  dealId: string,
+  fields: {
+    asking_price?: number | null
+    deal_structure?: string | null
+    financing_type?: string | null
+    property_size?: string | null
+  }
+) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: profile } = await supabase
+    .from('profiles').select('firm_id').single()
+  if (!profile) return { error: 'Profile not found' }
+
+  const { error } = await supabase
+    .from('deals')
+    .update(fields)
     .eq('id', dealId)
     .eq('firm_id', profile.firm_id)
 

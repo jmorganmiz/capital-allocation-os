@@ -9,9 +9,10 @@ interface Props {
   title: string
   initialContent: string
   placeholder?: string
+  highlight?: boolean
 }
 
-export default function NotesSection({ dealId, section, title, initialContent, placeholder }: Props) {
+export default function NotesSection({ dealId, section, title, initialContent, placeholder, highlight }: Props) {
   const [content, setContent] = useState(initialContent)
   const [saved, setSaved] = useState(true)
   const [isPending, startTransition] = useTransition()
@@ -31,10 +32,17 @@ export default function NotesSection({ dealId, section, title, initialContent, p
     debounceRef.current = setTimeout(() => save(value), 1500)
   }
 
+  const isEmpty = highlight && !content.trim()
+
   return (
-    <section>
+    <div className={isEmpty ? 'rounded-lg border-2 border-dashed border-blue-200 bg-blue-50/30 p-4 -mx-4' : ''}>
       <div className="flex items-center justify-between mb-2">
-        <h2 className="text-base font-semibold text-gray-900">{title}</h2>
+        <h2 className="text-base font-semibold text-gray-900">
+          {title}
+          {isEmpty && (
+            <span className="ml-2 text-xs font-normal text-blue-500">— start here</span>
+          )}
+        </h2>
         <span className={`text-xs transition-opacity ${saved ? 'text-gray-400' : 'text-amber-500'}`}>
           {isPending ? 'Saving…' : saved ? 'Saved' : 'Unsaved changes'}
         </span>
@@ -42,12 +50,16 @@ export default function NotesSection({ dealId, section, title, initialContent, p
       <textarea
         value={content}
         onChange={e => handleChange(e.target.value)}
-        placeholder={placeholder ?? `Add ${title.toLowerCase()}…`}
+        placeholder={isEmpty ? `What's the opportunity? Describe the asset, location, and thesis…` : (placeholder ?? `Add ${title.toLowerCase()}…`)}
         rows={6}
-        className="w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-800
+        className={`w-full rounded-lg p-3 text-sm text-gray-800
                    focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y
-                   placeholder:text-gray-400 font-mono leading-relaxed"
+                   placeholder:text-gray-400 font-mono leading-relaxed
+                   ${isEmpty
+                     ? 'border border-blue-200 bg-white'
+                     : 'border border-gray-200'
+                   }`}
       />
-    </section>
+    </div>
   )
 }

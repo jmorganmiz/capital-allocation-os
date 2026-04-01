@@ -1,5 +1,6 @@
 import DemoBanner from '@/components/demo/DemoBanner'
 import DemoSidebar from '@/components/demo/DemoSidebar'
+import DemoTour from '@/components/demo/DemoTour'
 
 export default function DemoLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -14,6 +15,8 @@ export default function DemoLayout({ children }: { children: React.ReactNode }) 
           {children}
         </main>
       </div>
+
+      <DemoTour />
     </div>
   )
 }

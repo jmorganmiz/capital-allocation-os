@@ -3,11 +3,13 @@
 import { useDraggable } from '@dnd-kit/core'
 import { Deal, DealStage } from '@/lib/types/database'
 import Link from 'next/link'
+import { FileText } from 'lucide-react'
 
 interface Props {
   deal: Deal & {
     owner?: { full_name: string | null } | null
     latest_stage_event_at?: string | null
+    hasNotes?: boolean
   }
   stage: DealStage
   onKill: (deal: Deal) => void
@@ -85,6 +87,14 @@ export default function DealCard({ deal, stage, onKill, onMove }: Props) {
         </div>
 
         <div className="flex items-center gap-1.5 flex-shrink-0">
+          {/* Notes indicator */}
+          <span
+            title={deal.hasNotes ? 'Has notes' : 'Add notes'}
+            className={deal.hasNotes ? 'text-blue-400' : 'text-gray-200'}
+          >
+            <FileText size={13} strokeWidth={1.8} />
+          </span>
+
           {deal.latest_stage_event_at && (
             <span className="text-xs text-amber-500 font-medium">
               {timeInStage(deal.latest_stage_event_at)}

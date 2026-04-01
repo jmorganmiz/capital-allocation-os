@@ -197,7 +197,7 @@ export default async function DemoDealPage({ params }: Props) {
         {notes && (
           <>
             {notes.overview && (
-              <section>
+              <section data-tour="notes">
                 <div className="flex items-center justify-between mb-2">
                   <h2 className="text-base font-semibold text-gray-900">Overview</h2>
                   <DemoLabel />
