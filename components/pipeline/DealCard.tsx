@@ -88,12 +88,16 @@ export default function DealCard({ deal, stage, onKill, onMove }: Props) {
 
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {/* Notes indicator */}
-          <span
-            title={deal.hasNotes ? 'Has notes' : 'Add notes'}
-            className={deal.hasNotes ? 'text-blue-400' : 'text-gray-200'}
-          >
-            <FileText size={13} strokeWidth={1.8} />
-          </span>
+          {deal.hasNotes ? (
+            <span title="Has notes" className="relative flex-shrink-0">
+              <FileText size={14} strokeWidth={2} className="text-emerald-500" />
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 border border-white" />
+            </span>
+          ) : (
+            <span title="Add notes" className="flex-shrink-0">
+              <FileText size={13} strokeWidth={1.5} className="text-gray-300" />
+            </span>
+          )}
 
           {deal.latest_stage_event_at && (
             <span className="text-xs text-amber-500 font-medium">
