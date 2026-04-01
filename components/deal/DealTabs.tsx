@@ -11,22 +11,42 @@ const TABS = [
   { label: 'Activity',   id: 'section-activity'    },
 ]
 
+// Walk up the DOM to find the nearest scrollable ancestor
+function findScrollContainer(el: Element | null): Element | null {
+  if (!el || el === document.documentElement) return null
+  const { overflow, overflowY } = getComputedStyle(el)
+  if (overflow === 'auto' || overflow === 'scroll' || overflowY === 'auto' || overflowY === 'scroll') {
+    return el
+  }
+  return findScrollContainer(el.parentElement)
+}
+
 export default function DealTabs() {
   const [active, setActive] = useState(TABS[0].id)
   const observerRef = useRef<IntersectionObserver | null>(null)
+  const containerRef = useRef<Element | null>(null)
 
   useEffect(() => {
+    // Find the scroll container from the first section element
+    const firstEl = document.getElementById(TABS[0].id)
+    const container = findScrollContainer(firstEl ?? null)
+    containerRef.current = container
+
     const targets = TABS.map(t => document.getElementById(t.id)).filter(Boolean) as HTMLElement[]
 
     observerRef.current = new IntersectionObserver(
       entries => {
-        // Pick the topmost visible section
+        // Pick the topmost currently-visible section
         const visible = entries
           .filter(e => e.isIntersecting)
           .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)
         if (visible.length > 0) setActive(visible[0].target.id)
       },
-      { rootMargin: '-20% 0px -60% 0px', threshold: 0 }
+      {
+        root: container ?? null,
+        rootMargin: '-20% 0px -60% 0px',
+        threshold: 0,
+      }
     )
 
     targets.forEach(el => observerRef.current!.observe(el))
@@ -36,9 +56,15 @@ export default function DealTabs() {
   function scrollTo(id: string) {
     const el = document.getElementById(id)
     if (!el) return
-    const offset = 80 // account for sticky header + tab bar height
-    const top = el.getBoundingClientRect().top + window.scrollY - offset
-    window.scrollTo({ top, behavior: 'smooth' })
+    const OFFSET = 80 // clears sticky tab bar + header
+    const container = containerRef.current
+
+    if (container) {
+      const top = container.scrollTop + el.getBoundingClientRect().top - container.getBoundingClientRect().top - OFFSET
+      container.scrollTo({ top, behavior: 'smooth' })
+    } else {
+      window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - OFFSET, behavior: 'smooth' })
+    }
     setActive(id)
   }
 

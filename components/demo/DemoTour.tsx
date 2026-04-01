@@ -48,11 +48,13 @@ function matchesPage(pages: string[], pathname: string) {
 export default function DemoTour() {
   const pathname = usePathname()
   const [step, setStep] = useState<number | null>(null)
-  const [rect, setRect] = useState<Rect | null>(null)
+  // null = still measuring, false = element not found / hidden (show tooltip only, no spotlight)
+  const [rect, setRect] = useState<Rect | null | false>(null)
   const retryRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const retriesRef = useRef(0)
   const TOOLTIP_W = 288
 
-  // Init from localStorage on mount only
+  // Read from localStorage on first mount only
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (stored === 'done') return
@@ -79,15 +81,30 @@ export default function DemoTour() {
     const el = document.querySelector(currentStep.target)
     if (el) {
       const r = el.getBoundingClientRect()
-      setRect({ top: r.top, left: r.left, width: r.width, height: r.height })
-    } else {
-      setRect(null)
+      if (r.width > 0 || r.height > 0) {
+        // Element is visible — use its rect for the spotlight
+        setRect({ top: r.top, left: r.left, width: r.width, height: r.height })
+        retriesRef.current = 0
+      } else {
+        // Element exists but is hidden (e.g. display:none on this breakpoint)
+        // Show tooltip without a spotlight rather than retrying forever
+        setRect(false)
+        retriesRef.current = 0
+      }
+    } else if (retriesRef.current < 8) {
+      // Element not yet in DOM — retry a few times (handles async renders)
+      retriesRef.current += 1
       retryRef.current = setTimeout(measure, 250)
+    } else {
+      // Give up — show tooltip without spotlight
+      retriesRef.current = 0
+      setRect(false)
     }
   }, [currentStep, onRightPage])
 
   useEffect(() => {
     if (retryRef.current) clearTimeout(retryRef.current)
+    retriesRef.current = 0
     setRect(null)
     measure()
     window.addEventListener('resize', measure)
@@ -101,15 +118,15 @@ export default function DemoTour() {
 
   if (step === null) return null
 
-  // Paused — user is on the wrong page for the current step
+  // Paused — user navigated to the wrong page for the current step
   if (!onRightPage) {
     let hint: string
     if (step === 2) hint = 'Click any deal to continue the tour →'
-    else if (step === 3) hint = '← Go back to the pipeline to continue'
-    else hint = `Tour paused · step ${step + 1} of ${STEPS.length}`
+    else if (step === 3) hint = '← Back to Pipeline to continue the tour'
+    else hint = `Tour paused — step ${step + 1} of ${STEPS.length}`
 
     return (
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-auto">
         <div className="flex items-center gap-3 bg-gray-900 text-white text-sm px-4 py-2.5 rounded-full shadow-lg whitespace-nowrap">
           <span className="text-gray-300">{hint}</span>
           <button
@@ -123,64 +140,64 @@ export default function DemoTour() {
     )
   }
 
-  if (!rect) return null
+  // Still measuring — render nothing yet
+  if (rect === null) return null
 
   const vw = window.innerWidth
   const vh = window.innerHeight
-  const PAD = 6
-
-  // Spotlight box (slightly bigger than target)
-  const sTop  = rect.top    - PAD
-  const sLeft = rect.left   - PAD
-  const sW    = rect.width  + PAD * 2
-  const sH    = rect.height + PAD * 2
-
-  // Tooltip horizontal center follows the target, clamped to viewport
-  const ttLeft = Math.max(12, Math.min(vw - TOOLTIP_W - 12, rect.left + rect.width / 2 - TOOLTIP_W / 2))
-
-  // Tooltip vertical: below or above
-  const isAbove = currentStep!.position === 'above'
-  const GAP = 14
-  const ttTop = isAbove
-    ? Math.max(12, rect.top - GAP - 130)  // 130 ≈ tooltip height estimate
-    : Math.min(vh - 160, rect.top + rect.height + GAP)
-
-  // Arrow horizontal offset relative to tooltip
-  const arrowLeft = Math.min(
-    Math.max(rect.left + rect.width / 2 - ttLeft - 6, 16),
-    TOOLTIP_W - 28,
-  )
-
   const isLast = step === STEPS.length - 1
+  const isAbove = currentStep!.position === 'above'
+  const PAD = 6
+  const GAP = 14
+
+  // When rect is `false` the element is hidden — centre tooltip on screen, no spotlight
+  const hasSpotlight = rect !== false
+
+  let ttLeft: number
+  let ttTop: number
+  let arrowLeft: number
+
+  if (hasSpotlight) {
+    ttLeft = Math.max(12, Math.min(vw - TOOLTIP_W - 12, rect.left + rect.width / 2 - TOOLTIP_W / 2))
+    ttTop  = isAbove
+      ? Math.max(12, rect.top - GAP - 130)
+      : Math.min(vh - 160, rect.top + rect.height + GAP)
+    arrowLeft = Math.min(Math.max(rect.left + rect.width / 2 - ttLeft - 6, 16), TOOLTIP_W - 28)
+  } else {
+    // Fallback: centre the card on screen
+    ttLeft    = Math.max(12, vw / 2 - TOOLTIP_W / 2)
+    ttTop     = vh / 2 - 80
+    arrowLeft = TOOLTIP_W / 2 - 6
+  }
 
   return (
     <>
-      {/* Spotlight — dark shadow radiates outward, revealing only the target area */}
-      <div
-        className="fixed pointer-events-none"
-        style={{
-          zIndex: 40,
-          top:    sTop,
-          left:   sLeft,
-          width:  sW,
-          height: sH,
-          borderRadius: 8,
-          boxShadow: '0 0 0 9999px rgba(0,0,0,0.45)',
-          border: '2px solid rgba(255,255,255,0.25)',
-        }}
-      />
+      {/* Spotlight overlay — only when target is visible */}
+      {hasSpotlight && (
+        <div
+          className="fixed pointer-events-none"
+          style={{
+            zIndex: 40,
+            top:    rect.top    - PAD,
+            left:   rect.left   - PAD,
+            width:  rect.width  + PAD * 2,
+            height: rect.height + PAD * 2,
+            borderRadius: 8,
+            boxShadow: '0 0 0 9999px rgba(0,0,0,0.45)',
+            border: '2px solid rgba(255,255,255,0.25)',
+          }}
+        />
+      )}
 
-      {/* Tooltip */}
-      <div
-        className="fixed"
-        style={{ zIndex: 50, top: ttTop, left: ttLeft, width: TOOLTIP_W }}
-      >
-        {/* Arrow pointing toward element */}
-        {!isAbove && (
-          <div
-            className="absolute w-3 h-3 bg-gray-900 rotate-45"
-            style={{ top: -6, left: arrowLeft }}
-          />
+      {/* Dark scrim with no spotlight (hidden-element fallback) */}
+      {!hasSpotlight && (
+        <div className="fixed inset-0 bg-black/40 pointer-events-none" style={{ zIndex: 40 }} />
+      )}
+
+      {/* Tooltip card */}
+      <div className="fixed pointer-events-auto" style={{ zIndex: 50, top: ttTop, left: ttLeft, width: TOOLTIP_W }}>
+        {!isAbove && hasSpotlight && (
+          <div className="absolute w-3 h-3 bg-gray-900 rotate-45" style={{ top: -6, left: arrowLeft }} />
         )}
 
         <div className="bg-gray-900 text-white rounded-xl shadow-2xl px-4 py-3.5">
@@ -202,11 +219,8 @@ export default function DemoTour() {
           </div>
         </div>
 
-        {isAbove && (
-          <div
-            className="absolute w-3 h-3 bg-gray-900 rotate-45"
-            style={{ bottom: -6, left: arrowLeft }}
-          />
+        {isAbove && hasSpotlight && (
+          <div className="absolute w-3 h-3 bg-gray-900 rotate-45" style={{ bottom: -6, left: arrowLeft }} />
         )}
       </div>
     </>

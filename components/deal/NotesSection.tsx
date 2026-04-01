@@ -32,10 +32,11 @@ export default function NotesSection({ dealId, section, title, initialContent, p
     debounceRef.current = setTimeout(() => save(value), 1500)
   }
 
+  // Only apply the highlight treatment on the first (overview) section when content is empty
   const isEmpty = highlight && !content.trim()
 
   return (
-    <div className={isEmpty ? 'rounded-lg border-2 border-dashed border-blue-200 bg-blue-50/30 p-4 -mx-4' : ''}>
+    <section>
       <div className="flex items-center justify-between mb-2">
         <h2 className="text-base font-semibold text-gray-900">
           {title}
@@ -50,16 +51,20 @@ export default function NotesSection({ dealId, section, title, initialContent, p
       <textarea
         value={content}
         onChange={e => handleChange(e.target.value)}
-        placeholder={isEmpty ? `What's the opportunity? Describe the asset, location, and thesis…` : (placeholder ?? `Add ${title.toLowerCase()}…`)}
+        placeholder={
+          isEmpty
+            ? `What's the opportunity? Describe the asset, location, and thesis…`
+            : (placeholder ?? `Add ${title.toLowerCase()}…`)
+        }
         rows={6}
         className={`w-full rounded-lg p-3 text-sm text-gray-800
                    focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y
                    placeholder:text-gray-400 font-mono leading-relaxed
                    ${isEmpty
-                     ? 'border border-blue-200 bg-white'
+                     ? 'border-2 border-dashed border-blue-300 bg-blue-50/30'
                      : 'border border-gray-200'
                    }`}
       />
-    </div>
+    </section>
   )
 }
