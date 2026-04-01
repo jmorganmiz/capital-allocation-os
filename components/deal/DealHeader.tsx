@@ -105,10 +105,10 @@ export default function DealHeader({ deal, stages, killReasons, currentStage, fi
                     href={mapsUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-0.5 text-xs text-gray-400 hover:text-blue-500 transition-colors"
+                    className="flex items-center gap-1 text-sm text-blue-500 hover:text-blue-600 transition-colors font-medium"
                     title="View on Google Maps"
                   >
-                    <MapPin size={11} strokeWidth={2} />
+                    <MapPin size={13} strokeWidth={2} />
                     <span>Map</span>
                   </a>
                 )}
