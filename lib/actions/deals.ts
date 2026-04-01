@@ -38,6 +38,7 @@ export async function createDeal(formData: FormData) {
       financing_type:   (formData.get('financing_type') as string) || null,
       asking_price:     Number.isFinite(askingPrice) ? askingPrice : null,
       property_size:    (formData.get('property_size') as string) || null,
+      address:          (formData.get('address') as string) || null,
       stage_id:         firstStage?.id ?? null,
       created_by:       user.id,
     })
@@ -570,6 +571,7 @@ export async function updateDealFields(
     deal_structure?: string | null
     financing_type?: string | null
     property_size?: string | null
+    address?: string | null
   }
 ) {
   const supabase = await createClient()

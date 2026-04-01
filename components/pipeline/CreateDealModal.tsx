@@ -42,6 +42,11 @@ export default function CreateDealModal({ stages, onCreated, onCancel }: Props) 
             <input name="title" required autoFocus className="input-base" placeholder="123 Main St, Austin TX" />
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+            <input name="address" className="input-base" placeholder="123 Main St, Austin, TX 78701" />
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Market</label>

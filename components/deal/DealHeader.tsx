@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { MapPin } from 'lucide-react'
 import { Deal, DealStage, KillReason } from '@/lib/types/database'
-import { updateDealStage, killDeal, updateDealOwner } from '@/lib/actions/deals'
+import { updateDealStage, killDeal, updateDealOwner, updateDealFields } from '@/lib/actions/deals'
 import KillModal from '@/components/pipeline/KillModal'
 
 interface Props {
@@ -18,6 +18,8 @@ interface Props {
 export default function DealHeader({ deal, stages, killReasons, currentStage, firmUsers }: Props) {
   const [showKillModal, setShowKillModal] = useState(false)
   const [ownerId, setOwnerId] = useState(deal.owner_user_id ?? '')
+  const [address, setAddress] = useState(deal.address ?? '')
+  const [editingAddress, setEditingAddress] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   const killedStage = stages.find(s => s.name === 'Killed')
@@ -33,9 +35,7 @@ export default function DealHeader({ deal, stages, killReasons, currentStage, fi
 
   function handleOwnerChange(newOwnerId: string) {
     setOwnerId(newOwnerId)
-    startTransition(async () => {
-      await updateDealOwner(deal.id, newOwnerId || null)
-    })
+    startTransition(async () => { await updateDealOwner(deal.id, newOwnerId || null) })
   }
 
   function handleKillConfirm(killReasonId: string, notes: string) {
@@ -46,7 +46,18 @@ export default function DealHeader({ deal, stages, killReasons, currentStage, fi
     })
   }
 
-  const currentOwner = firmUsers.find(u => u.id === ownerId)
+  function commitAddress(value: string) {
+    setEditingAddress(false)
+    const trimmed = value.trim()
+    setAddress(trimmed)
+    startTransition(async () => { await updateDealFields(deal.id, { address: trimmed || null }) })
+  }
+
+  // Use full address for Maps link when available, otherwise fall back to market
+  const mapsQuery = address || deal.market
+  const mapsUrl = mapsQuery
+    ? `https://www.google.com/maps/search/?q=${encodeURIComponent(mapsQuery)}`
+    : null
 
   return (
     <div>
@@ -57,24 +68,54 @@ export default function DealHeader({ deal, stages, killReasons, currentStage, fi
       </div>
 
       <div className="flex items-start justify-between">
-        <div>
+        <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-semibold text-gray-900">{deal.title}</h1>
+
           <div className="flex items-center gap-3 mt-2 text-sm text-gray-500 flex-wrap">
-            {deal.market && (
+            {/* Address — inline editable */}
+            {editingAddress ? (
+              <input
+                autoFocus
+                value={address}
+                onChange={e => setAddress(e.target.value)}
+                onBlur={e => commitAddress(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') commitAddress(address)
+                  if (e.key === 'Escape') { setAddress(deal.address ?? ''); setEditingAddress(false) }
+                }}
+                className="text-sm border border-blue-300 rounded px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+                placeholder="123 Main St, Austin, TX 78701"
+              />
+            ) : (
               <span className="flex items-center gap-1.5">
-                {deal.market}
-                <a
-                  href={`https://www.google.com/maps/search/?q=${encodeURIComponent(deal.market)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-0.5 text-xs text-gray-400 hover:text-blue-500 transition-colors"
-                  title="View on Google Maps"
+                <button
+                  onClick={() => !deal.is_archived && setEditingAddress(true)}
+                  disabled={deal.is_archived}
+                  className={`text-sm transition-colors ${
+                    address
+                      ? 'text-gray-500 hover:text-gray-700'
+                      : 'text-gray-300 hover:text-gray-400 italic'
+                  } disabled:cursor-default`}
+                  title={deal.is_archived ? undefined : 'Click to edit address'}
                 >
-                  <MapPin size={11} strokeWidth={2} />
-                  <span>Map</span>
-                </a>
+                  {address || 'Add address'}
+                </button>
+                {mapsUrl && (
+                  <a
+                    href={mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-0.5 text-xs text-gray-400 hover:text-blue-500 transition-colors"
+                    title="View on Google Maps"
+                  >
+                    <MapPin size={11} strokeWidth={2} />
+                    <span>Map</span>
+                  </a>
+                )}
               </span>
             )}
+
+            {deal.market && <span className="before:content-['·'] before:mr-3">{deal.market}</span>}
             {deal.deal_type && <span className="before:content-['·'] before:mr-3">{deal.deal_type}</span>}
             {deal.source_name && <span className="before:content-['·'] before:mr-3">via {deal.source_name}</span>}
           </div>
