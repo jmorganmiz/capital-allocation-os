@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
+import { MapPin } from 'lucide-react'
 import { Deal, DealStage, KillReason } from '@/lib/types/database'
 import { updateDealStage, killDeal, updateDealOwner } from '@/lib/actions/deals'
 import KillModal from '@/components/pipeline/KillModal'
@@ -59,7 +60,21 @@ export default function DealHeader({ deal, stages, killReasons, currentStage, fi
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">{deal.title}</h1>
           <div className="flex items-center gap-3 mt-2 text-sm text-gray-500 flex-wrap">
-            {deal.market && <span>{deal.market}</span>}
+            {deal.market && (
+              <span className="flex items-center gap-1.5">
+                {deal.market}
+                <a
+                  href={`https://www.google.com/maps/search/?q=${encodeURIComponent(deal.market)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-0.5 text-xs text-gray-400 hover:text-blue-500 transition-colors"
+                  title="View on Google Maps"
+                >
+                  <MapPin size={11} strokeWidth={2} />
+                  <span>Map</span>
+                </a>
+              </span>
+            )}
             {deal.deal_type && <span className="before:content-['·'] before:mr-3">{deal.deal_type}</span>}
             {deal.source_name && <span className="before:content-['·'] before:mr-3">via {deal.source_name}</span>}
           </div>
