@@ -13,6 +13,7 @@ import {
   DEMO_DEAL_OVERALL_SCORES,
   DEMO_DEAL_EVENTS,
 } from '@/lib/demo-data'
+import DemoDealTabs from '@/components/demo/DemoDealTabs'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -93,7 +94,7 @@ export default async function DemoDealPage({ params }: Props) {
       </div>
 
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-6">
         <div className="flex items-start justify-between gap-3">
           <h1 className="text-2xl font-semibold text-gray-900">{deal.title}</h1>
           <span className="flex-shrink-0 mt-1 text-[10px] bg-blue-50 text-blue-600 border border-blue-200 rounded px-1.5 py-0.5 font-medium whitespace-nowrap">
@@ -110,10 +111,53 @@ export default async function DemoDealPage({ params }: Props) {
         </div>
       </div>
 
+      {/* Tab bar */}
+      <DemoDealTabs />
+
       <div className="space-y-8">
+
+        {/* Notes — first */}
+        {notes && (
+          <section id="section-notes" className="space-y-6">
+            {notes.overview && (
+              <div data-tour="notes">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-base font-semibold text-gray-900">Overview</h2>
+                  <DemoLabel />
+                </div>
+                <div className="w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-800 font-mono leading-relaxed whitespace-pre-wrap bg-white min-h-[80px]">
+                  {notes.overview}
+                </div>
+              </div>
+            )}
+            {notes.risks && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-base font-semibold text-gray-900">Risks</h2>
+                  <DemoLabel />
+                </div>
+                <div className="w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-800 font-mono leading-relaxed whitespace-pre-wrap bg-white min-h-[80px]">
+                  {notes.risks}
+                </div>
+              </div>
+            )}
+            {notes.notes && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-base font-semibold text-gray-900">Notes</h2>
+                  <DemoLabel />
+                </div>
+                <div className="w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-800 font-mono leading-relaxed whitespace-pre-wrap bg-white min-h-[80px]">
+                  {notes.notes}
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
         {/* Financial Snapshot */}
         {snapshot && (
-          <section>
+          <section id="section-financials">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-base font-semibold text-gray-900">Financial Snapshot</h2>
               <DemoLabel />
@@ -141,7 +185,7 @@ export default async function DemoDealPage({ params }: Props) {
 
         {/* Underwriting Score */}
         {scoredVals.length > 0 && overallScore !== null && (
-          <section>
+          <section id="section-scoring">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-base font-semibold text-gray-900">Underwriting Score</h2>
               <div className="flex items-center gap-3">
@@ -193,47 +237,8 @@ export default async function DemoDealPage({ params }: Props) {
           </section>
         )}
 
-        {/* Notes */}
-        {notes && (
-          <>
-            {notes.overview && (
-              <section data-tour="notes">
-                <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-base font-semibold text-gray-900">Overview</h2>
-                  <DemoLabel />
-                </div>
-                <div className="w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-800 font-mono leading-relaxed whitespace-pre-wrap bg-white min-h-[80px]">
-                  {notes.overview}
-                </div>
-              </section>
-            )}
-            {notes.risks && (
-              <section>
-                <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-base font-semibold text-gray-900">Risks</h2>
-                  <DemoLabel />
-                </div>
-                <div className="w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-800 font-mono leading-relaxed whitespace-pre-wrap bg-white min-h-[80px]">
-                  {notes.risks}
-                </div>
-              </section>
-            )}
-            {notes.notes && (
-              <section>
-                <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-base font-semibold text-gray-900">Notes</h2>
-                  <DemoLabel />
-                </div>
-                <div className="w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-800 font-mono leading-relaxed whitespace-pre-wrap bg-white min-h-[80px]">
-                  {notes.notes}
-                </div>
-              </section>
-            )}
-          </>
-        )}
-
         {/* Files */}
-        <section>
+        <section id="section-files">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-base font-semibold text-gray-900">Files</h2>
             <Link href="/signup" className="btn-secondary text-sm">+ Upload File</Link>
@@ -246,76 +251,86 @@ export default async function DemoDealPage({ params }: Props) {
         </section>
 
         {/* Contacts */}
-        {linkedContacts.length > 0 && (
-          <section>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base font-semibold text-gray-900">Contacts</h2>
-              <DemoLabel />
-            </div>
-            <div className="border border-gray-200 rounded-lg divide-y divide-gray-100">
-              {linkedContacts.map(dc => {
-                const c = dc.contact
-                if (!c) return null
-                return (
-                  <div key={dc.contact_id} className="flex items-center justify-between px-4 py-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-900">{c.name}</span>
-                        {c.contact_type && (
-                          <span className={`text-xs px-2 py-0.5 rounded font-medium capitalize ${TYPE_COLORS[c.contact_type] ?? ''}`}>
-                            {c.contact_type}
-                          </span>
-                        )}
-                        {dc.is_source && (
-                          <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded font-medium">Source</span>
-                        )}
+        <section id="section-contacts">
+          {linkedContacts.length > 0 && (
+            <>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-base font-semibold text-gray-900">Contacts</h2>
+                <DemoLabel />
+              </div>
+              <div className="border border-gray-200 rounded-lg divide-y divide-gray-100">
+                {linkedContacts.map(dc => {
+                  const c = dc.contact
+                  if (!c) return null
+                  return (
+                    <div key={dc.contact_id} className="flex items-center justify-between px-4 py-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-900">{c.name}</span>
+                          {c.contact_type && (
+                            <span className={`text-xs px-2 py-0.5 rounded font-medium capitalize ${TYPE_COLORS[c.contact_type] ?? ''}`}>
+                              {c.contact_type}
+                            </span>
+                          )}
+                          {dc.is_source && (
+                            <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded font-medium">Source</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-400 mt-0.5">{c.company}</p>
                       </div>
-                      <p className="text-xs text-gray-400 mt-0.5">{c.company}</p>
+                      <span className="text-xs text-gray-400">{c.email}</span>
                     </div>
-                    <span className="text-xs text-gray-400">{c.email}</span>
-                  </div>
-                )
-              })}
+                  )
+                })}
+              </div>
+            </>
+          )}
+          {linkedContacts.length === 0 && (
+            <div>
+              <h2 className="text-base font-semibold text-gray-900 mb-3">Contacts</h2>
+              <p className="text-sm text-gray-400">No contacts linked to this deal.</p>
             </div>
-          </section>
-        )}
+          )}
+        </section>
 
-        {/* Decision Log */}
-        {events.length > 0 && (
-          <section>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold text-gray-900">Decision Log</h2>
-              <DemoLabel />
-            </div>
-            <div className="relative border-l-2 border-gray-100 pl-5 space-y-5">
-              {events.map(event => {
-                const style = EVENT_STYLES[event.event_type] ?? { label: event.event_type, dot: 'bg-gray-300' }
-                return (
-                  <div key={event.id} className="relative">
-                    <div className={`absolute -left-[23px] top-1 w-3 h-3 rounded-full border-2 border-white ${style.dot}`} />
-                    <div className="bg-white border border-gray-100 rounded-lg px-4 py-3">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium text-gray-800">{style.label}</span>
-                        <span className="text-xs text-gray-400">
-                          {formatDistanceToNow(new Date(event.created_at), { addSuffix: true })}
-                        </span>
+        {/* Decision Log / Activity */}
+        <section id="section-activity">
+          {events.length > 0 && (
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-base font-semibold text-gray-900">Decision Log</h2>
+                <DemoLabel />
+              </div>
+              <div className="relative border-l-2 border-gray-100 pl-5 space-y-5">
+                {events.map(event => {
+                  const style = EVENT_STYLES[event.event_type] ?? { label: event.event_type, dot: 'bg-gray-300' }
+                  return (
+                    <div key={event.id} className="relative">
+                      <div className={`absolute -left-[23px] top-1 w-3 h-3 rounded-full border-2 border-white ${style.dot}`} />
+                      <div className="bg-white border border-gray-100 rounded-lg px-4 py-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-medium text-gray-800">{style.label}</span>
+                          <span className="text-xs text-gray-400">
+                            {formatDistanceToNow(new Date(event.created_at), { addSuffix: true })}
+                          </span>
+                        </div>
+                        {event.event_type === 'stage_changed' && event.from_stage && event.to_stage && (
+                          <p className="text-xs text-gray-500 mb-1">
+                            {event.from_stage} → {event.to_stage}
+                          </p>
+                        )}
+                        {event.event_type === 'file_added' && event.notes && (
+                          <p className="text-xs text-gray-500">{event.notes}</p>
+                        )}
+                        <p className="text-xs text-gray-400 mt-1">by {event.actor}</p>
                       </div>
-                      {event.event_type === 'stage_changed' && event.from_stage && event.to_stage && (
-                        <p className="text-xs text-gray-500 mb-1">
-                          {event.from_stage} → {event.to_stage}
-                        </p>
-                      )}
-                      {event.event_type === 'file_added' && event.notes && (
-                        <p className="text-xs text-gray-500">{event.notes}</p>
-                      )}
-                      <p className="text-xs text-gray-400 mt-1">by {event.actor}</p>
                     </div>
-                  </div>
-                )
-              })}
-            </div>
-          </section>
-        )}
+                  )
+                })}
+              </div>
+            </>
+          )}
+        </section>
 
         {/* Sign-up CTA */}
         <div className="bg-gray-900 rounded-xl p-6 text-center">

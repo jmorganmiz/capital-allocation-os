@@ -11,7 +11,8 @@ import {
 } from '@dnd-kit/core'
 import { useDroppable, useDraggable } from '@dnd-kit/core'
 import Link from 'next/link'
-import { DEMO_STAGES } from '@/lib/demo-data'
+import { FileText } from 'lucide-react'
+import { DEMO_STAGES, DEMO_DEAL_NOTES } from '@/lib/demo-data'
 
 type DemoStage = typeof DEMO_STAGES[number]
 type DemoDeal = {
@@ -106,6 +107,22 @@ function DemoDealCard({
         </div>
 
         <div className="flex items-center gap-1.5 flex-shrink-0">
+          {/* Notes indicator */}
+          {(() => {
+            const n = DEMO_DEAL_NOTES[deal.id]
+            const hasNotes = !!(n?.overview || n?.risks || n?.notes)
+            return hasNotes ? (
+              <span title="Has notes" className="relative flex-shrink-0">
+                <FileText size={14} strokeWidth={2} className="text-emerald-500" />
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 border border-white" />
+              </span>
+            ) : (
+              <span title="Add notes" className="flex-shrink-0">
+                <FileText size={13} strokeWidth={1.5} className="text-gray-300" />
+              </span>
+            )
+          })()}
+
           {deal.latest_stage_event_at && (
             <span className="text-xs text-amber-500 font-medium">
               {timeInStage(deal.latest_stage_event_at)}
