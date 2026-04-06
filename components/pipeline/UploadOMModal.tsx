@@ -88,6 +88,9 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
   const [capRate, setCapRate] = useState('')
   const [addBroker, setAddBroker] = useState(false)
 
+  // Storage path set by analyzeFile so handleConfirm can reuse it (avoid double-upload)
+  const [tempStoragePath, setTempStoragePath] = useState<string | null>(null)
+
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -99,19 +102,49 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
     console.log('[OM] analyzeFile called, file:', f.name, f.size, 'bytes')
     setStep('analyzing')
     setParseError(null)
+    setTempStoragePath(null)
     const nameFromFile = cleanFilename(f.name)
     setTitle(nameFromFile)
 
-    const fd = new FormData()
-    fd.append('file', f)
+    // ── Step 1: upload to Supabase Storage (avoids Vercel payload limit) ──
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      setParseError('Not authenticated. Please refresh and try again.')
+      setStep('select')
+      return
+    }
+    const { data: profile } = await supabase.from('profiles').select('firm_id').single()
+    if (!profile) {
+      setParseError('Profile not found. Please refresh and try again.')
+      setStep('select')
+      return
+    }
 
+    const storageKey = `${profile.firm_id}/om-parse/${Date.now()}_${f.name}`
+    console.log('[OM] uploading to storage:', storageKey)
+    const { error: uploadErr } = await supabase.storage.from('deal-files').upload(storageKey, f)
+    if (uploadErr) {
+      console.error('[OM] storage upload failed:', uploadErr.message)
+      setParseError(`Upload failed: ${uploadErr.message}`)
+      setStep('select')
+      return
+    }
+    setTempStoragePath(storageKey)
+    console.log('[OM] storage upload done, calling parse-om API...')
+
+    // ── Step 2: call parse-om with the storage path (no file bytes in body) ──
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 90_000)
 
     let res: Response
     try {
-      console.log('[OM] Calling parse-om API...')
-      res = await fetch('/api/parse-om', { method: 'POST', body: fd, signal: controller.signal })
+      res = await fetch('/api/parse-om', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ storagePath: storageKey }),
+        signal: controller.signal,
+      })
       console.log('[OM] parse-om response status:', res.status, res.ok)
     } catch (err: unknown) {
       clearTimeout(timeoutId)
@@ -193,6 +226,7 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
     setStep('select')
     setParseError(null)
     setError(null)
+    setTempStoragePath(null)
   }
 
   async function handleConfirm() {
@@ -210,12 +244,15 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
     const { data: profile } = await supabase.from('profiles').select('firm_id').single()
     if (!profile) { setError('Profile not found'); setUploading(false); return }
 
-    const storagePath = `${profile.firm_id}/new/${Date.now()}_${file.name}`
-    const { error: storageError } = await supabase.storage
-      .from('deal-files')
-      .upload(storagePath, file)
-
-    if (storageError) { setError(storageError.message); setUploading(false); return }
+    // Reuse the temp path from analyzeFile if available — avoids a second upload
+    let storagePath = tempStoragePath
+    if (!storagePath) {
+      storagePath = `${profile.firm_id}/new/${Date.now()}_${file.name}`
+      const { error: storageError } = await supabase.storage
+        .from('deal-files')
+        .upload(storagePath, file)
+      if (storageError) { setError(storageError.message); setUploading(false); return }
+    }
 
     const capRateNum = capRate ? parseFloat(capRate) / 100 : null
 

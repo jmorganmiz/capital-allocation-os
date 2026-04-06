@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { createAdminClient } from '@/lib/supabase/server'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -44,57 +45,55 @@ function logErr(label: string, err: unknown) {
 }
 
 export async function POST(req: NextRequest) {
-  // Global catch — guarantees we always return JSON, never an HTML error page
   try {
-    return await handleParsOM(req)
+    return await handleParseOM(req)
   } catch (err) {
     logErr('UNHANDLED top-level exception', err)
     return NextResponse.json({ error: 'parse_failed', detail: String(err) }, { status: 500 })
   }
 }
 
-async function handleParsOM(req: NextRequest): Promise<NextResponse> {
+async function handleParseOM(req: NextRequest): Promise<NextResponse> {
   console.log('[parse-om] request received')
-
-  // ── Parse request ──────────────────────────────────────────────────────────
-  let formData: FormData
-  try {
-    formData = await req.formData()
-    console.log('[parse-om] formData keys:', [...formData.keys()])
-  } catch (err) {
-    logErr('formData() failed', err)
-    return NextResponse.json({ error: 'bad_request', detail: 'Could not parse form data' }, { status: 400 })
-  }
-
-  const file = formData.get('file') as File | null
-  if (!file) {
-    console.error('[parse-om] no file in form data')
-    return NextResponse.json({ error: 'No file provided' }, { status: 400 })
-  }
-  console.log('[parse-om] file:', file.name, 'size:', file.size, 'type:', file.type)
 
   if (!process.env.ANTHROPIC_API_KEY) {
     console.error('[parse-om] ANTHROPIC_API_KEY not set')
     return NextResponse.json({ error: 'api_key_missing' }, { status: 503 })
   }
 
-  let buffer: Buffer
+  // ── Parse JSON body: { storagePath, bucket? } ─────────────────────────────
+  let body: { storagePath?: string; bucket?: string }
   try {
-    const bytes = await file.arrayBuffer()
-    buffer = Buffer.from(bytes)
-    console.log('[parse-om] buffer ready, bytes:', buffer.length)
+    body = await req.json()
+    console.log('[parse-om] body:', body)
   } catch (err) {
-    logErr('arrayBuffer() failed', err)
-    return NextResponse.json({ error: 'read_failed' }, { status: 500 })
+    logErr('req.json() failed', err)
+    return NextResponse.json({ error: 'bad_request', detail: 'Expected JSON body with storagePath' }, { status: 400 })
   }
 
-  let client: Anthropic
-  try {
-    client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-  } catch (err) {
-    logErr('Anthropic client init failed', err)
-    return NextResponse.json({ error: 'parse_failed' }, { status: 500 })
+  const { storagePath, bucket = 'deal-files' } = body
+  if (!storagePath) {
+    console.error('[parse-om] storagePath missing from body')
+    return NextResponse.json({ error: 'bad_request', detail: 'storagePath is required' }, { status: 400 })
   }
+  console.log('[parse-om] storagePath:', storagePath, 'bucket:', bucket)
+
+  // ── Download file from Supabase Storage ───────────────────────────────────
+  let buffer: Buffer
+  try {
+    const supabase = createAdminClient()
+    const { data, error } = await supabase.storage.from(bucket).download(storagePath)
+    if (error) throw error
+    const bytes = await data.arrayBuffer()
+    buffer = Buffer.from(bytes)
+    console.log('[parse-om] downloaded from storage, bytes:', buffer.length)
+  } catch (err) {
+    logErr('storage download failed', err)
+    const detail = err instanceof Error ? err.message : String(err)
+    return NextResponse.json({ error: 'storage_error', detail }, { status: 500 })
+  }
+
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
   // ── Path 1: text-based PDF ────────────────────────────────────────────────
   let text = ''
@@ -126,21 +125,20 @@ async function handleParsOM(req: NextRequest): Promise<NextResponse> {
           },
         ],
       })
-
-      console.log('[parse-om] text path response, stop_reason:', message.stop_reason)
+      console.log('[parse-om] text path stop_reason:', message.stop_reason)
       const responseText = message.content[0].type === 'text' ? message.content[0].text : ''
-      console.log('[parse-om] text path raw response (first 200 chars):', responseText.slice(0, 200))
+      console.log('[parse-om] text path response (first 200):', responseText.slice(0, 200))
       const parsed = extractJSON(responseText)
       if (parsed) {
         console.log('[parse-om] text path success')
         return NextResponse.json({ data: parsed })
       }
-      console.warn('[parse-om] text path: extractJSON returned null, falling through to vision')
+      console.warn('[parse-om] text path: extractJSON null, falling through to vision')
     } catch (err) {
       logErr('text path Claude call failed — falling through to vision', err)
     }
   } else {
-    console.log('[parse-om] text too short or empty (length:', text.trim().length, '), skipping text path')
+    console.log('[parse-om] text too short/empty (length:', text.trim().length, '), skipping text path')
   }
 
   // ── Path 2: vision fallback for scanned / image-based PDFs ───────────────
@@ -157,11 +155,7 @@ async function handleParsOM(req: NextRequest): Promise<NextResponse> {
 
     const docBlock: Anthropic.Beta.Messages.BetaRequestDocumentBlock = {
       type: 'document',
-      source: {
-        type: 'base64',
-        media_type: 'application/pdf',
-        data: base64,
-      },
+      source: { type: 'base64', media_type: 'application/pdf', data: base64 },
     }
     const textBlock: Anthropic.Beta.Messages.BetaTextBlockParam = {
       type: 'text',
@@ -172,30 +166,24 @@ async function handleParsOM(req: NextRequest): Promise<NextResponse> {
       {
         model: 'claude-sonnet-4-20250514',
         max_tokens: 1024,
-        messages: [
-          {
-            role: 'user',
-            content: [docBlock, textBlock],
-          },
-        ],
+        messages: [{ role: 'user', content: [docBlock, textBlock] }],
       },
       { headers: { 'anthropic-beta': 'pdfs-2024-09-25' } },
     )
 
-    console.log('[parse-om] vision path response, stop_reason:', message.stop_reason)
+    console.log('[parse-om] vision path stop_reason:', message.stop_reason)
     const responseText = message.content[0].type === 'text' ? message.content[0].text : ''
-    console.log('[parse-om] vision path raw response (first 200 chars):', responseText.slice(0, 200))
+    console.log('[parse-om] vision path response (first 200):', responseText.slice(0, 200))
     const parsed = extractJSON(responseText)
     if (parsed) {
       console.log('[parse-om] vision path success')
       return NextResponse.json({ data: parsed, via: 'vision' })
     }
 
-    console.warn('[parse-om] vision path: extractJSON returned null')
+    console.warn('[parse-om] vision path: extractJSON null')
     return NextResponse.json({ error: 'parse_failed' }, { status: 500 })
   } catch (err) {
     logErr('vision path Claude call failed', err)
-    const detail = err instanceof Error ? err.message : String(err)
-    return NextResponse.json({ error: 'parse_failed', detail }, { status: 500 })
+    return NextResponse.json({ error: 'parse_failed', detail: String(err) }, { status: 500 })
   }
 }
