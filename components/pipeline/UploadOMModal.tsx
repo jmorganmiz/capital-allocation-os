@@ -142,8 +142,8 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
     if (!res.ok || json.error) {
       console.warn('[OM] API returned error:', json.error, '| status:', res.status)
       const msg =
-        json.error === 'image_based_pdf'
-          ? "This PDF appears to be image-based (scanned) and couldn't be read automatically. Please fill in details manually."
+        json.error === 'pdf_too_large'
+          ? 'This PDF is too large to analyze automatically (max 20 MB). Please fill in details manually.'
           : json.error === 'api_key_missing'
           ? 'AI extraction is not configured on this server. Please fill in details manually.'
           : "Couldn't extract data automatically — please fill in manually."
