@@ -204,6 +204,7 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
       try {
         const result = await createDealFromOM({
           title:       title.trim(),
+          address:     parsedOM?.address ?? null,
           market:      market.trim() || null,
           deal_type:   dealType.trim() || null,
           source_name: sourceName.trim() || null,

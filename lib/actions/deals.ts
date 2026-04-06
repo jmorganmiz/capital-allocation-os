@@ -330,6 +330,7 @@ export async function createDealFromUpload({
 
 export async function createDealFromOM(params: {
   title: string
+  address: string | null
   market: string | null
   deal_type: string | null
   source_name: string | null
@@ -364,10 +365,12 @@ export async function createDealFromOM(params: {
     .insert({
       firm_id:       profile.firm_id,
       title:         params.title,
+      address:       params.address,
       market:        params.market,
       deal_type:     params.deal_type,
       source_type:   params.source_name ? 'Broker' : null,
       source_name:   params.source_name,
+      asking_price:  params.financials.asking_price,
       stage_id:      params.stageId,
       owner_user_id: user.id,
       intake_type:   'upload',
