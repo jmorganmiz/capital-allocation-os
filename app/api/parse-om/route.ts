@@ -56,8 +56,12 @@ export async function POST(req: NextRequest) {
 async function handleParseOM(req: NextRequest): Promise<NextResponse> {
   console.log('[parse-om] request received')
 
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.error('[parse-om] ANTHROPIC_API_KEY not set')
+  const anthropicKey = (process.env.ANTHROPIC_API_KEY ?? '').trim()
+  console.log('[parse-om] ANTHROPIC_API_KEY present:', !!anthropicKey,
+    '| length:', anthropicKey.length,
+    '| prefix:', anthropicKey.slice(0, 7))
+  if (!anthropicKey) {
+    console.error('[parse-om] ANTHROPIC_API_KEY not set or empty')
     return NextResponse.json({ error: 'api_key_missing' }, { status: 503 })
   }
 
@@ -93,7 +97,7 @@ async function handleParseOM(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'storage_error', detail }, { status: 500 })
   }
 
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  const client = new Anthropic({ apiKey: anthropicKey })
 
   // ── Path 1: text-based PDF ────────────────────────────────────────────────
   let text = ''
