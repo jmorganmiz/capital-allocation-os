@@ -51,6 +51,16 @@ function parseCurrency(val: string): number | null {
   return isNaN(num) ? null : num
 }
 
+function cleanFilename(filename: string): string {
+  return filename
+    .replace(/\.pdf$/i, '')          // strip extension
+    .replace(/[-_]/g, ' ')           // dashes/underscores → spaces
+    .replace(/\bOM\b/gi, '')         // remove standalone "OM"
+    .replace(/\s*\([^)]*\)\s*/g, ' ')// remove (Interactive) and similar
+    .replace(/\s+/g, ' ')            // collapse multiple spaces
+    .trim()
+}
+
 function buildSnapshotNotes(data: ParsedOM): string | null {
   const parts: string[] = []
   if (data.square_footage) parts.push(`${data.square_footage.toLocaleString()} SF`)
@@ -89,23 +99,33 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
     console.log('[OM] analyzeFile called, file:', f.name, f.size, 'bytes')
     setStep('analyzing')
     setParseError(null)
-    const nameFromFile = f.name.replace(/\.pdf$/i, '').replace(/[-_]/g, ' ')
+    const nameFromFile = cleanFilename(f.name)
     setTitle(nameFromFile)
 
     const fd = new FormData()
     fd.append('file', f)
 
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 90_000)
+
     let res: Response
     try {
       console.log('[OM] Calling parse-om API...')
-      res = await fetch('/api/parse-om', { method: 'POST', body: fd })
+      res = await fetch('/api/parse-om', { method: 'POST', body: fd, signal: controller.signal })
       console.log('[OM] parse-om response status:', res.status, res.ok)
-    } catch (err) {
-      console.error('[OM] fetch failed (network error):', err)
-      setParseError("Couldn't reach the server. Check your connection and try again.")
+    } catch (err: unknown) {
+      clearTimeout(timeoutId)
+      if (err instanceof Error && err.name === 'AbortError') {
+        console.warn('[OM] fetch timed out')
+        setParseError("AI analysis timed out — the PDF may be too large. Please fill in details manually.")
+      } else {
+        console.error('[OM] fetch failed (network error):', err)
+        setParseError("Couldn't reach the server. Check your connection and try again.")
+      }
       setStep('select')
       return
     }
+    clearTimeout(timeoutId)
 
     // Parse JSON separately so a non-JSON response (HTML error page) is caught cleanly
     let json: { data?: ParsedOM; error?: string }
