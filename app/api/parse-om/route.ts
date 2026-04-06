@@ -5,8 +5,11 @@ import { createAdminClient } from '@/lib/supabase/server'
 export const runtime = 'nodejs'
 export const maxDuration = 60
 
-// Max PDF size we'll send to the vision API (20 MB)
-const MAX_VISION_BYTES = 20 * 1024 * 1024
+// Max PDF size we'll send to the vision API (50 MB).
+// Note: Anthropic's pdfs-2024-09-25 beta accepts up to ~32 MB raw;
+// files above that will fail in the vision path with parse_failed.
+// Text-based PDFs have no effective size limit (text is truncated to 15k chars).
+const MAX_VISION_BYTES = 50 * 1024 * 1024
 
 const EXTRACTION_PROMPT = `You are a real estate data extraction assistant. Extract key deal data from the following offering memorandum and respond with ONLY a valid JSON object using exactly these keys:
 
