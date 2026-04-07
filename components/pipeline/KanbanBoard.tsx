@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useMemo } from 'react'
 import {
   DndContext,
   DragEndEvent,
@@ -9,7 +9,7 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core'
-import { Deal, DealStage, KillReason } from '@/lib/types/database'
+import { Deal, DealStage, KillReason, StageChecklistItem } from '@/lib/types/database'
 import { updateDealStage, killDeal } from '@/lib/actions/deals'
 import DealColumn from './DealColumn'
 import DealCard from './DealCard'
@@ -17,19 +17,37 @@ import KillModal from './KillModal'
 import MoveSheet from './MoveSheet'
 import CreateDealModal from './CreateDealModal'
 import UploadOMModal from './UploadOMModal'
+import ChecklistWarningModal from './ChecklistWarningModal'
+
+interface PendingMove {
+  deal: Deal
+  newStageId: string
+  oldStageId: string
+  incompleteItems: StageChecklistItem[]
+}
 
 interface Props {
   initialStages: DealStage[]
   initialDeals: (Deal & { owner?: { full_name: string | null } | null, latest_stage_event_at?: string | null })[]
   killReasons: KillReason[]
   currentUserId: string
+  checklistItems: Pick<StageChecklistItem, 'id' | 'stage_id' | 'name' | 'position'>[]
+  dealProgress: { deal_id: string; checklist_item_id: string }[]
 }
 
-export default function KanbanBoard({ initialStages, initialDeals, killReasons, currentUserId }: Props) {
+export default function KanbanBoard({
+  initialStages,
+  initialDeals,
+  killReasons,
+  currentUserId,
+  checklistItems,
+  dealProgress,
+}: Props) {
   const [deals, setDeals] = useState(initialDeals)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [killTarget, setKillTarget] = useState<Deal | null>(null)
   const [moveTarget, setMoveTarget] = useState<Deal | null>(null)
+  const [pendingMove, setPendingMove] = useState<PendingMove | null>(null)
   const [showCreate, setShowCreate] = useState(false)
   const [showUploadOM, setShowUploadOM] = useState(false)
   const [isPending, startTransition] = useTransition()
@@ -41,6 +59,16 @@ export default function KanbanBoard({ initialStages, initialDeals, killReasons, 
   const activeStages = initialStages.filter(s => s.name !== 'Killed')
   const activeDeal = activeId ? deals.find(d => d.id === activeId) : null
 
+  // Build deal_id → Set<checklist_item_id> for fast incomplete lookups
+  const progressMap = useMemo(() => {
+    const m = new Map<string, Set<string>>()
+    for (const p of dealProgress) {
+      if (!m.has(p.deal_id)) m.set(p.deal_id, new Set())
+      m.get(p.deal_id)!.add(p.checklist_item_id)
+    }
+    return m
+  }, [dealProgress])
+
   function applyStageMove(dealId: string, newStageId: string, oldStageId: string) {
     setDeals(prev => prev.map(d =>
       d.id === dealId
@@ -48,6 +76,19 @@ export default function KanbanBoard({ initialStages, initialDeals, killReasons, 
         : d
     ))
     startTransition(async () => { await updateDealStage(dealId, newStageId, oldStageId) })
+  }
+
+  // Check for incomplete checklist items; show warning or proceed immediately
+  function checkAndMove(deal: Deal, newStageId: string, oldStageId: string) {
+    const stageItems = checklistItems.filter(i => i.stage_id === oldStageId)
+    const completed = progressMap.get(deal.id) ?? new Set<string>()
+    const incomplete = stageItems.filter(i => !completed.has(i.id))
+
+    if (incomplete.length > 0) {
+      setPendingMove({ deal, newStageId, oldStageId, incompleteItems: incomplete as StageChecklistItem[] })
+    } else {
+      applyStageMove(deal.id, newStageId, oldStageId)
+    }
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -65,7 +106,7 @@ export default function KanbanBoard({ initialStages, initialDeals, killReasons, 
       return
     }
 
-    applyStageMove(deal.id, newStageId, deal.stage_id ?? '')
+    checkAndMove(deal, newStageId, deal.stage_id ?? '')
   }
 
   function handleKillConfirm(killReasonId: string, notes: string) {
@@ -123,7 +164,10 @@ export default function KanbanBoard({ initialStages, initialDeals, killReasons, 
         <MoveSheet
           deal={moveTarget}
           stages={activeStages}
-          onMove={(newStageId, oldStageId) => applyStageMove(moveTarget.id, newStageId, oldStageId)}
+          onMove={(newStageId, oldStageId) => {
+            setMoveTarget(null)
+            checkAndMove(moveTarget, newStageId, oldStageId)
+          }}
           onClose={() => setMoveTarget(null)}
         />
       )}
@@ -134,6 +178,19 @@ export default function KanbanBoard({ initialStages, initialDeals, killReasons, 
           killReasons={killReasons}
           onConfirm={handleKillConfirm}
           onCancel={() => setKillTarget(null)}
+        />
+      )}
+
+      {pendingMove && (
+        <ChecklistWarningModal
+          dealTitle={pendingMove.deal.title}
+          stageName={initialStages.find(s => s.id === pendingMove.oldStageId)?.name ?? ''}
+          incompleteItems={pendingMove.incompleteItems}
+          onProceed={() => {
+            applyStageMove(pendingMove.deal.id, pendingMove.newStageId, pendingMove.oldStageId)
+            setPendingMove(null)
+          }}
+          onCancel={() => setPendingMove(null)}
         />
       )}
 

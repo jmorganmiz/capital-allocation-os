@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import DealHeader from '@/components/deal/DealHeader'
 import DealTabs from '@/components/deal/DealTabs'
+import StageChecklist from '@/components/deal/StageChecklist'
 import NotesSection from '@/components/deal/NotesSection'
 import FilesSection from '@/components/deal/FilesSection'
 import DecisionLog from '@/components/deal/DecisionLog'
@@ -52,6 +53,15 @@ export default async function DealPage({ params }: Props) {
       .eq('deal_id', id),
   ])
 
+  // Checklist for the current stage (fetched after deal is known)
+  const dealStageId = deal?.stage_id ?? null
+  const [{ data: checklistItems }, { data: checklistProgress }] = await Promise.all([
+    dealStageId
+      ? supabase.from('stage_checklist_items').select('*').eq('stage_id', dealStageId).order('position')
+      : Promise.resolve({ data: [] }),
+    supabase.from('deal_checklist_progress').select('checklist_item_id').eq('deal_id', id),
+  ])
+
   const [scoringCriteriaResult, dealScoresResult] = await Promise.all([
     getScoringCriteria(),
     getDealScores(id),
@@ -83,6 +93,16 @@ export default async function DealPage({ params }: Props) {
       <DealTabs />
 
       <div className="space-y-8">
+        {/* Stage Checklist */}
+        {(checklistItems ?? []).length > 0 && currentStage && !deal.is_archived && (
+          <StageChecklist
+            dealId={deal.id}
+            stageName={currentStage.name}
+            items={checklistItems ?? []}
+            initialCompletedIds={(checklistProgress ?? []).map(p => p.checklist_item_id)}
+          />
+        )}
+
         {/* Notes */}
         <section id="section-notes" className="space-y-6">
           <NotesSection

@@ -12,7 +12,12 @@
       "Bash(kill:*)",
       "Bash(node:*)",
       "Bash(notepad:*)",
-      "Bash(npm i:*)"
+      "Bash(npm i:*)",
+      "Bash(start \"\" \"C:\\\\Users\\\\jmorg\\\\capital-allocation-os\\\\.env.local\")",
+      "Bash(cd \"C:\\\\Users\\\\jmorg\\\\capital-allocation-os\" && find node_modules/stripe/types -name \"*.d.ts\" | xargs grep -l \"current_period_end\" 2>/dev/null | head -5)",
+      "Bash(npx tsc:*)",
+      "Bash(git add:*)",
+      "Bash(git push:*)"
     ]
   }
 }

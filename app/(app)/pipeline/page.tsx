@@ -10,6 +10,8 @@ export default async function PipelinePage() {
     { data: stages },
     { data: killReasons },
     { data: rawDeals },
+    { data: checklistItems },
+    { data: dealProgress },
   ] = await Promise.all([
     supabase.from('deal_stages').select('*').order('position'),
     supabase.from('kill_reasons').select('*').order('position'),
@@ -23,6 +25,8 @@ export default async function PipelinePage() {
       `)
       .eq('is_archived', false)
       .order('created_at', { ascending: false }),
+    supabase.from('stage_checklist_items').select('id, stage_id, name, position').order('position'),
+    supabase.from('deal_checklist_progress').select('deal_id, checklist_item_id'),
   ])
 
   // Get latest stage_changed event per deal for time-in-stage
@@ -57,6 +61,8 @@ export default async function PipelinePage() {
           initialDeals={deals ?? []}
           killReasons={killReasons ?? []}
           currentUserId={user?.id ?? ''}
+          checklistItems={checklistItems ?? []}
+          dealProgress={dealProgress ?? []}
         />
       </div>
     </div>

@@ -139,6 +139,28 @@ export interface Database {
         }
         Update: { is_source?: boolean }
       }
+      stage_checklist_items: {
+        Row: {
+          id: string; firm_id: string; stage_id: string
+          name: string; position: number; created_at: string
+        }
+        Insert: {
+          id?: string; firm_id: string; stage_id: string
+          name: string; position?: number
+        }
+        Update: { name?: string; position?: number }
+      }
+      deal_checklist_progress: {
+        Row: {
+          id: string; deal_id: string; checklist_item_id: string
+          firm_id: string; completed_by: string; completed_at: string
+        }
+        Insert: {
+          id?: string; deal_id: string; checklist_item_id: string
+          firm_id: string; completed_by: string
+        }
+        Update: never
+      }
       deal_financial_snapshots: {
         Row: {
           id: string; deal_id: string; firm_id: string; version: number
@@ -174,3 +196,5 @@ export type Contact = Database['public']['Tables']['contacts']['Row']
 export type DealContact = Database['public']['Tables']['deal_contacts']['Row']
 export type ScoringCriteria = Database['public']['Tables']['scoring_criteria']['Row']
 export type DealScore = Database['public']['Tables']['deal_scores']['Row']
+export type StageChecklistItem = Database['public']['Tables']['stage_checklist_items']['Row']
+export type DealChecklistProgress = Database['public']['Tables']['deal_checklist_progress']['Row']

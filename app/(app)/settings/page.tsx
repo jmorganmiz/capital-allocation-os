@@ -48,12 +48,14 @@ export default async function SettingsPage({ searchParams }: Props) {
     { data: killReasons },
     { data: members },
     { data: invites },
+    { data: checklistItems },
     scoringResult,
   ] = await Promise.all([
     supabase.from('deal_stages').select('*').order('position'),
     supabase.from('kill_reasons').select('*').order('position'),
     supabase.from('profiles').select('id, full_name, email, role, created_at').eq('firm_id', firmId),
     supabase.from('invites').select('id, email, created_at, accepted_at').eq('firm_id', firmId).order('created_at', { ascending: false }),
+    supabase.from('stage_checklist_items').select('*').order('position'),
     getAllScoringCriteria(),
   ])
 
@@ -80,7 +82,7 @@ export default async function SettingsPage({ searchParams }: Props) {
         invites={invites ?? []}
         firmName={firmName}
       />
-      <StagesSettings stages={stages ?? []} />
+      <StagesSettings stages={stages ?? []} checklistItems={checklistItems ?? []} />
       <KillReasonsSettings killReasons={killReasons ?? []} />
       <ScoringCriteriaSettings criteria={(scoringResult.criteria ?? []) as any} />
     </div>
