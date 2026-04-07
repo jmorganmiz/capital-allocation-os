@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import {
   DndContext,
   DragEndEvent,
@@ -12,7 +12,8 @@ import {
 import { useDroppable, useDraggable } from '@dnd-kit/core'
 import Link from 'next/link'
 import { FileText } from 'lucide-react'
-import { DEMO_STAGES, DEMO_DEAL_NOTES } from '@/lib/demo-data'
+import { DEMO_STAGES, DEMO_DEAL_NOTES, DEMO_CHECKLIST_ITEMS, DEMO_CHECKLIST_PROGRESS } from '@/lib/demo-data'
+import ChecklistWarningModal from '@/components/pipeline/ChecklistWarningModal'
 
 type DemoStage = typeof DEMO_STAGES[number]
 type DemoDeal = {
@@ -286,6 +287,13 @@ function SignupNudge({ message, onClose }: { message: string; onClose: () => voi
   )
 }
 
+interface PendingMove {
+  deal: DemoDeal
+  newStageId: string
+  oldStageId: string
+  incompleteItems: { id: string; name: string; position: number }[]
+}
+
 // ── Main Demo Board ────────────────────────────────────────────────
 interface Props {
   initialDeals: DemoDeal[]
@@ -298,6 +306,16 @@ export default function DemoKanbanBoard({ initialDeals, searchQuery = '' }: Prop
   const [moveTarget, setMoveTarget] = useState<DemoDeal | null>(null)
   const [nudgeMessage, setNudgeMessage] = useState<string | null>(null)
   const [showSaveNudge, setShowSaveNudge] = useState(false)
+  const [pendingMove, setPendingMove] = useState<PendingMove | null>(null)
+
+  // Build deal_id → Set<checklist_item_id> for fast incomplete lookups
+  const progressMap = useMemo(() => {
+    const m = new Map<string, Set<string>>()
+    for (const [dealId, completedIds] of Object.entries(DEMO_CHECKLIST_PROGRESS)) {
+      m.set(dealId, new Set(completedIds))
+    }
+    return m
+  }, [])
 
   const sensors = useSensors(useSensor(PointerSensor, {
     activationConstraint: { distance: 8 },
@@ -326,6 +344,17 @@ export default function DemoKanbanBoard({ initialDeals, searchQuery = '' }: Prop
     setTimeout(() => setShowSaveNudge(false), 4000)
   }
 
+  function checkAndMove(deal: DemoDeal, newStageId: string, oldStageId: string) {
+    const stageItems = DEMO_CHECKLIST_ITEMS[oldStageId] ?? []
+    const completed = progressMap.get(deal.id) ?? new Set<string>()
+    const incomplete = stageItems.filter(i => !completed.has(i.id))
+    if (incomplete.length > 0) {
+      setPendingMove({ deal, newStageId, oldStageId, incompleteItems: incomplete })
+    } else {
+      moveDeal(deal.id, newStageId)
+    }
+  }
+
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
     setActiveId(null)
@@ -333,7 +362,7 @@ export default function DemoKanbanBoard({ initialDeals, searchQuery = '' }: Prop
     const deal = deals.find(d => d.id === active.id)
     const newStageId = over.id as string
     if (!deal || deal.stage_id === newStageId) return
-    moveDeal(deal.id, newStageId)
+    checkAndMove(deal, newStageId, deal.stage_id ?? '')
   }
 
   return (
@@ -388,8 +417,24 @@ export default function DemoKanbanBoard({ initialDeals, searchQuery = '' }: Prop
         <MoveSheet
           deal={moveTarget}
           stages={activeStages}
-          onMove={stageId => moveDeal(moveTarget.id, stageId)}
+          onMove={stageId => {
+            setMoveTarget(null)
+            checkAndMove(moveTarget, stageId, moveTarget.stage_id ?? '')
+          }}
           onClose={() => setMoveTarget(null)}
+        />
+      )}
+
+      {pendingMove && (
+        <ChecklistWarningModal
+          dealTitle={pendingMove.deal.title}
+          stageName={DEMO_STAGES.find(s => s.id === pendingMove.oldStageId)?.name ?? ''}
+          incompleteItems={pendingMove.incompleteItems as any}
+          onProceed={() => {
+            moveDeal(pendingMove.deal.id, pendingMove.newStageId)
+            setPendingMove(null)
+          }}
+          onCancel={() => setPendingMove(null)}
         />
       )}
 

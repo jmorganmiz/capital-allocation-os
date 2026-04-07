@@ -13,6 +13,8 @@ import {
   DEMO_DEAL_SCORES,
   DEMO_DEAL_OVERALL_SCORES,
   DEMO_DEAL_EVENTS,
+  DEMO_CHECKLIST_ITEMS,
+  DEMO_CHECKLIST_PROGRESS,
 } from '@/lib/demo-data'
 import DemoDealTabs from '@/components/demo/DemoDealTabs'
 
@@ -70,6 +72,8 @@ export default async function DemoDealPage({ params }: Props) {
   if (!deal) notFound()
 
   const stage = getDemoStage(deal.stage_id ?? '')
+  const checklistItems = DEMO_CHECKLIST_ITEMS[deal.stage_id ?? ''] ?? []
+  const completedChecklistIds = new Set(DEMO_CHECKLIST_PROGRESS[id] ?? [])
   const snapshot = DEMO_DEAL_SNAPSHOTS[id] ?? null
   const notes = DEMO_DEAL_NOTES[id] ?? null
   const linkedContacts = (DEMO_DEAL_CONTACTS[id] ?? []).map(dc => ({
@@ -130,6 +134,50 @@ export default async function DemoDealPage({ params }: Props) {
       <DemoDealTabs />
 
       <div className="space-y-8">
+
+        {/* Stage Checklist */}
+        {checklistItems.length > 0 && (
+          <section id="section-checklist">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h2 className="text-sm font-semibold text-gray-900">Stage Checklist</h2>
+                <p className="text-xs text-gray-400 mt-0.5">{stage?.name}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <DemoLabel />
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                  checklistItems.every(i => completedChecklistIds.has(i.id))
+                    ? 'bg-green-50 text-green-700'
+                    : 'bg-gray-100 text-gray-500'
+                }`}>
+                  {checklistItems.filter(i => completedChecklistIds.has(i.id)).length} of {checklistItems.length} complete
+                </span>
+              </div>
+            </div>
+            <div className="border border-gray-200 rounded-lg divide-y divide-gray-100">
+              {checklistItems.map(item => {
+                const done = completedChecklistIds.has(item.id)
+                return (
+                  <div key={item.id} className={`flex items-center gap-3 px-4 py-3 ${done ? 'bg-gray-50' : ''}`}>
+                    <div className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center ${done ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
+                      {done && (
+                        <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                    <span className={`text-sm ${done ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                      {item.name}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+            <p className="text-xs text-gray-400 mt-2">
+              <Link href="/signup" className="text-blue-600 hover:underline">Sign up</Link> to configure your own stage checklists and track completion.
+            </p>
+          </section>
+        )}
 
         {/* Notes — first */}
         {notes && (

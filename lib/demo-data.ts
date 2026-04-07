@@ -501,6 +501,36 @@ export const DEMO_KILL_BREAKDOWN = [
 
 export const DEMO_TOTAL_KILLED = DEMO_KILL_BREAKDOWN.reduce((sum, r) => sum + r.count, 0)
 
+export const DEMO_CHECKLIST_ITEMS: Record<string, { id: string; name: string; position: number }[]> = {
+  'stage-screening': [
+    { id: 'ci-s-1', name: 'Review offering memorandum', position: 0 },
+    { id: 'ci-s-2', name: 'Run comparable sales analysis', position: 1 },
+    { id: 'ci-s-3', name: 'Confirm market vacancy and rent data', position: 2 },
+  ],
+  'stage-loi': [
+    { id: 'ci-l-1', name: 'Complete underwriting model', position: 0 },
+    { id: 'ci-l-2', name: 'Schedule and complete site visit', position: 1 },
+    { id: 'ci-l-3', name: 'Confirm debt terms with lender', position: 2 },
+  ],
+  'stage-due-diligence': [
+    { id: 'ci-dd-1', name: 'Order Phase I environmental report', position: 0 },
+    { id: 'ci-dd-2', name: 'Review and verify rent rolls', position: 1 },
+    { id: 'ci-dd-3', name: 'Complete legal review and title search', position: 2 },
+    { id: 'ci-dd-4', name: 'Finalize financing and term sheet', position: 3 },
+  ],
+}
+
+export const DEMO_CHECKLIST_PROGRESS: Record<string, string[]> = {
+  'deal-sunset-ridge':          ['ci-s-1'],
+  'deal-harbor-view':           ['ci-l-1', 'ci-l-2'],
+  'deal-riverfront':            ['ci-dd-1', 'ci-dd-2'],
+  'deal-cascade':               ['ci-dd-1'],
+  'deal-maplewood':             ['ci-s-1', 'ci-s-2'],
+  'deal-grand-hotel':           [],
+  'deal-lakeview-commons':      [],
+  'deal-thornton-business-park':[],
+}
+
 export function getDemoDeal(id: string) {
   return DEMO_DEALS.find(d => d.id === id) ?? null
 }
