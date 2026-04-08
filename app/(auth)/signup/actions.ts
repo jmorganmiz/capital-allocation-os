@@ -84,12 +84,12 @@ export async function signUpAction(prevState: any, formData: FormData) {
     }
 
     const { data: seededStages } = await adminClient.from('deal_stages').insert([
-      { firm_id: firm.id, name: 'New', position: 0, is_terminal: false },
-      { firm_id: firm.id, name: 'Screening', position: 1, is_terminal: false },
-      { firm_id: firm.id, name: 'Underwriting', position: 2, is_terminal: false },
-      { firm_id: firm.id, name: 'LOI', position: 3, is_terminal: false },
-      { firm_id: firm.id, name: 'Closed', position: 4, is_terminal: true },
-      { firm_id: firm.id, name: 'Killed', position: 5, is_terminal: true },
+      { firm_id: firm.id, name: 'New',           position: 0, is_terminal: false },
+      { firm_id: firm.id, name: 'Screening',     position: 1, is_terminal: false },
+      { firm_id: firm.id, name: 'LOI',           position: 2, is_terminal: false },
+      { firm_id: firm.id, name: 'Due Diligence', position: 3, is_terminal: false },
+      { firm_id: firm.id, name: 'Closed',        position: 4, is_terminal: true  },
+      { firm_id: firm.id, name: 'Killed',        position: 5, is_terminal: true  },
     ]).select()
 
     if (seededStages) {
@@ -100,18 +100,18 @@ export async function signUpAction(prevState: any, formData: FormData) {
         { firm_id: firm.id, stage_id: stageId('Screening'), name: 'Run comparable sales analysis', position: 1 },
         { firm_id: firm.id, stage_id: stageId('Screening'), name: 'Confirm market vacancy and rent data', position: 2 },
         { firm_id: firm.id, stage_id: stageId('Screening'), name: 'IC go / no-go decision', position: 3 },
-        // Underwriting
-        { firm_id: firm.id, stage_id: stageId('Underwriting'), name: 'Build full underwriting model', position: 0 },
-        { firm_id: firm.id, stage_id: stageId('Underwriting'), name: 'Complete site visit', position: 1 },
-        { firm_id: firm.id, stage_id: stageId('Underwriting'), name: 'Size debt and confirm lender terms', position: 2 },
-        { firm_id: firm.id, stage_id: stageId('Underwriting'), name: 'IC approval to proceed', position: 3 },
         // LOI
-        { firm_id: firm.id, stage_id: stageId('LOI'), name: 'Order Phase I environmental report', position: 0 },
-        { firm_id: firm.id, stage_id: stageId('LOI'), name: 'Complete property condition assessment', position: 1 },
-        { firm_id: firm.id, stage_id: stageId('LOI'), name: 'Verify rent rolls and lease abstracts', position: 2 },
-        { firm_id: firm.id, stage_id: stageId('LOI'), name: 'Review title and survey', position: 3 },
-        { firm_id: firm.id, stage_id: stageId('LOI'), name: 'Finalize loan commitment', position: 4 },
-        { firm_id: firm.id, stage_id: stageId('LOI'), name: 'IC final approval', position: 5 },
+        { firm_id: firm.id, stage_id: stageId('LOI'), name: 'Build full underwriting model', position: 0 },
+        { firm_id: firm.id, stage_id: stageId('LOI'), name: 'Complete site visit', position: 1 },
+        { firm_id: firm.id, stage_id: stageId('LOI'), name: 'Size debt and confirm lender terms', position: 2 },
+        { firm_id: firm.id, stage_id: stageId('LOI'), name: 'IC approval to proceed', position: 3 },
+        // Due Diligence
+        { firm_id: firm.id, stage_id: stageId('Due Diligence'), name: 'Order Phase I environmental report', position: 0 },
+        { firm_id: firm.id, stage_id: stageId('Due Diligence'), name: 'Complete property condition assessment', position: 1 },
+        { firm_id: firm.id, stage_id: stageId('Due Diligence'), name: 'Verify rent rolls and lease abstracts', position: 2 },
+        { firm_id: firm.id, stage_id: stageId('Due Diligence'), name: 'Review title and survey', position: 3 },
+        { firm_id: firm.id, stage_id: stageId('Due Diligence'), name: 'Finalize loan commitment', position: 4 },
+        { firm_id: firm.id, stage_id: stageId('Due Diligence'), name: 'IC final approval', position: 5 },
       ].filter(r => r.stage_id)
       await adminClient.from('stage_checklist_items').insert(checklistRows)
     }
