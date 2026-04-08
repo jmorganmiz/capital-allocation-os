@@ -225,7 +225,7 @@ export default async function DemoDealPage({ params }: Props) {
               <h2 className="text-base font-semibold text-gray-900">Financial Snapshot</h2>
               <DemoLabel />
             </div>
-            <div className="grid grid-cols-3 gap-3 mb-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
               {[
                 { label: 'Purchase Price', value: fmt(snapshot.purchase_price) },
                 { label: 'NOI',            value: fmt(snapshot.noi) },
@@ -283,7 +283,7 @@ export default async function DemoDealPage({ params }: Props) {
                       {[1, 2, 3, 4, 5].map(val => (
                         <div
                           key={val}
-                          className={`w-8 h-8 rounded text-sm font-medium border flex items-center justify-center ${
+                          className={`w-7 h-7 sm:w-8 sm:h-8 rounded text-xs sm:text-sm font-medium border flex items-center justify-center ${
                             score === val
                               ? 'bg-gray-900 text-white border-gray-900'
                               : 'bg-white text-gray-300 border-gray-200'
@@ -341,7 +341,7 @@ export default async function DemoDealPage({ params }: Props) {
                         </div>
                         <p className="text-xs text-gray-400 mt-0.5">{c.company}</p>
                       </div>
-                      <span className="text-xs text-gray-400">{c.email}</span>
+                      <span className="hidden sm:block text-xs text-gray-400">{c.email}</span>
                     </div>
                   )
                 })}

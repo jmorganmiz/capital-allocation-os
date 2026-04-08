@@ -10,7 +10,7 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Nav */}
-      <nav className="flex items-center justify-between px-8 py-5 border-b border-gray-100">
+      <nav className="flex items-center justify-between px-4 md:px-8 py-5 border-b border-gray-100">
         <span className="text-lg font-bold text-gray-900">Dealstash</span>
         <div className="flex items-center gap-4">
           <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900">Sign in</Link>
@@ -21,14 +21,14 @@ export default async function HomePage() {
       </nav>
 
       {/* Hero */}
-      <div className="max-w-4xl mx-auto px-8 pt-20 pb-16 text-center">
+      <div className="max-w-4xl mx-auto px-4 md:px-8 pt-12 pb-10 md:pt-20 md:pb-16 text-center">
         <div className="inline-block bg-blue-50 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full mb-6 uppercase tracking-wide">
           Built for small CRE investment teams
         </div>
-        <h1 className="text-5xl font-bold text-gray-900 leading-tight mb-6">
+        <h1 className="text-3xl sm:text-5xl font-bold text-gray-900 leading-tight mb-5 md:mb-6">
           Your deal pipeline.<br />Your decision history.
         </h1>
-        <p className="text-xl text-gray-500 max-w-2xl mx-auto mb-10 leading-relaxed">
+        <p className="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto mb-8 md:mb-10 leading-relaxed">
           Track deals, score opportunities, manage broker relationships — and never lose institutional memory again.
         </p>
         <div className="flex items-center justify-center gap-4 flex-wrap">
@@ -47,7 +47,7 @@ export default async function HomePage() {
       </div>
 
       {/* Features */}
-      <div className="max-w-5xl mx-auto px-8 py-16 border-t border-gray-100">
+      <div className="max-w-5xl mx-auto px-4 md:px-8 py-12 md:py-16 border-t border-gray-100">
         <h2 className="text-2xl font-bold text-gray-900 text-center mb-12">
           Everything your team needs. Nothing you don't.
         </h2>
@@ -99,7 +99,7 @@ export default async function HomePage() {
       </div>
 
       {/* The problem */}
-      <div className="bg-gray-900 text-white py-16 px-8">
+      <div className="bg-gray-900 text-white py-12 md:py-16 px-4 md:px-8">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-2xl font-bold mb-6">The spreadsheet isn't your OS. It's your liability.</h2>
           <p className="text-gray-400 leading-relaxed mb-8">
@@ -114,7 +114,7 @@ export default async function HomePage() {
       </div>
 
       {/* Pricing */}
-      <div className="max-w-2xl mx-auto px-8 py-16 text-center">
+      <div className="max-w-2xl mx-auto px-4 md:px-8 py-12 md:py-16 text-center">
         <h2 className="text-2xl font-bold text-gray-900 mb-3">Simple pricing</h2>
         <p className="text-gray-500 mb-10">One plan. Everything included. No surprises.</p>
         <div className="border border-gray-200 rounded-xl p-8 text-left">
@@ -154,7 +154,7 @@ export default async function HomePage() {
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-gray-100 px-8 py-6 text-center">
+      <footer className="border-t border-gray-100 px-4 md:px-8 py-6 text-center">
         <p className="text-xs text-gray-400 mb-2">© 2026 Dealstash. Built for investment teams.</p>
         <div className="flex items-center justify-center gap-4">
           <Link href="/terms" className="text-xs text-gray-400 hover:text-gray-600">Terms of Service</Link>

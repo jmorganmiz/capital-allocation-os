@@ -40,14 +40,14 @@ export default function DemoGraveyardPage() {
       </div>
 
       {/* Killed deals table */}
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="border border-gray-200 rounded-lg overflow-hidden overflow-x-auto">
+        <table className="w-full text-sm min-w-[480px]">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Deal</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Market</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600 hidden sm:table-cell">Market</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Kill Reason</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Killed</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600 hidden sm:table-cell">Killed</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -59,13 +59,13 @@ export default function DemoGraveyardPage() {
                     <p className="text-xs text-gray-400 mt-0.5">{deal.deal_type}</p>
                   )}
                 </td>
-                <td className="px-4 py-3 text-gray-600">{deal.market}</td>
+                <td className="px-4 py-3 text-gray-600 hidden sm:table-cell">{deal.market}</td>
                 <td className="px-4 py-3">
                   <span className="text-xs bg-red-50 text-red-700 px-2 py-0.5 rounded">
                     {deal.kill_reason}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-gray-500">
+                <td className="px-4 py-3 text-gray-500 hidden sm:table-cell">
                   {formatDistanceToNow(new Date(deal.archived_at), { addSuffix: true })}
                 </td>
               </tr>
