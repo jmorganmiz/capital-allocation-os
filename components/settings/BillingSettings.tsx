@@ -69,7 +69,7 @@ export default function BillingSettings({ isSubscribed, cancelAtPeriodEnd: initi
               {isSubscribed ? 'Team Plan' : 'Free Beta'}
             </p>
             <p className="text-xs text-gray-400 mt-0.5">
-              {isSubscribed ? '$90 / month · All features included' : 'All features available during beta'}
+              {isSubscribed ? '$149 / month · All features included' : 'All features available during beta'}
             </p>
           </div>
           {isSubscribed ? (
@@ -105,10 +105,10 @@ export default function BillingSettings({ isSubscribed, cancelAtPeriodEnd: initi
               disabled={loading}
               className="btn-primary disabled:opacity-50"
             >
-              {loading ? 'Redirecting…' : 'Subscribe — $90/month'}
+              {loading ? 'Redirecting…' : 'Subscribe — $149/month'}
             </button>
             <p className="text-xs text-gray-400 mt-2">
-              You will be charged $90/month on a recurring basis. Cancel anytime by emailing{' '}
+              You will be charged $149/month on a recurring basis. Cancel anytime by emailing{' '}
               <a href="mailto:jack@getdealstash.com" className="hover:underline">jack@getdealstash.com</a>.
             </p>
           </div>
