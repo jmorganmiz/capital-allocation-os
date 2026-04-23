@@ -196,6 +196,18 @@ export function UploadStep({ onComplete }: Props) {
         disabled={isLoading}
       />
 
+      <a
+        href="/test-import.csv"
+        download
+        className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+      >
+        <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
+          <path d="M8 12.5L3 7.5h3V2h4v5.5h3L8 12.5z" />
+          <path d="M2 14h12v-1.5H2V14z" />
+        </svg>
+        Download sample CSV to try it out
+      </a>
+
       <p className="text-xs text-gray-400">CSV files up to 500 rows</p>
     </div>
   )
