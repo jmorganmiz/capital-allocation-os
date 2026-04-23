@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import Link from 'next/link'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -17,10 +17,11 @@ type ColMapping = {
 }
 
 type Stage = { id: string; name: string }
+type CsvRow = Record<string, string>
 
-type WizardStep = 'analyzing' | 'mapping' | 'preview' | 'import'
+type WizardStep = 'mapping' | 'preview' | 'import'
 
-// ─── Hardcoded sample data (mirrors /public/test-import.csv) ─────────────────
+// ─── Hardcoded sample data ─────────────────────────────────────────────────────
 
 const DEMO_STAGES: Stage[] = [
   { id: 'stage-new',           name: 'New' },
@@ -35,40 +36,34 @@ const DEMO_MEMBERS = [
   { id: 'user-2', full_name: 'Sarah Kim' },
 ]
 
-type CsvRow = Record<string, string>
-
 const DEMO_ROWS: CsvRow[] = [
-  { 'Deal Name': 'The Oaks at Cedar Park', 'Location': 'Cedar Park TX', 'Asking Price': '18500000', 'Asset Type': 'Multifamily', 'Size (SF)': '148000', 'Stage': 'Screening',        'Source': 'Broker',     'Structure': 'Acquisition',  'Financing': 'Agency'       },
-  { 'Deal Name': 'Uptown Dallas Flats',    'Location': 'Dallas TX',      'Asking Price': '24750000', 'Asset Type': 'Multifamily', 'Size (SF)': '191500', 'Stage': 'Active DD',       'Source': 'LoopNet',    'Structure': 'Acquisition',  'Financing': 'Bridge'       },
-  { 'Deal Name': 'Westchase Office Tower', 'Location': 'Houston TX',     'Asking Price': '12200000', 'Asset Type': 'Office',      'Size (SF)': '85000',  'Stage': 'Under Contract',  'Source': 'Direct',     'Structure': 'Acquisition',  'Financing': 'CMBS'         },
-  { 'Deal Name': 'North SA Industrial',   'Location': 'San Antonio TX',  'Asking Price': '8500000',  'Asset Type': 'Industrial',  'Size (SF)': '120000', 'Stage': 'New Deal',        'Source': 'CoStar',     'Structure': 'Acquisition',  'Financing': 'Conventional' },
-  { 'Deal Name': 'Panther Island Apts',   'Location': 'Fort Worth TX',   'Asking Price': '31000000', 'Asset Type': 'Multifamily', 'Size (SF)': '246000', 'Stage': 'LOI',             'Source': 'Broker',     'Structure': 'Joint Venture','Financing': 'Agency'       },
-  { 'Deal Name': 'Domain Retail Center',  'Location': 'Austin TX',       'Asking Price': '6200000',  'Asset Type': 'Retail',      'Size (SF)': '28500',  'Stage': 'Initial Screening','Source': 'Off-Market', 'Structure': 'Acquisition',  'Financing': 'Conventional' },
-  { 'Deal Name': 'Midtown Houston Lofts', 'Location': 'Houston TX',      'Asking Price': '45000000', 'Asset Type': 'Multifamily', 'Size (SF)': '318000', 'Stage': 'Due Diligence',   'Source': 'Broker',     'Structure': 'Acquisition',  'Financing': 'Bridge'       },
+  { 'Deal Name': 'The Oaks at Cedar Park', 'Location': 'Cedar Park TX', 'Asking Price': '18500000', 'Asset Type': 'Multifamily', 'Size SF': '148000', 'Stage': 'Screening',         'Broker': 'Transwestern'        },
+  { 'Deal Name': 'Uptown Dallas Flats',    'Location': 'Dallas TX',      'Asking Price': '24750000', 'Asset Type': 'Multifamily', 'Size SF': '191500', 'Stage': 'Active DD',        'Broker': 'CBRE'                 },
+  { 'Deal Name': 'Westchase Office Tower', 'Location': 'Houston TX',     'Asking Price': '12200000', 'Asset Type': 'Office',      'Size SF': '85000',  'Stage': 'Under Contract',   'Broker': 'JLL'                  },
+  { 'Deal Name': 'North SA Industrial',    'Location': 'San Antonio TX',  'Asking Price': '8500000',  'Asset Type': 'Industrial',  'Size SF': '120000', 'Stage': 'New Deal',         'Broker': 'Marcus & Millichap'   },
+  { 'Deal Name': 'Panther Island Apts',    'Location': 'Fort Worth TX',   'Asking Price': '31000000', 'Asset Type': 'Multifamily', 'Size SF': '246000', 'Stage': 'LOI',              'Broker': 'Cushman & Wakefield'  },
+  { 'Deal Name': 'Domain Retail Center',   'Location': 'Austin TX',       'Asking Price': '6200000',  'Asset Type': 'Retail',      'Size SF': '28500',  'Stage': 'Initial Screening','Broker': 'Newmark'              },
+  { 'Deal Name': 'Midtown Houston Lofts',  'Location': 'Houston TX',      'Asking Price': '45000000', 'Asset Type': 'Multifamily', 'Size SF': '318000', 'Stage': 'Due Diligence',    'Broker': 'HFF'                  },
 ]
 
-// Pre-computed as if Claude just ran the map-columns API
 const INITIAL_MAPPINGS: ColMapping[] = [
-  { csv_column: 'Deal Name',    schema_field: 'title',          confidence: 'high'   },
-  { csv_column: 'Location',     schema_field: 'market',         confidence: 'high'   },
-  { csv_column: 'Asking Price', schema_field: 'asking_price',   confidence: 'high'   },
-  { csv_column: 'Asset Type',   schema_field: 'deal_type',      confidence: 'high'   },
-  { csv_column: 'Size (SF)',    schema_field: 'property_size',  confidence: 'high'   },
-  { csv_column: 'Stage',        schema_field: 'stage_id',       confidence: 'high'   },
-  { csv_column: 'Source',       schema_field: 'source_type',    confidence: 'medium' },
-  { csv_column: 'Structure',    schema_field: 'deal_structure', confidence: 'high'   },
-  { csv_column: 'Financing',    schema_field: 'financing_type', confidence: 'high'   },
+  { csv_column: 'Deal Name',    schema_field: 'title',         confidence: 'high'   },
+  { csv_column: 'Location',     schema_field: 'market',        confidence: 'high'   },
+  { csv_column: 'Asking Price', schema_field: 'asking_price',  confidence: 'high'   },
+  { csv_column: 'Asset Type',   schema_field: 'deal_type',     confidence: 'high'   },
+  { csv_column: 'Size SF',      schema_field: 'property_size', confidence: 'medium' },
+  { csv_column: 'Stage',        schema_field: 'stage_id',      confidence: 'high'   },
+  { csv_column: 'Broker',       schema_field: 'source_name',   confidence: 'medium' },
 ]
 
-// Fuzzy-matched ahead of time using the same logic as the real MappingStep
 const INITIAL_STAGE_RESOLUTIONS: Record<string, string | null> = {
-  'Screening':        'stage-screening',
-  'Active DD':        'stage-due-diligence',
-  'Under Contract':   null,
-  'New Deal':         'stage-new',
-  'LOI':              'stage-loi',
-  'Initial Screening':'stage-screening',
-  'Due Diligence':    'stage-due-diligence',
+  'Screening':         'stage-screening',
+  'Active DD':         'stage-due-diligence',
+  'Under Contract':    null,
+  'New Deal':          'stage-new',
+  'LOI':               'stage-loi',
+  'Initial Screening': 'stage-screening',
+  'Due Diligence':     'stage-due-diligence',
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -99,26 +94,16 @@ const CONFIDENCE_CLASSES: Record<ColMapping['confidence'], string> = {
   low:    'bg-orange-100 text-orange-700',
 }
 
-const STEP_ORDER: Record<WizardStep, number> = {
-  analyzing: 1, mapping: 1, preview: 2, import: 3,
-}
-
 const STEP_LABELS = ['Upload', 'Map Columns', 'Preview', 'Import']
+const STEP_ORDER: Record<WizardStep, number> = { mapping: 1, preview: 2, import: 3 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function DemoImportWizard({ onClose }: { onClose: () => void }) {
-  const [step, setStep] = useState<WizardStep>('analyzing')
+  const [step, setStep] = useState<WizardStep>('mapping')
   const [mappings, setMappings] = useState<ColMapping[]>(INITIAL_MAPPINGS)
   const [stageResolutions, setStageResolutions] = useState(INITIAL_STAGE_RESOLUTIONS)
   const [ownerUserId, setOwnerUserId] = useState<string | null>(null)
-
-  // Simulate the AI mapping call finishing
-  useEffect(() => {
-    if (step !== 'analyzing') return
-    const t = setTimeout(() => setStep('mapping'), 1800)
-    return () => clearTimeout(t)
-  }, [step])
 
   const stageColumn = mappings.find(m => m.schema_field === 'stage_id')?.csv_column ?? null
 
@@ -144,28 +129,23 @@ export default function DemoImportWizard({ onClose }: { onClose: () => void }) {
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100 flex-shrink-0">
-          {/* Step indicator */}
           <nav className="flex items-center">
             {STEP_LABELS.map((label, idx) => {
-              const done   = idx < currentIdx || (idx === 0)
-              const active = idx === currentIdx && step !== 'analyzing'
-              const loading = idx === 1 && step === 'analyzing'
+              const done   = idx === 0 || idx < currentIdx
+              const active = idx === currentIdx
               return (
                 <div key={label} className="flex items-center">
                   {idx > 0 && (
                     <div className={`h-px w-8 ${done ? 'bg-blue-400' : 'bg-gray-200'}`} />
                   )}
                   <div className={`flex items-center gap-1.5 text-xs font-medium ${
-                    active  ? 'text-blue-600'  :
-                    loading ? 'text-blue-400'  :
-                    done    ? 'text-gray-500'  : 'text-gray-400'
+                    active ? 'text-blue-600' : done ? 'text-gray-500' : 'text-gray-400'
                   }`}>
                     <span className={`flex h-5 w-5 items-center justify-center rounded-full text-xs font-semibold ${
-                      active  ? 'bg-blue-600 text-white'  :
-                      loading ? 'bg-blue-100 text-blue-500' :
-                      done    ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400'
+                      active ? 'bg-blue-600 text-white'  :
+                      done   ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400'
                     }`}>
-                      {loading ? <SpinnerTiny /> : done ? '✓' : idx + 1}
+                      {done && !active ? '✓' : idx + 1}
                     </span>
                     <span className="hidden sm:inline">{label}</span>
                   </div>
@@ -187,8 +167,7 @@ export default function DemoImportWizard({ onClose }: { onClose: () => void }) {
 
         {/* Body */}
         <div className="overflow-y-auto flex-1 px-6 py-6">
-          {step === 'analyzing' && <AnalyzingView />}
-          {step === 'mapping'   && (
+          {step === 'mapping' && (
             <MappingView
               mappings={mappings}
               stageColumn={stageColumn}
@@ -211,29 +190,16 @@ export default function DemoImportWizard({ onClose }: { onClose: () => void }) {
               onImport={() => setStep('import')}
             />
           )}
-          {step === 'import' && <ImportView onClose={onClose} />}
+          {step === 'import' && (
+            <SuccessView onClose={onClose} />
+          )}
         </div>
       </div>
     </div>
   )
 }
 
-// ─── Step views ───────────────────────────────────────────────────────────────
-
-function AnalyzingView() {
-  return (
-    <div className="flex flex-col items-center gap-4 py-16 text-center">
-      <svg className="h-7 w-7 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-      </svg>
-      <div>
-        <p className="text-sm font-medium text-gray-700">Analyzing columns with AI…</p>
-        <p className="text-xs text-gray-400 mt-1">Matching your CSV headers to the deal schema</p>
-      </div>
-    </div>
-  )
-}
+// ─── Mapping step ─────────────────────────────────────────────────────────────
 
 function MappingView({
   mappings,
@@ -263,12 +229,11 @@ function MappingView({
       <div>
         <h2 className="text-xl font-semibold text-gray-900">Map your columns</h2>
         <p className="mt-1 text-sm text-gray-500">
-          Review the AI suggestions and adjust as needed. Only{' '}
+          AI mapped your CSV columns to the deal schema. Review and adjust as needed — only{' '}
           <span className="font-medium">Deal Title</span> is required.
         </p>
       </div>
 
-      {/* Column mapping table */}
       <section>
         <div className="overflow-hidden rounded-lg border border-gray-200">
           <table className="w-full text-sm">
@@ -314,7 +279,6 @@ function MappingView({
         )}
       </section>
 
-      {/* Stage resolution */}
       {stageColumn && csvStageValues.length > 0 && (
         <section>
           <h3 className="text-sm font-semibold text-gray-700">Stage values in your CSV</h3>
@@ -354,7 +318,6 @@ function MappingView({
         </section>
       )}
 
-      {/* Owner */}
       <section>
         <h3 className="text-sm font-semibold text-gray-700">Deal owner</h3>
         <p className="mt-1 mb-3 text-xs text-gray-500">Optionally assign all imported deals to a team member.</p>
@@ -370,8 +333,7 @@ function MappingView({
         </select>
       </section>
 
-      <div className="flex items-center justify-between border-t border-gray-100 pt-4">
-        <span />
+      <div className="flex items-center justify-end border-t border-gray-100 pt-4">
         <button
           onClick={onContinue}
           disabled={!titleMapped}
@@ -383,6 +345,8 @@ function MappingView({
     </div>
   )
 }
+
+// ─── Preview step ─────────────────────────────────────────────────────────────
 
 function PreviewView({
   mappings,
@@ -415,23 +379,18 @@ function PreviewView({
     return raw
   }
 
-  const importableCount = DEMO_ROWS.filter(r => {
-    const titleCol = mappings.find(m => m.schema_field === 'title')?.csv_column
-    return titleCol && r[titleCol]?.trim()
-  }).length
-
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h2 className="text-xl font-semibold text-gray-900">Preview import</h2>
         <p className="mt-1 text-sm text-gray-500">
-          Showing all {DEMO_ROWS.length} rows with your column mappings applied.
+          All {DEMO_ROWS.length} rows with your column mappings applied.
         </p>
       </div>
 
       <div className="flex gap-3">
         <span className="inline-flex rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-medium text-green-700">
-          {importableCount} will import
+          {DEMO_ROWS.length} will import
         </span>
         {ownerName && (
           <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
@@ -482,50 +441,45 @@ function PreviewView({
           onClick={onImport}
           className="rounded-md bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
-          Import {importableCount} deals →
+          Import {DEMO_ROWS.length} deals →
         </button>
       </div>
     </div>
   )
 }
 
-function ImportView({ onClose }: { onClose: () => void }) {
+// ─── Success step ─────────────────────────────────────────────────────────────
+
+function SuccessView({ onClose }: { onClose: () => void }) {
   return (
-    <div className="flex flex-col items-center gap-5 py-12 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 text-2xl">
-        🔒
+    <div className="flex flex-col items-center gap-5 py-10 text-center">
+      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-50">
+        <svg className="h-8 w-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
       </div>
+
       <div>
-        <h2 className="text-lg font-semibold text-gray-900">Sign up to import your deals</h2>
-        <p className="mt-2 max-w-sm text-sm text-gray-500">
-          Connect your own pipeline, import historical deals in one click, and keep everything in sync — no spreadsheets needed.
+        <h2 className="text-xl font-semibold text-gray-900">7 deals imported successfully</h2>
+        <p className="mt-2 text-sm text-gray-500 max-w-xs">
+          Your Texas CRE deals have been added to the pipeline and sorted into their stages.
         </p>
       </div>
-      <div className="flex gap-3">
+
+      <div className="flex flex-col items-center gap-3 pt-1">
         <button
           onClick={onClose}
-          className="rounded-md border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
+          className="rounded-md bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
-          Keep exploring
+          View pipeline →
         </button>
         <Link
           href="/signup"
-          className="rounded-md bg-gray-900 px-5 py-2 text-sm font-semibold text-white hover:bg-gray-800"
+          className="text-xs text-gray-400 hover:text-gray-600 underline underline-offset-2"
         >
-          Sign up free →
+          Import your own deals — sign up free
         </Link>
       </div>
     </div>
-  )
-}
-
-// ─── Tiny inline spinner for step indicator ───────────────────────────────────
-
-function SpinnerTiny() {
-  return (
-    <svg className="h-3 w-3 animate-spin" fill="none" viewBox="0 0 24 24">
-      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-    </svg>
   )
 }
