@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import DemoImportWizard from './DemoImportWizard'
+
 import {
   DndContext,
   DragEndEvent,
@@ -308,7 +308,7 @@ export default function DemoKanbanBoard({ initialDeals, searchQuery = '' }: Prop
   const [nudgeMessage, setNudgeMessage] = useState<string | null>(null)
   const [showSaveNudge, setShowSaveNudge] = useState(false)
   const [pendingMove, setPendingMove] = useState<PendingMove | null>(null)
-  const [showImportWizard, setShowImportWizard] = useState(false)
+
 
   // Build deal_id → Set<checklist_item_id> for fast incomplete lookups
   const progressMap = useMemo(() => {
@@ -377,13 +377,7 @@ export default function DemoKanbanBoard({ initialDeals, searchQuery = '' }: Prop
         >
           Upload OM
         </button>
-        <button
-          onClick={() => setShowImportWizard(true)}
-          className="btn-secondary"
-        >
-          Import Deals
-        </button>
-        <button
+<button
           onClick={() => setNudgeMessage('Create deals, assign owners, and move them through your custom pipeline stages.')}
           className="btn-primary"
         >
@@ -450,9 +444,6 @@ export default function DemoKanbanBoard({ initialDeals, searchQuery = '' }: Prop
         <SignupNudge message={nudgeMessage} onClose={() => setNudgeMessage(null)} />
       )}
 
-      {showImportWizard && (
-        <DemoImportWizard onClose={() => setShowImportWizard(false)} />
-      )}
 
       {/* Save nudge toast — shown briefly after a move */}
       {showSaveNudge && (

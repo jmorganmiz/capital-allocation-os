@@ -3,13 +3,17 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import DemoImportWizard from './DemoImportWizard'
 
-const navLinks = [
-  { href: '/demo',            label: 'Pipeline' },
-  { href: '/demo/dashboard',  label: 'Dashboard' },
-  { href: '/demo/graveyard',  label: 'Graveyard' },
-  { href: '/signup',          label: 'Contacts ↗' },
-  { href: '/signup',          label: 'Settings ↗' },
+const NAV_BEFORE_IMPORT = [
+  { href: '/demo', label: 'Pipeline' },
+]
+
+const NAV_AFTER_IMPORT = [
+  { href: '/demo/dashboard', label: 'Dashboard' },
+  { href: '/demo/graveyard', label: 'Graveyard' },
+  { href: '/signup',         label: 'Contacts ↗' },
+  { href: '/signup',         label: 'Settings ↗' },
 ]
 
 function SearchIcon() {
@@ -36,19 +40,39 @@ function CloseIcon() {
   )
 }
 
-function NavLinks({ pathname, onClick }: { pathname: string; onClick?: () => void }) {
+const linkClass = (active: boolean) =>
+  `block px-3 py-2 rounded-md text-sm transition-colors ${
+    active
+      ? 'bg-gray-100 text-gray-900 font-medium'
+      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+  }`
+
+function NavLinks({
+  pathname,
+  onImportDeals,
+  onClick,
+}: {
+  pathname: string
+  onImportDeals: () => void
+  onClick?: () => void
+}) {
   return (
     <>
-      {navLinks.map(({ href, label }) => (
-        <Link
-          key={label}
-          href={href}
-          onClick={onClick}
-          className={`block px-3 py-2 rounded-md text-sm transition-colors
-            ${pathname === href
-              ? 'bg-gray-100 text-gray-900 font-medium'
-              : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'}`}
-        >
+      {NAV_BEFORE_IMPORT.map(({ href, label }) => (
+        <Link key={label} href={href} onClick={onClick} className={linkClass(pathname === href)}>
+          {label}
+        </Link>
+      ))}
+
+      <button
+        onClick={() => { onClick?.(); onImportDeals() }}
+        className={linkClass(false) + ' w-full text-left'}
+      >
+        Import Deals
+      </button>
+
+      {NAV_AFTER_IMPORT.map(({ href, label }) => (
+        <Link key={label} href={href} onClick={onClick} className={linkClass(pathname === href)}>
           {label}
         </Link>
       ))}
@@ -62,6 +86,7 @@ export default function DemoSidebar() {
   const [showSearch, setShowSearch] = useState(false)
   const [query, setQuery] = useState('')
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [showImportWizard, setShowImportWizard] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -83,7 +108,6 @@ export default function DemoSidebar() {
     if (showSearch) inputRef.current?.focus()
   }, [showSearch])
 
-  // Close drawer on route change
   useEffect(() => { setDrawerOpen(false) }, [pathname])
 
   function closeSearch() {
@@ -137,7 +161,10 @@ export default function DemoSidebar() {
             </button>
           )}
 
-          <NavLinks pathname={pathname} />
+          <NavLinks
+            pathname={pathname}
+            onImportDeals={() => setShowImportWizard(true)}
+          />
         </div>
 
         <div className="px-4 py-4 border-t border-gray-100">
@@ -148,7 +175,7 @@ export default function DemoSidebar() {
         </div>
       </nav>
 
-      {/* ── Mobile top bar (fixed, below banner ~40px) ────────── */}
+      {/* ── Mobile top bar ────────────────────────────────────── */}
       <div className="md:hidden fixed top-10 left-0 right-0 z-40 bg-white border-b border-gray-200 flex items-center gap-3 px-4 h-14">
         <button
           onClick={() => setDrawerOpen(true)}
@@ -180,7 +207,11 @@ export default function DemoSidebar() {
             </div>
 
             <div className="flex-1 px-3 py-4 space-y-0.5">
-              <NavLinks pathname={pathname} onClick={() => setDrawerOpen(false)} />
+              <NavLinks
+                pathname={pathname}
+                onImportDeals={() => setShowImportWizard(true)}
+                onClick={() => setDrawerOpen(false)}
+              />
             </div>
 
             <div className="px-4 py-4 border-t border-gray-100 space-y-3">
@@ -194,6 +225,10 @@ export default function DemoSidebar() {
             </div>
           </div>
         </div>
+      )}
+
+      {showImportWizard && (
+        <DemoImportWizard onClose={() => setShowImportWizard(false)} />
       )}
     </>
   )
