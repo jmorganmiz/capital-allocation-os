@@ -442,6 +442,87 @@ export const DEMO_DEAL_OVERALL_SCORES: Record<string, number> = {
   'deal-thornton-business-park': 59,
 }
 
+// AI-generated reasoning shown in the demo scoring tab — one sentence per criterion
+export const DEMO_DEAL_SCORE_NOTES: Record<string, Record<string, string>> = {
+  'deal-sunset-ridge': {
+    'sc-1': 'Strong Phoenix metro submarket with above-average population growth and consistent multifamily rent demand.',
+    'sc-2': 'Residential tenants at 94% occupancy with no single-tenant concentration risk.',
+    'sc-3': 'Short-term residential leases are standard for the asset class; rollover risk is managed by strong market absorption.',
+    'sc-4': 'Debt coverage at current rents is adequate but tightens materially under bridge rate assumptions.',
+    'sc-5': '5.0% going-in cap is at the low end of our threshold; value-add rent upside is the primary return driver.',
+    'sc-6': 'Phoenix is a top-tier U.S. multifamily market with strong net migration and a constrained supply pipeline.',
+    'sc-7': '2005 construction is structurally sound; unit interiors are dated but the deferred capex estimate is manageable.',
+    'sc-8': 'Clear value-add thesis — renovate units, push rents to market, and exit at a stabilized cap.',
+  },
+  'deal-harbor-view': {
+    'sc-1': 'Downtown San Diego CBD location with good transit access and strong demand from professional services tenants.',
+    'sc-2': 'Mix of mid-size tenants across professional services; creditworthiness is adequate but formal verification is pending.',
+    'sc-3': 'Two anchor tenants have leases expiring within 18 months, creating significant near-term rollover and re-leasing risk.',
+    'sc-4': 'DSCR at 78% occupancy is adequate but provides limited cushion for lease-up costs and concessions.',
+    'sc-5': '6.0% cap rate is at our threshold; successful lease-up execution will be required to justify the basis.',
+    'sc-6': 'San Diego office fundamentals are mixed; remote work trends have softened downtown Class B absorption.',
+    'sc-7': 'Well-maintained building with a recent lobby renovation and updated HVAC systems.',
+    'sc-8': 'Lease-up exit is achievable but execution risk is moderate given the near-term lease expirations.',
+  },
+  'deal-riverfront': {
+    'sc-1': 'High-traffic Austin retail node with strong consumer demographics and limited new supply in the immediate trade area.',
+    'sc-2': 'National grocery anchor provides investment-grade credit with 7 years of remaining lease term.',
+    'sc-3': 'Grocery anchor WALT of 7 years delivers long-term income stability and supports favorable financing terms.',
+    'sc-4': 'At current NOI, DSCR is comfortably above 1.30x even under moderate stress assumptions.',
+    'sc-5': '6.0% going-in cap rate meets our acquisition threshold with clear upside from junior anchor lease-up.',
+    'sc-6': 'Austin retail fundamentals remain strong; grocery-anchored centers continue to outperform the broader retail sector.',
+    'sc-7': 'Building is functional but aging; deferred maintenance on the parking field and facade is estimated at approximately $400k.',
+    'sc-8': 'Stabilize junior anchor spaces and exit at a tighter cap — well-defined value creation path with identifiable milestones.',
+  },
+  'deal-cascade': {
+    'sc-1': 'Established Portland industrial corridor with good freeway access; some tenant exodus in the broader market warrants caution.',
+    'sc-2': 'Diversified mix of light manufacturing and distribution tenants with no single tenant above 25% of net rental income.',
+    'sc-3': 'Strong WALT of 4.2 years provides meaningful cash flow visibility across the projected hold period.',
+    'sc-4': '96% occupancy and a long WALT support DSCR well above 1.30x under current financing assumptions.',
+    'sc-5': '6.5% cap rate exceeds our threshold; industrial premium is justified by tenant quality and weighted lease term.',
+    'sc-6': 'Portland industrial demand is softer than Sunbelt peers; market rent growth has moderated in recent quarters.',
+    'sc-7': 'Building C roof requires replacement; total deferred capex across the park is estimated at approximately $600k.',
+    'sc-8': 'Mark-to-market on lease renewal and exit at a tighter industrial cap is a clear and achievable strategy.',
+  },
+  'deal-maplewood': {
+    'sc-1': 'Well-located Denver southeast submarket with strong household density that supports self-storage demand.',
+    'sc-2': 'Self-storage tenants are month-to-month by nature; no tenant credit risk, but high rollover exposure.',
+    'sc-3': 'Month-to-month lease structure provides rate flexibility but limits income predictability over the hold period.',
+    'sc-4': 'At 91% occupancy and below-market rents, DSCR is solid with meaningful upside as rates are pushed to market.',
+    'sc-5': '6.0% going-in cap rate is at our acquisition threshold; returns depend on executing the rent-to-market strategy.',
+  },
+  'deal-grand-hotel': {
+    'sc-1': 'Downtown Nashville location is excellent; tourism-driven demand has produced strong and consistent RevPAR growth.',
+    'sc-2': 'Hotel guests are transient with no lease creditworthiness; operational execution and management quality are the key drivers.',
+    'sc-3': 'No traditional lease structure; management contract expires in 14 months with renewal terms not yet confirmed.',
+    'sc-4': 'Hotel DSCR is more volatile than other CRE asset classes; current NOI coverage is thin under stress occupancy scenarios.',
+    'sc-5': '5.0% cap rate reflects the hospitality premium; targeted returns are feasible but execution-dependent.',
+    'sc-6': 'Nashville tourism fundamentals are strong; ADR and RevPAR continue to grow year-over-year across the market.',
+    'sc-7': 'Well-maintained boutique property with recent renovations to rooms and common areas that are competitive with nearby hotels.',
+    'sc-8': 'F&B repositioning thesis is credible and adds $200k projected NOI, but introduces operational complexity and execution risk.',
+  },
+  'deal-lakeview-commons': {
+    'sc-1': 'Established Chicago submarket, but property tax increases and the local regulatory environment are meaningful headwinds.',
+    'sc-2': 'Long-term workforce housing tenants driving stable 97% occupancy; low turnover supports predictable cash flow.',
+    'sc-3': 'Short-term residential leases are standard; rent growth is constrained by the workforce housing positioning.',
+    'sc-4': 'At current below-market rents, DSCR is adequate but near-term debt service coverage leaves limited buffer.',
+    'sc-5': '5.5% going-in cap is slightly below our standard threshold given Chicago regulatory and tax risks.',
+    'sc-6': 'Chicago multifamily demand is stable but rent growth has lagged Sunbelt markets meaningfully over the past three years.',
+    'sc-7': '1987 construction with aging mechanical systems; adequate reserves for capital expenditures will be essential.',
+    'sc-8': 'Rent upside on turnover is the primary strategy; achievable but low-return with limited exit cap compression.',
+  },
+  'deal-thornton-business-park': {
+    'sc-1': 'Suburban Denver industrial location is functional with interstate access but limits the depth of prospective tenant pool.',
+    'sc-2': 'Eight diversified tenants mitigate concentration risk, though tenant credit profiles have not yet been formally verified.',
+    'sc-3': 'Average lease term of 2.8 years creates significant near-term rollover risk across multiple tenants simultaneously.',
+    'sc-4': '100% occupancy supports current DSCR, but short lease terms expose the asset to re-leasing costs and potential downtime.',
+    'sc-5': '6.0% cap rate meets our acquisition threshold; the strong Denver industrial market supports the current basis.',
+    'sc-6': 'Denver industrial fundamentals are among the strongest in the Mountain West; vacancy rates remain historically low.',
+    'sc-7': '1998 construction; building systems are functional but aging — budget for deferred maintenance on roofing and dock equipment.',
+    'sc-8': 'Re-leasing at market rents on rollover is the primary strategy; thesis is straightforward but dependent on continued market strength.',
+  },
+}
+
 export const DEMO_KILLED_DEALS = [
   {
     id: 'killed-sunset-lakes',

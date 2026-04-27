@@ -11,6 +11,7 @@ import {
   DEMO_DEAL_CONTACTS,
   DEMO_SCORING_CRITERIA,
   DEMO_DEAL_SCORES,
+  DEMO_DEAL_SCORE_NOTES,
   DEMO_DEAL_OVERALL_SCORES,
   DEMO_DEAL_EVENTS,
   DEMO_CHECKLIST_ITEMS,
@@ -82,6 +83,7 @@ export default async function DemoDealPage({ params }: Props) {
   }))
   const criteria = DEMO_SCORING_CRITERIA
   const scores = DEMO_DEAL_SCORES[id] ?? {}
+  const scoreNotes = DEMO_DEAL_SCORE_NOTES[id] ?? {}
   const events = DEMO_DEAL_EVENTS[id] ?? []
 
   const scoredVals = Object.values(scores)
@@ -276,23 +278,38 @@ export default async function DemoDealPage({ params }: Props) {
             <div className="border border-gray-200 rounded-lg divide-y divide-gray-100">
               {criteria.map(c => {
                 const score = scores[c.id]
+                const note = scoreNotes[c.id]
                 return (
-                  <div key={c.id} className="flex items-center justify-between px-4 py-3">
-                    <p className="text-sm font-medium text-gray-800">{c.name}</p>
-                    <div className="flex items-center gap-1">
-                      {[1, 2, 3, 4, 5].map(val => (
-                        <div
-                          key={val}
-                          className={`w-7 h-7 sm:w-8 sm:h-8 rounded text-xs sm:text-sm font-medium border flex items-center justify-center ${
-                            score === val
-                              ? 'bg-gray-900 text-white border-gray-900'
-                              : 'bg-white text-gray-300 border-gray-200'
-                          }`}
-                        >
-                          {val}
+                  <div key={c.id} className="px-4 py-3">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm font-medium text-gray-800">{c.name}</p>
+                          {score !== undefined && (
+                            <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded leading-none">
+                              AI
+                            </span>
+                          )}
                         </div>
-                      ))}
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        {[1, 2, 3, 4, 5].map(val => (
+                          <div
+                            key={val}
+                            className={`w-7 h-7 sm:w-8 sm:h-8 rounded text-xs sm:text-sm font-medium border flex items-center justify-center ${
+                              score === val
+                                ? 'bg-gray-900 text-white border-gray-900'
+                                : 'bg-white text-gray-300 border-gray-200'
+                            }`}
+                          >
+                            {val}
+                          </div>
+                        ))}
+                      </div>
                     </div>
+                    {note && (
+                      <p className="mt-1.5 text-xs text-gray-400 leading-relaxed">{note}</p>
+                    )}
                   </div>
                 )
               })}
