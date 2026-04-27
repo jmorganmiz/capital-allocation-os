@@ -14,6 +14,7 @@ interface DealScore {
   criteria_id: string
   score: number
   notes: string | null
+  scored_by: string | null
 }
 
 interface Props {
@@ -59,7 +60,7 @@ export default function ScoringSection({ dealId, criteria, initialScores }: Prop
 
     setScores(prev => ({
       ...prev,
-      [criteriaId]: { criteria_id: criteriaId, score, notes },
+      [criteriaId]: { criteria_id: criteriaId, score, notes, scored_by: null },
     }))
 
     setSaving(prev => new Set(prev).add(criteriaId))
@@ -139,8 +140,13 @@ export default function ScoringSection({ dealId, criteria, initialScores }: Prop
               <div key={c.id} className="px-4 py-3">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-medium text-gray-800">{c.name}</p>
+                      {current?.scored_by === 'ai-auto' && (
+                        <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded leading-none">
+                          AI
+                        </span>
+                      )}
                       {isSaving && <span className="text-xs text-gray-400">Saving…</span>}
                     </div>
                     {c.description && (

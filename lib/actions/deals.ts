@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { autoScoreDeal } from '@/lib/actions/scoring'
 
 export async function createDeal(formData: FormData) {
   const supabase = await createClient()
@@ -54,6 +55,8 @@ export async function createDeal(formData: FormData) {
     to_stage_id:   firstStage?.id ?? null,
     actor_user_id: user.id,
   })
+
+  await autoScoreDeal(deal.id, profile.firm_id)
 
   revalidatePath('/pipeline')
   return { deal }
@@ -456,6 +459,8 @@ export async function createDealFromOM(params: {
       })
     }
   }
+
+  await autoScoreDeal(deal.id, profile.firm_id)
 
   revalidatePath('/pipeline')
   revalidatePath('/contacts')
