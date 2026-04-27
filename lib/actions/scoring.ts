@@ -194,26 +194,43 @@ export async function deleteScoringCriteria(id: string) {
 // ─── AI Auto-Scoring ──────────────────────────────────────────────────────────
 
 export async function autoScoreDeal(dealId: string, firmId: string): Promise<void> {
+  console.log('[auto-score] starting — dealId:', dealId, 'firmId:', firmId)
   try {
     const supabase = await createClient()
 
-    const { data: criteria } = await supabase
+    const { data: criteria, error: criteriaError } = await supabase
       .from('scoring_criteria')
       .select('id, name, description')
       .eq('firm_id', firmId)
       .eq('is_active', true)
       .order('position')
 
-    if (!criteria || criteria.length === 0) return
+    if (criteriaError) {
+      console.error('[auto-score] failed to fetch criteria:', criteriaError.message, '| code:', criteriaError.code)
+      return
+    }
+    console.log('[auto-score] criteria fetched:', criteria?.length ?? 0)
+    if (!criteria || criteria.length === 0) {
+      console.log('[auto-score] no active criteria — skipping')
+      return
+    }
 
-    const { data: deal } = await supabase
+    const { data: deal, error: dealError } = await supabase
       .from('deals')
       .select('title, market, deal_type, asking_price, property_size, address, deal_structure, financing_type')
       .eq('id', dealId)
       .eq('firm_id', firmId)
       .single()
 
-    if (!deal) return
+    if (dealError) {
+      console.error('[auto-score] failed to fetch deal:', dealError.message, '| code:', dealError.code)
+      return
+    }
+    if (!deal) {
+      console.error('[auto-score] deal not found for id:', dealId)
+      return
+    }
+    console.log('[auto-score] deal fetched:', deal.title)
 
     const dealContext = [
       `Deal name: ${deal.title}`,
@@ -230,8 +247,12 @@ export async function autoScoreDeal(dealId: string, firmId: string): Promise<voi
       .map(c => `- id: ${c.id} | name: ${c.name}${c.description ? ` | description: ${c.description}` : ''}`)
       .join('\n')
 
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+    const apiKey = process.env.ANTHROPIC_API_KEY
+    console.log('[auto-score] ANTHROPIC_API_KEY present:', !!apiKey, '| length:', apiKey?.length ?? 0)
 
+    const client = new Anthropic({ apiKey })
+
+    console.log('[auto-score] calling Claude...')
     const msg = await client.messages.create({
       model: 'claude-haiku-4-5',
       max_tokens: 1024,
@@ -276,13 +297,22 @@ ${criteriaText}`,
       ],
     })
 
+    console.log('[auto-score] Claude responded — stop_reason:', msg.stop_reason, '| content blocks:', msg.content.length)
+
     const toolUse = msg.content.find(b => b.type === 'tool_use')
-    if (!toolUse || toolUse.type !== 'tool_use') return
+    if (!toolUse || toolUse.type !== 'tool_use') {
+      console.error('[auto-score] no tool_use block in response — content:', JSON.stringify(msg.content))
+      return
+    }
 
     const { scores } = toolUse.input as {
       scores: Array<{ criteria_id: string; score: number; reasoning: string }>
     }
-    if (!Array.isArray(scores) || scores.length === 0) return
+    console.log('[auto-score] scores returned by Claude:', scores?.length ?? 0)
+    if (!Array.isArray(scores) || scores.length === 0) {
+      console.error('[auto-score] scores array missing or empty — raw input:', JSON.stringify(toolUse.input))
+      return
+    }
 
     // Only insert scores for criteria that actually belong to this firm
     const validIds = new Set(criteria.map(c => c.id))
@@ -302,13 +332,22 @@ ${criteriaText}`,
         scored_by:   'ai-auto',
       }))
 
-    if (rows.length > 0) {
-      const { error } = await supabase.from('deal_scores').insert(rows)
-      if (error) {
-        console.error('[auto-score] insert failed:', error.message, '| code:', error.code, '| hint:', error.hint)
-      }
+    console.log('[auto-score] rows to insert:', rows.length, '(filtered from', scores.length, 'returned)')
+    if (rows.length === 0) {
+      console.warn('[auto-score] all scores filtered out — criteria IDs from Claude did not match firm criteria')
+      console.warn('[auto-score] Claude criteria_ids:', scores.map(s => s.criteria_id))
+      console.warn('[auto-score] valid firm criteria_ids:', [...validIds])
+      return
+    }
+
+    const { error: insertError } = await supabase.from('deal_scores').insert(rows)
+    if (insertError) {
+      console.error('[auto-score] insert failed:', insertError.message, '| code:', insertError.code, '| hint:', insertError.hint, '| details:', insertError.details)
+    } else {
+      console.log('[auto-score] done — inserted', rows.length, 'scores for deal', dealId)
     }
   } catch (err) {
-    console.error('[auto-score] failed:', err instanceof Error ? err.message : err)
+    console.error('[auto-score] uncaught exception:', err instanceof Error ? `${err.name}: ${err.message}` : err)
+    if (err instanceof Error && err.stack) console.error('[auto-score] stack:', err.stack)
   }
 }
