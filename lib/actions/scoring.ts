@@ -252,9 +252,11 @@ export async function autoScoreDeal(dealId: string, firmId: string): Promise<Aut
       deal.deal_type
         ? supabase
             .from('buy_boxes')
-            .select('*')
+            .select('*, buy_box_criteria(*)')
             .eq('firm_id', firmId)
             .eq('asset_type', deal.deal_type)
+            .order('updated_at', { ascending: false })
+            .limit(1)
             .maybeSingle()
         : Promise.resolve({ data: null }),
     ])
@@ -281,16 +283,16 @@ export async function autoScoreDeal(dealId: string, firmId: string): Promise<Aut
       snapshot?.occupancy_rate != null && `Occupancy rate: ${(Number(snapshot.occupancy_rate) * 100).toFixed(1)}%`,
     ].filter(Boolean).join('\n')
 
+    const buyBoxCriteria: any[] = (buyBox as any)?.buy_box_criteria ?? []
     const buyBoxContext = buyBox ? [
-      `\nFirm's buy box for ${deal.deal_type}:`,
-      buyBox.min_cap_rate      != null && `- Min cap rate: ${(Number(buyBox.min_cap_rate) * 100).toFixed(1)}% (score 5 if meets/exceeds, 1 if well below)`,
-      buyBox.max_ltv           != null && `- Max LTV: ${(Number(buyBox.max_ltv) * 100).toFixed(0)}% (score 5 if at or below, 1 if materially above)`,
-      buyBox.min_dscr          != null && `- Min DSCR: ${buyBox.min_dscr}x (score 5 if meets/exceeds, 1 if below 1.0x)`,
-      buyBox.min_occupancy     != null && `- Min occupancy: ${(Number(buyBox.min_occupancy) * 100).toFixed(0)}% (score 5 if meets/exceeds, 1 if well below)`,
-      buyBox.min_irr           != null && `- Target IRR: ${(Number(buyBox.min_irr) * 100).toFixed(0)}% (score 5 if meets/exceeds, 1 if well below)`,
-      buyBox.max_asking_price  != null && `- Max asking price: $${Number(buyBox.max_asking_price).toLocaleString()}`,
-      buyBox.preferred_markets && `- Preferred markets: ${buyBox.preferred_markets}`,
-      buyBox.notes             && `- Additional criteria: ${buyBox.notes}`,
+      `\nFirm's buy box "${buyBox.name}" for ${deal.deal_type}:`,
+      buyBox.min_cap_rate            != null && `- Min cap rate: ${(Number(buyBox.min_cap_rate) * 100).toFixed(1)}% (score 5 if meets/exceeds, 1 if well below)`,
+      buyBox.max_asking_price        != null && `- Max asking price: $${Number(buyBox.max_asking_price).toLocaleString()} (score lower if deal exceeds this)`,
+      buyBox.min_noi                 != null && `- Min NOI: $${Number(buyBox.min_noi).toLocaleString()} (score 5 if meets/exceeds, 1 if well below)`,
+      buyBox.preferred_markets       && `- Preferred markets: ${buyBox.preferred_markets}`,
+      buyBox.preferred_deal_structure && `- Preferred deal structure: ${buyBox.preferred_deal_structure}`,
+      buyBox.notes                   && `- Additional criteria: ${buyBox.notes}`,
+      buyBoxCriteria.length > 0      && `- Custom criteria to evaluate: ${buyBoxCriteria.map((c: any) => c.name + (c.description ? ` (${c.description})` : '')).join('; ')}`,
     ].filter(Boolean).join('\n') : ''
 
     const criteriaText = criteria

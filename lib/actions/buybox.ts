@@ -2,118 +2,25 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { type BuyBox, ASSET_TYPES } from '@/lib/constants/buybox'
+import { type BuyBoxWithCriteria } from '@/lib/constants/buybox'
 
-type DefaultBox = Omit<BuyBox, 'id' | 'updated_at'>
+export type { BuyBoxWithCriteria }
 
-const DEFAULTS: DefaultBox[] = [
-  {
-    asset_type: 'Multifamily',
-    min_cap_rate: 0.055,
-    max_ltv: 0.75,
-    min_dscr: 1.25,
-    min_occupancy: 0.85,
-    min_irr: 0.12,
-    max_asking_price: null,
-    preferred_markets: null,
-    notes: 'Value-add or stabilized. B/B+ class preferred. 50–300 units.',
-  },
-  {
-    asset_type: 'Retail',
-    min_cap_rate: 0.065,
-    max_ltv: 0.70,
-    min_dscr: 1.30,
-    min_occupancy: 0.90,
-    min_irr: 0.14,
-    max_asking_price: null,
-    preferred_markets: null,
-    notes: 'Anchored or shadow-anchored. Essential retail preferred. Minimum 5-year WALT.',
-  },
-  {
-    asset_type: 'Office',
-    min_cap_rate: 0.07,
-    max_ltv: 0.65,
-    min_dscr: 1.35,
-    min_occupancy: 0.85,
-    min_irr: 0.15,
-    max_asking_price: null,
-    preferred_markets: null,
-    notes: 'Suburban or medical office preferred. Class A/B. Minimum 5-year leases.',
-  },
-  {
-    asset_type: 'Industrial',
-    min_cap_rate: 0.05,
-    max_ltv: 0.70,
-    min_dscr: 1.25,
-    min_occupancy: null,
-    min_irr: 0.12,
-    max_asking_price: null,
-    preferred_markets: null,
-    notes: 'Last-mile, distribution, or flex industrial. NNN leases preferred.',
-  },
-  {
-    asset_type: 'Hospitality',
-    min_cap_rate: 0.08,
-    max_ltv: 0.60,
-    min_dscr: 1.40,
-    min_occupancy: 0.65,
-    min_irr: 0.18,
-    max_asking_price: null,
-    preferred_markets: null,
-    notes: 'Select-service or limited-service. Franchise flags only. Strong RevPAR market.',
-  },
-  {
-    asset_type: 'Self Storage',
-    min_cap_rate: 0.06,
-    max_ltv: 0.70,
-    min_dscr: 1.25,
-    min_occupancy: 0.80,
-    min_irr: 0.13,
-    max_asking_price: null,
-    preferred_markets: null,
-    notes: 'Climate-controlled preferred. Suburban markets with limited new supply.',
-  },
-  {
-    asset_type: 'Mixed Use',
-    min_cap_rate: 0.06,
-    max_ltv: 0.70,
-    min_dscr: 1.25,
-    min_occupancy: 0.85,
-    min_irr: 0.13,
-    max_asking_price: null,
-    preferred_markets: null,
-    notes: 'Retail ground floor with residential or office above. Urban infill preferred.',
-  },
-  {
-    asset_type: 'Land',
-    min_cap_rate: null,
-    max_ltv: 0.50,
-    min_dscr: null,
-    min_occupancy: null,
-    min_irr: 0.20,
-    max_asking_price: null,
-    preferred_markets: null,
-    notes: 'Entitled or entitleable. Shovel-ready preferred. Exit via development or sale to builder.',
-  },
-  {
-    asset_type: 'Other',
-    min_cap_rate: null,
-    max_ltv: null,
-    min_dscr: null,
-    min_occupancy: null,
-    min_irr: null,
-    max_asking_price: null,
-    preferred_markets: null,
-    notes: 'Evaluate on a case-by-case basis against deal fundamentals.',
-  },
-]
+type CriterionInput = { name: string; description: string }
 
-async function seedDefaults(firmId: string, supabase: Awaited<ReturnType<typeof createClient>>) {
-  const rows = DEFAULTS.map(d => ({ ...d, firm_id: firmId }))
-  await supabase.from('buy_boxes').insert(rows)
+type BuyBoxInput = {
+  name: string
+  asset_type: string
+  min_cap_rate: number | null
+  max_asking_price: number | null
+  min_noi: number | null
+  preferred_markets: string | null
+  preferred_deal_structure: string | null
+  notes: string | null
+  criteria: CriterionInput[]
 }
 
-export async function getBuyBoxes(): Promise<{ buyBoxes?: BuyBox[]; error?: string }> {
+export async function getBuyBoxes(): Promise<{ buyBoxes?: BuyBoxWithCriteria[]; error?: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
@@ -123,42 +30,101 @@ export async function getBuyBoxes(): Promise<{ buyBoxes?: BuyBox[]; error?: stri
 
   const { data, error } = await supabase
     .from('buy_boxes')
-    .select('*')
+    .select('*, buy_box_criteria(*)')
     .eq('firm_id', profile.firm_id)
-    .order('asset_type')
+    .order('updated_at', { ascending: false })
 
   if (error) return { error: error.message }
-
-  if (!data || data.length === 0) {
-    await seedDefaults(profile.firm_id, supabase)
-    const { data: seeded } = await supabase
-      .from('buy_boxes')
-      .select('*')
-      .eq('firm_id', profile.firm_id)
-      .order('asset_type')
-    return { buyBoxes: (seeded ?? []) as BuyBox[] }
-  }
-
-  // Ensure all asset types are present (firm may predate a new type)
-  const existingTypes = new Set(data.map((b: any) => b.asset_type))
-  const missing = DEFAULTS.filter(d => !existingTypes.has(d.asset_type))
-  if (missing.length > 0) {
-    await supabase.from('buy_boxes').insert(missing.map(d => ({ ...d, firm_id: profile.firm_id })))
-    const { data: full } = await supabase
-      .from('buy_boxes')
-      .select('*')
-      .eq('firm_id', profile.firm_id)
-      .order('asset_type')
-    return { buyBoxes: (full ?? []) as BuyBox[] }
-  }
-
-  return { buyBoxes: data as BuyBox[] }
+  return { buyBoxes: (data ?? []) as unknown as BuyBoxWithCriteria[] }
 }
 
-export async function upsertBuyBox(
-  assetType: string,
-  fields: Partial<Omit<BuyBox, 'id' | 'asset_type' | 'updated_at'>>,
-): Promise<{ error?: string }> {
+export async function createBuyBox(input: BuyBoxInput): Promise<{ buyBox?: BuyBoxWithCriteria; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: profile } = await supabase.from('profiles').select('firm_id').single()
+  if (!profile) return { error: 'Profile not found' }
+
+  const { criteria, ...fields } = input
+
+  const { data: box, error: boxErr } = await supabase
+    .from('buy_boxes')
+    .insert({ ...fields, firm_id: profile.firm_id })
+    .select()
+    .single()
+
+  if (boxErr || !box) return { error: boxErr?.message ?? 'Failed to create buy box' }
+
+  if (criteria.length > 0) {
+    const rows = criteria.map((c, i) => ({
+      buy_box_id:  box.id,
+      firm_id:     profile.firm_id,
+      name:        c.name,
+      description: c.description || null,
+      position:    i,
+    }))
+    const { error: criErr } = await supabase.from('buy_box_criteria').insert(rows)
+    if (criErr) console.error('[createBuyBox] criteria insert failed:', criErr.message)
+  }
+
+  const { data: full } = await supabase
+    .from('buy_boxes')
+    .select('*, buy_box_criteria(*)')
+    .eq('id', box.id)
+    .single()
+
+  revalidatePath('/buy-box')
+  return { buyBox: full as unknown as BuyBoxWithCriteria }
+}
+
+export async function updateBuyBox(
+  id: string,
+  input: BuyBoxInput,
+): Promise<{ buyBox?: BuyBoxWithCriteria; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: profile } = await supabase.from('profiles').select('firm_id').single()
+  if (!profile) return { error: 'Profile not found' }
+
+  const { criteria, ...fields } = input
+
+  const { error: boxErr } = await supabase
+    .from('buy_boxes')
+    .update({ ...fields, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('firm_id', profile.firm_id)
+
+  if (boxErr) return { error: boxErr.message }
+
+  // Replace all criteria: delete existing then re-insert
+  await supabase.from('buy_box_criteria').delete().eq('buy_box_id', id)
+
+  if (criteria.length > 0) {
+    const rows = criteria.map((c, i) => ({
+      buy_box_id:  id,
+      firm_id:     profile.firm_id,
+      name:        c.name,
+      description: c.description || null,
+      position:    i,
+    }))
+    const { error: criErr } = await supabase.from('buy_box_criteria').insert(rows)
+    if (criErr) console.error('[updateBuyBox] criteria insert failed:', criErr.message)
+  }
+
+  const { data: full } = await supabase
+    .from('buy_boxes')
+    .select('*, buy_box_criteria(*)')
+    .eq('id', id)
+    .single()
+
+  revalidatePath('/buy-box')
+  return { buyBox: full as unknown as BuyBoxWithCriteria }
+}
+
+export async function deleteBuyBox(id: string): Promise<{ error?: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
@@ -168,13 +134,12 @@ export async function upsertBuyBox(
 
   const { error } = await supabase
     .from('buy_boxes')
-    .upsert(
-      { firm_id: profile.firm_id, asset_type: assetType, ...fields, updated_at: new Date().toISOString() },
-      { onConflict: 'firm_id,asset_type' },
-    )
+    .delete()
+    .eq('id', id)
+    .eq('firm_id', profile.firm_id)
 
   if (error) return { error: error.message }
 
-  revalidatePath('/settings')
+  revalidatePath('/buy-box')
   return {}
 }

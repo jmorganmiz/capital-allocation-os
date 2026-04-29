@@ -152,22 +152,33 @@ export interface Database {
       }
       buy_boxes: {
         Row: {
-          id: string; firm_id: string; asset_type: string
-          min_cap_rate: number | null; max_ltv: number | null; min_dscr: number | null
-          min_occupancy: number | null; min_irr: number | null; max_asking_price: number | null
-          preferred_markets: string | null; notes: string | null; updated_at: string
+          id: string; firm_id: string; name: string; asset_type: string
+          min_cap_rate: number | null; max_asking_price: number | null; min_noi: number | null
+          preferred_markets: string | null; preferred_deal_structure: string | null
+          notes: string | null; updated_at: string
         }
         Insert: {
-          id?: string; firm_id: string; asset_type: string
-          min_cap_rate?: number | null; max_ltv?: number | null; min_dscr?: number | null
-          min_occupancy?: number | null; min_irr?: number | null; max_asking_price?: number | null
-          preferred_markets?: string | null; notes?: string | null
+          id?: string; firm_id: string; name: string; asset_type: string
+          min_cap_rate?: number | null; max_asking_price?: number | null; min_noi?: number | null
+          preferred_markets?: string | null; preferred_deal_structure?: string | null; notes?: string | null
         }
         Update: {
-          min_cap_rate?: number | null; max_ltv?: number | null; min_dscr?: number | null
-          min_occupancy?: number | null; min_irr?: number | null; max_asking_price?: number | null
-          preferred_markets?: string | null; notes?: string | null; updated_at?: string
+          name?: string; asset_type?: string
+          min_cap_rate?: number | null; max_asking_price?: number | null; min_noi?: number | null
+          preferred_markets?: string | null; preferred_deal_structure?: string | null
+          notes?: string | null; updated_at?: string
         }
+      }
+      buy_box_criteria: {
+        Row: {
+          id: string; buy_box_id: string; firm_id: string; name: string
+          description: string | null; position: number; created_at: string
+        }
+        Insert: {
+          id?: string; buy_box_id: string; firm_id: string; name: string
+          description?: string | null; position?: number
+        }
+        Update: { name?: string; description?: string | null; position?: number }
       }
       deal_checklist_progress: {
         Row: {
