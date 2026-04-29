@@ -15,6 +15,7 @@ const navLinks = [
   { href: '/import/deals', label: 'Import Deals' },
   { href: '/contacts', label: 'Contacts' },
   { href: '/dashboard', label: 'Dashboard' },
+  { href: '/buy-box', label: 'Buy Box' },
   { href: '/graveyard', label: 'Graveyard' },
   { href: '/settings', label: 'Settings' },
 ]

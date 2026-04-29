@@ -4,9 +4,7 @@ import KillReasonsSettings from '@/components/settings/KillReasonsSettings'
 import TeamSettings from '@/components/settings/TeamSettings'
 import BillingSettings from '@/components/settings/BillingSettings'
 import ScoringCriteriaSettings from '@/components/settings/ScoringCriteriaSettings'
-import BuyBoxSettings from '@/components/settings/BuyBoxSettings'
 import { getAllScoringCriteria } from '@/lib/actions/scoring'
-import { getBuyBoxes } from '@/lib/actions/buybox'
 import { getStripe } from '@/lib/stripe'
 
 interface Props {
@@ -52,7 +50,6 @@ export default async function SettingsPage({ searchParams }: Props) {
     { data: invites },
     { data: checklistItems },
     scoringResult,
-    buyBoxResult,
   ] = await Promise.all([
     supabase.from('deal_stages').select('*').order('position'),
     supabase.from('kill_reasons').select('*').order('position'),
@@ -60,7 +57,6 @@ export default async function SettingsPage({ searchParams }: Props) {
     supabase.from('invites').select('id, email, created_at, accepted_at').eq('firm_id', firmId).order('created_at', { ascending: false }),
     supabase.from('stage_checklist_items').select('*').order('position'),
     getAllScoringCriteria(),
-    getBuyBoxes(),
   ])
 
   return (
@@ -89,7 +85,6 @@ export default async function SettingsPage({ searchParams }: Props) {
       <StagesSettings stages={stages ?? []} checklistItems={checklistItems ?? []} />
       <KillReasonsSettings killReasons={killReasons ?? []} />
       <ScoringCriteriaSettings criteria={(scoringResult.criteria ?? []) as any} />
-      <BuyBoxSettings buyBoxes={(buyBoxResult.buyBoxes ?? []) as any} />
     </div>
   )
 }
