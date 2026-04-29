@@ -240,24 +240,15 @@ export async function autoScoreDeal(dealId: string, firmId: string): Promise<Aut
     }
     console.log('[auto-score] deal fetched:', deal.title)
 
-    const [{ data: snapshot }, { data: overviewNote }] = await Promise.all([
-      supabase
-        .from('deal_financial_snapshots')
-        .select('purchase_price, noi, cap_rate')
-        .eq('deal_id', dealId)
-        .eq('firm_id', firmId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-      supabase
-        .from('deal_notes')
-        .select('content')
-        .eq('deal_id', dealId)
-        .eq('firm_id', firmId)
-        .eq('section', 'overview')
-        .maybeSingle(),
-    ])
-    console.log('[auto-score] snapshot:', snapshot ? 'found' : 'none', '| overview note:', overviewNote ? 'found' : 'none')
+    const { data: snapshot } = await supabase
+      .from('deal_financial_snapshots')
+      .select('purchase_price, noi, cap_rate, debt_rate, ltv, irr, square_footage, year_built, num_units, occupancy_rate')
+      .eq('deal_id', dealId)
+      .eq('firm_id', firmId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    console.log('[auto-score] snapshot:', snapshot ? 'found' : 'none')
 
     const dealContext = [
       `Deal name: ${deal.title}`,
@@ -268,10 +259,16 @@ export async function autoScoreDeal(dealId: string, firmId: string): Promise<Aut
       deal.property_size  && `Property size: ${deal.property_size}`,
       deal.deal_structure && `Deal structure: ${deal.deal_structure}`,
       deal.financing_type && `Financing type: ${deal.financing_type}`,
-      snapshot?.noi         != null && `NOI: $${Number(snapshot.noi).toLocaleString()}`,
-      snapshot?.cap_rate    != null && `Cap rate: ${Number(snapshot.cap_rate).toFixed(2)}%`,
       snapshot?.purchase_price != null && `Purchase price: $${Number(snapshot.purchase_price).toLocaleString()}`,
-      overviewNote?.content && `Property details: ${overviewNote.content}`,
+      snapshot?.noi            != null && `NOI: $${Number(snapshot.noi).toLocaleString()}`,
+      snapshot?.cap_rate       != null && `Cap rate: ${Number(snapshot.cap_rate).toFixed(2)}%`,
+      snapshot?.debt_rate      != null && `Debt rate: ${Number(snapshot.debt_rate).toFixed(2)}%`,
+      snapshot?.ltv            != null && `LTV: ${Number(snapshot.ltv).toFixed(1)}%`,
+      snapshot?.irr            != null && `Projected IRR: ${Number(snapshot.irr).toFixed(1)}%`,
+      snapshot?.square_footage != null && `Square footage: ${Number(snapshot.square_footage).toLocaleString()} SF`,
+      snapshot?.year_built     != null && `Year built: ${snapshot.year_built}`,
+      snapshot?.num_units      != null && `Number of units: ${snapshot.num_units}`,
+      snapshot?.occupancy_rate != null && `Occupancy rate: ${(Number(snapshot.occupancy_rate) * 100).toFixed(1)}%`,
     ].filter(Boolean).join('\n')
 
     const criteriaText = criteria

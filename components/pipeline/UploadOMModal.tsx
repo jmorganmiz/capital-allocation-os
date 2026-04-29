@@ -61,14 +61,6 @@ function cleanFilename(filename: string): string {
     .trim()
 }
 
-function buildSnapshotNotes(data: ParsedOM): string | null {
-  const parts: string[] = []
-  if (data.square_footage) parts.push(`${data.square_footage.toLocaleString()} SF`)
-  if (data.year_built)     parts.push(`Built ${data.year_built}`)
-  if (data.num_units)      parts.push(`${data.num_units} units`)
-  if (data.occupancy_rate) parts.push(`${(data.occupancy_rate * 100).toFixed(0)}% occupied`)
-  return parts.length > 0 ? parts.join(' · ') : null
-}
 
 export default function UploadOMModal({ stages, existingDeals, onCreated, onCancel }: Props) {
   const [file, setFile] = useState<File | null>(null)
@@ -279,8 +271,12 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
           addBrokerContact: addBroker && !!(parsedOM?.broker_name ?? sourceName.trim()),
           brokerName:       parsedOM?.broker_name ?? null,
           brokerCompany:    parsedOM?.brokerage ?? null,
-          // Summary of additional property details to store as a deal note
-          snapshotNotes:    parsedOM ? buildSnapshotNotes(parsedOM) : null,
+          propertyDetails: {
+            square_footage: parsedOM?.square_footage ?? null,
+            year_built:     parsedOM?.year_built ?? null,
+            num_units:      parsedOM?.num_units ?? null,
+            occupancy_rate: parsedOM?.occupancy_rate ?? null,
+          },
         })
 
         console.log('[OM] createDealFromOM result:', result)

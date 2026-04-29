@@ -166,12 +166,16 @@ export interface Database {
           id: string; deal_id: string; firm_id: string; version: number
           purchase_price: number | null; noi: number | null; cap_rate: number | null
           debt_rate: number | null; ltv: number | null; irr: number | null
+          square_footage: number | null; year_built: number | null
+          num_units: number | null; occupancy_rate: number | null
           created_by: string; created_at: string
         }
         Insert: {
           id?: string; deal_id: string; firm_id: string; version?: number
           purchase_price?: number | null; noi?: number | null; cap_rate?: number | null
           debt_rate?: number | null; ltv?: number | null; irr?: number | null
+          square_footage?: number | null; year_built?: number | null
+          num_units?: number | null; occupancy_rate?: number | null
           created_by: string
         }
         Update: never

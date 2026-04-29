@@ -352,7 +352,12 @@ export async function createDealFromOM(params: {
   addBrokerContact: boolean
   brokerName: string | null       // raw broker name for contact record
   brokerCompany: string | null    // brokerage for contact company field
-  snapshotNotes: string | null    // additional property details summary
+  propertyDetails: {
+    square_footage: number | null
+    year_built: number | null
+    num_units: number | null
+    occupancy_rate: number | null
+  }
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -396,13 +401,21 @@ export async function createDealFromOM(params: {
 
   // Create financial snapshot if any data was extracted
   const { asking_price, noi, cap_rate } = params.financials
-  if (asking_price !== null || noi !== null || cap_rate !== null) {
+  const { square_footage, year_built, num_units, occupancy_rate } = params.propertyDetails
+  if (
+    asking_price !== null || noi !== null || cap_rate !== null ||
+    square_footage !== null || year_built !== null || num_units !== null || occupancy_rate !== null
+  ) {
     await supabase.from('deal_financial_snapshots').insert({
       deal_id:        deal.id,
       firm_id:        profile.firm_id,
       purchase_price: asking_price,
       noi,
       cap_rate,
+      square_footage,
+      year_built,
+      num_units,
+      occupancy_rate,
       created_by:     user.id,
     })
   }
@@ -425,17 +438,6 @@ export async function createDealFromOM(params: {
     event_type:    'file_added',
     notes:         params.filename,
   })
-
-  // Save additional property details (SF, year built, units, occupancy) as a deal note
-  if (params.snapshotNotes) {
-    await supabase.from('deal_notes').insert({
-      deal_id:    deal.id,
-      firm_id:    profile.firm_id,
-      section:    'overview',
-      content:    `Property details from OM: ${params.snapshotNotes}`,
-      created_by: user.id,
-    })
-  }
 
   // Optionally create broker contact and link to deal
   // Use the raw broker name (not the combined source_name string) for the contact record
