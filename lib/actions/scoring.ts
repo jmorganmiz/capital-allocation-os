@@ -193,7 +193,14 @@ export async function deleteScoringCriteria(id: string) {
 
 // ─── AI Auto-Scoring ──────────────────────────────────────────────────────────
 
-export async function autoScoreDeal(dealId: string, firmId: string): Promise<void> {
+type AutoScoreResult = {
+  criteriaCount: number
+  scoresWritten: number
+  skippedReason?: string
+  error?: string
+}
+
+export async function autoScoreDeal(dealId: string, firmId: string): Promise<AutoScoreResult> {
   console.log('autoScoreDeal called for deal ID:', dealId, '| firmId:', firmId)
   try {
     const supabase = await createClient()
@@ -208,12 +215,12 @@ export async function autoScoreDeal(dealId: string, firmId: string): Promise<voi
 
     if (criteriaError) {
       console.error('[auto-score] failed to fetch criteria:', criteriaError.message, '| code:', criteriaError.code)
-      return
+      return { criteriaCount: 0, scoresWritten: 0, error: `criteria fetch failed: ${criteriaError.message}` }
     }
     console.log('[auto-score] criteria fetched:', criteria?.length ?? 0)
     if (!criteria || criteria.length === 0) {
       console.log('[auto-score] no active criteria — skipping')
-      return
+      return { criteriaCount: 0, scoresWritten: 0, skippedReason: 'no active criteria' }
     }
 
     const { data: deal, error: dealError } = await supabase
@@ -225,11 +232,11 @@ export async function autoScoreDeal(dealId: string, firmId: string): Promise<voi
 
     if (dealError) {
       console.error('[auto-score] failed to fetch deal:', dealError.message, '| code:', dealError.code)
-      return
+      return { criteriaCount: criteria.length, scoresWritten: 0, error: `deal fetch failed: ${dealError.message}` }
     }
     if (!deal) {
       console.error('[auto-score] deal not found for id:', dealId)
-      return
+      return { criteriaCount: criteria.length, scoresWritten: 0, error: 'deal not found' }
     }
     console.log('[auto-score] deal fetched:', deal.title)
 
@@ -250,6 +257,10 @@ export async function autoScoreDeal(dealId: string, firmId: string): Promise<voi
 
     const apiKey = process.env.ANTHROPIC_API_KEY
     console.log('[auto-score] ANTHROPIC_API_KEY present:', !!apiKey, '| length:', apiKey?.length ?? 0)
+    if (!apiKey) {
+      console.error('[auto-score] ANTHROPIC_API_KEY is not set — cannot call Claude')
+      return { criteriaCount: criteria.length, scoresWritten: 0, error: 'ANTHROPIC_API_KEY not set' }
+    }
 
     const client = new Anthropic({ apiKey })
 
@@ -303,7 +314,7 @@ ${criteriaText}`,
     const toolUse = msg.content.find(b => b.type === 'tool_use')
     if (!toolUse || toolUse.type !== 'tool_use') {
       console.error('[auto-score] no tool_use block in response — content:', JSON.stringify(msg.content))
-      return
+      return { criteriaCount: criteria.length, scoresWritten: 0, error: 'no tool_use block in Claude response' }
     }
 
     const { scores } = toolUse.input as {
@@ -312,7 +323,7 @@ ${criteriaText}`,
     console.log('[auto-score] scores returned by Claude:', scores?.length ?? 0)
     if (!Array.isArray(scores) || scores.length === 0) {
       console.error('[auto-score] scores array missing or empty — raw input:', JSON.stringify(toolUse.input))
-      return
+      return { criteriaCount: criteria.length, scoresWritten: 0, error: 'Claude returned empty scores array' }
     }
 
     // Only insert scores for criteria that actually belong to this firm
@@ -335,20 +346,24 @@ ${criteriaText}`,
 
     console.log('[auto-score] rows to insert:', rows.length, '(filtered from', scores.length, 'returned)')
     if (rows.length === 0) {
-      console.warn('[auto-score] all scores filtered out — criteria IDs from Claude did not match firm criteria')
+      console.warn('[auto-score] all scores filtered out — Claude criteria IDs did not match firm criteria')
       console.warn('[auto-score] Claude criteria_ids:', scores.map(s => s.criteria_id))
       console.warn('[auto-score] valid firm criteria_ids:', [...validIds])
-      return
+      return { criteriaCount: criteria.length, scoresWritten: 0, error: 'all Claude scores filtered (criteria ID mismatch)' }
     }
 
     const { error: insertError } = await supabase.from('deal_scores').insert(rows)
     if (insertError) {
       console.error('[auto-score] insert failed:', insertError.message, '| code:', insertError.code, '| hint:', insertError.hint, '| details:', insertError.details)
-    } else {
-      console.log('[auto-score] done — inserted', rows.length, 'scores for deal', dealId)
+      return { criteriaCount: criteria.length, scoresWritten: 0, error: `insert failed: ${insertError.message}` }
     }
+
+    console.log('[auto-score] done — inserted', rows.length, 'scores for deal', dealId)
+    return { criteriaCount: criteria.length, scoresWritten: rows.length }
   } catch (err) {
-    console.error('[auto-score] uncaught exception:', err instanceof Error ? `${err.name}: ${err.message}` : err)
+    const msg = err instanceof Error ? `${err.name}: ${err.message}` : String(err)
+    console.error('[auto-score] uncaught exception:', msg)
     if (err instanceof Error && err.stack) console.error('[auto-score] stack:', err.stack)
+    return { criteriaCount: 0, scoresWritten: 0, error: msg }
   }
 }

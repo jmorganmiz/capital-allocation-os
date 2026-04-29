@@ -56,9 +56,9 @@ export async function createDeal(formData: FormData) {
     actor_user_id: user.id,
   })
 
-  console.log('[createDeal] calling autoScoreDeal for deal:', deal.id)
-  await autoScoreDeal(deal.id, profile.firm_id)
-  console.log('[createDeal] autoScoreDeal returned')
+  console.log('[createDeal] calling autoScoreDeal for deal:', deal.id, '| firm:', profile.firm_id)
+  const scoreResult = await autoScoreDeal(deal.id, profile.firm_id)
+  console.log('[createDeal] autoScoreDeal result:', JSON.stringify(scoreResult))
 
   revalidatePath('/pipeline')
   return { deal }
@@ -462,9 +462,9 @@ export async function createDealFromOM(params: {
     }
   }
 
-  console.log('[createDealFromOM] calling autoScoreDeal for deal:', deal.id)
-  await autoScoreDeal(deal.id, profile.firm_id)
-  console.log('[createDealFromOM] autoScoreDeal returned')
+  console.log('[createDealFromOM] calling autoScoreDeal for deal:', deal.id, '| firm:', profile.firm_id)
+  const scoreResult = await autoScoreDeal(deal.id, profile.firm_id)
+  console.log('[createDealFromOM] autoScoreDeal result:', JSON.stringify(scoreResult))
 
   revalidatePath('/pipeline')
   revalidatePath('/contacts')
