@@ -306,12 +306,12 @@ export async function autoScoreDeal(dealId: string, firmId: string): Promise<Aut
       return { criteriaCount: criteria.length, scoresWritten: 0, error: 'ANTHROPIC_API_KEY not set' }
     }
 
-    const client = new Anthropic({ apiKey })
+    const client = new Anthropic({ apiKey, timeout: 25_000 })
 
     console.log('[auto-score] calling Claude...')
     const msg = await client.messages.create({
-      model: 'claude-haiku-4-5',
-      max_tokens: 1024,
+      model: 'claude-3-haiku-20240307',
+      max_tokens: 500,
       tool_choice: { type: 'tool', name: 'score_deal' },
       tools: [
         {

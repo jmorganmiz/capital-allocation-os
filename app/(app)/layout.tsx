@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import MobileSidebar from '@/components/layout/MobileSidebar'
+import Toaster from '@/components/ui/Toaster'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -24,6 +25,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <main className="flex-1 overflow-auto md:pt-0 pt-14">
         {children}
       </main>
+      <Toaster />
     </div>
   )
 }
