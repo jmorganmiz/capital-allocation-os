@@ -4,8 +4,6 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { type BuyBoxWithCriteria } from '@/lib/constants/buybox'
 
-export type { BuyBoxWithCriteria }
-
 type CriterionInput = { name: string; description: string }
 
 type BuyBoxInput = {
