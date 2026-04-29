@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { upsertBuyBox, ASSET_TYPES, type BuyBox } from '@/lib/actions/buybox'
+import { upsertBuyBox } from '@/lib/actions/buybox'
+import { ASSET_TYPES, type BuyBox } from '@/lib/constants/buybox'
 
 interface Props {
   buyBoxes: BuyBox[]
