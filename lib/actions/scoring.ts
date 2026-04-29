@@ -240,15 +240,25 @@ export async function autoScoreDeal(dealId: string, firmId: string): Promise<Aut
     }
     console.log('[auto-score] deal fetched:', deal.title)
 
-    const { data: snapshot } = await supabase
-      .from('deal_financial_snapshots')
-      .select('purchase_price, noi, cap_rate, debt_rate, ltv, irr, square_footage, year_built, num_units, occupancy_rate')
-      .eq('deal_id', dealId)
-      .eq('firm_id', firmId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-    console.log('[auto-score] snapshot:', snapshot ? 'found' : 'none')
+    const [{ data: snapshot }, { data: buyBox }] = await Promise.all([
+      supabase
+        .from('deal_financial_snapshots')
+        .select('purchase_price, noi, cap_rate, debt_rate, ltv, irr, square_footage, year_built, num_units, occupancy_rate')
+        .eq('deal_id', dealId)
+        .eq('firm_id', firmId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      deal.deal_type
+        ? supabase
+            .from('buy_boxes')
+            .select('*')
+            .eq('firm_id', firmId)
+            .eq('asset_type', deal.deal_type)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+    ])
+    console.log('[auto-score] snapshot:', snapshot ? 'found' : 'none', '| buy box:', buyBox ? 'found' : 'none')
 
     const dealContext = [
       `Deal name: ${deal.title}`,
@@ -270,6 +280,18 @@ export async function autoScoreDeal(dealId: string, firmId: string): Promise<Aut
       snapshot?.num_units      != null && `Number of units: ${snapshot.num_units}`,
       snapshot?.occupancy_rate != null && `Occupancy rate: ${(Number(snapshot.occupancy_rate) * 100).toFixed(1)}%`,
     ].filter(Boolean).join('\n')
+
+    const buyBoxContext = buyBox ? [
+      `\nFirm's buy box for ${deal.deal_type}:`,
+      buyBox.min_cap_rate      != null && `- Min cap rate: ${(Number(buyBox.min_cap_rate) * 100).toFixed(1)}% (score 5 if meets/exceeds, 1 if well below)`,
+      buyBox.max_ltv           != null && `- Max LTV: ${(Number(buyBox.max_ltv) * 100).toFixed(0)}% (score 5 if at or below, 1 if materially above)`,
+      buyBox.min_dscr          != null && `- Min DSCR: ${buyBox.min_dscr}x (score 5 if meets/exceeds, 1 if below 1.0x)`,
+      buyBox.min_occupancy     != null && `- Min occupancy: ${(Number(buyBox.min_occupancy) * 100).toFixed(0)}% (score 5 if meets/exceeds, 1 if well below)`,
+      buyBox.min_irr           != null && `- Target IRR: ${(Number(buyBox.min_irr) * 100).toFixed(0)}% (score 5 if meets/exceeds, 1 if well below)`,
+      buyBox.max_asking_price  != null && `- Max asking price: $${Number(buyBox.max_asking_price).toLocaleString()}`,
+      buyBox.preferred_markets && `- Preferred markets: ${buyBox.preferred_markets}`,
+      buyBox.notes             && `- Additional criteria: ${buyBox.notes}`,
+    ].filter(Boolean).join('\n') : ''
 
     const criteriaText = criteria
       .map(c => `- id: ${c.id} | name: ${c.name}${c.description ? ` | description: ${c.description}` : ''}`)
@@ -318,10 +340,11 @@ export async function autoScoreDeal(dealId: string, firmId: string): Promise<Aut
           role: 'user',
           content: `You are a CRE underwriting assistant. Score this deal against the firm's criteria.
 
-Rate each criterion 1–5 (1 = very poor, 3 = neutral / insufficient info, 5 = excellent). Keep reasoning to one concise sentence. Default to 3 if there is not enough information to assess a criterion.
+Rate each criterion 1–5 (1 = very poor, 3 = neutral / insufficient info, 5 = excellent). Keep reasoning to one concise sentence. Default to 3 if there is not enough information to assess a criterion. When a firm buy box is provided, use its thresholds as the primary grading rubric for relevant criteria.
 
 Deal:
 ${dealContext}
+${buyBoxContext}
 
 Criteria (score every one):
 ${criteriaText}`,
