@@ -10,7 +10,7 @@ interface Snapshot {
   cap_rate: number | null
   debt_rate: number | null
   ltv: number | null
-  projected_irr: number | null
+  irr: number | null
   notes: string | null
   created_at: string
 }
@@ -38,7 +38,7 @@ export default function FinancialSnapshot({ dealId, firmId, snapshots: initial }
     cap_rate: '',
     debt_rate: '',
     ltv: '',
-    projected_irr: '',
+    irr: '',
     notes: '',
   })
 
@@ -65,7 +65,7 @@ export default function FinancialSnapshot({ dealId, firmId, snapshots: initial }
           cap_rate: form.cap_rate ? parseFloat(form.cap_rate) : null,
           debt_rate: form.debt_rate ? parseFloat(form.debt_rate) : null,
           ltv: form.ltv ? parseFloat(form.ltv) : null,
-          projected_irr: form.projected_irr ? parseFloat(form.projected_irr) : null,
+          irr: form.irr ? parseFloat(form.irr) : null,
           notes: form.notes || null,
         })
         .select()
@@ -74,7 +74,7 @@ export default function FinancialSnapshot({ dealId, firmId, snapshots: initial }
       if (!error && data) {
         setSnapshots(prev => [data, ...prev])
         setShowForm(false)
-        setForm({ purchase_price: '', noi: '', cap_rate: '', debt_rate: '', ltv: '', projected_irr: '', notes: '' })
+        setForm({ purchase_price: '', noi: '', cap_rate: '', debt_rate: '', ltv: '', irr: '', notes: '' })
       }
     })
   }
@@ -97,7 +97,7 @@ export default function FinancialSnapshot({ dealId, firmId, snapshots: initial }
               { field: 'cap_rate', label: 'Cap Rate (%)' },
               { field: 'debt_rate', label: 'Debt Rate (%)' },
               { field: 'ltv', label: 'LTV (%)' },
-              { field: 'projected_irr', label: 'Projected IRR (%)' },
+              { field: 'irr', label: 'Projected IRR (%)' },
             ].map(({ field, label }) => (
               <div key={field}>
                 <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
@@ -138,7 +138,7 @@ export default function FinancialSnapshot({ dealId, firmId, snapshots: initial }
               { label: 'Cap Rate', value: fmt(latest.cap_rate, true) },
               { label: 'Debt Rate', value: fmt(latest.debt_rate, true) },
               { label: 'LTV', value: fmt(latest.ltv, true) },
-              { label: 'Projected IRR', value: fmt(latest.projected_irr, true) },
+              { label: 'Projected IRR', value: fmt(latest.irr, true) },
             ].map(({ label, value }) => (
               <div key={label} className="bg-white border border-gray-100 rounded-lg p-3">
                 <p className="text-xs text-gray-400 mb-1">{label}</p>
@@ -177,7 +177,7 @@ export default function FinancialSnapshot({ dealId, firmId, snapshots: initial }
                           { label: 'Cap Rate', value: fmt(snap.cap_rate, true) },
                           { label: 'Debt Rate', value: fmt(snap.debt_rate, true) },
                           { label: 'LTV', value: fmt(snap.ltv, true) },
-                          { label: 'IRR', value: fmt(snap.projected_irr, true) },
+                          { label: 'IRR', value: fmt(snap.irr, true) },
                         ].map(({ label, value }) => (
                           <div key={label}>
                             <p className="text-xs text-gray-400">{label}</p>

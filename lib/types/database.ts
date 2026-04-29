@@ -168,6 +168,7 @@ export interface Database {
           debt_rate: number | null; ltv: number | null; irr: number | null
           square_footage: number | null; year_built: number | null
           num_units: number | null; occupancy_rate: number | null
+          notes: string | null
           created_by: string; created_at: string
         }
         Insert: {
@@ -176,6 +177,7 @@ export interface Database {
           debt_rate?: number | null; ltv?: number | null; irr?: number | null
           square_footage?: number | null; year_built?: number | null
           num_units?: number | null; occupancy_rate?: number | null
+          notes?: string | null
           created_by: string
         }
         Update: never

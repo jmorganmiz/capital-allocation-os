@@ -406,7 +406,7 @@ export async function createDealFromOM(params: {
     asking_price !== null || noi !== null || cap_rate !== null ||
     square_footage !== null || year_built !== null || num_units !== null || occupancy_rate !== null
   ) {
-    await supabase.from('deal_financial_snapshots').insert({
+    const { error: snapshotErr } = await supabase.from('deal_financial_snapshots').insert({
       deal_id:        deal.id,
       firm_id:        profile.firm_id,
       purchase_price: asking_price,
@@ -418,6 +418,14 @@ export async function createDealFromOM(params: {
       occupancy_rate,
       created_by:     user.id,
     })
+    if (snapshotErr) {
+      console.error('[createDealFromOM] snapshot insert failed:', snapshotErr.message, '| code:', snapshotErr.code,
+        '| hint:', snapshotErr.hint, '| detail:', snapshotErr.details)
+    } else {
+      console.log('[createDealFromOM] snapshot created for deal:', deal.id)
+    }
+  } else {
+    console.log('[createDealFromOM] no financial/property data extracted — snapshot skipped')
   }
 
   // Record uploaded file
