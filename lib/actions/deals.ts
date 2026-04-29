@@ -440,27 +440,56 @@ export async function createDealFromOM(params: {
   })
 
   // Optionally create broker contact and link to deal
-  // Use the raw broker name (not the combined source_name string) for the contact record
   if (params.addBrokerContact && params.brokerName) {
-    const { data: contact } = await supabase
-      .from('contacts')
-      .insert({
-        firm_id:      profile.firm_id,
-        name:         params.brokerName,
-        company:      params.brokerCompany,
-        contact_type: 'broker',
-        created_by:   user.id,
-      })
-      .select()
-      .single()
+    console.log('[createDealFromOM] creating broker contact:', params.brokerName, '| company:', params.brokerCompany)
 
-    if (contact) {
-      await supabase.from('deal_contacts').insert({
-        deal_id:    deal.id,
-        contact_id: contact.id,
-        firm_id:    profile.firm_id,
-        is_source:  true,
-      })
+    // Check if a contact with this name already exists for the firm (avoid duplicate)
+    const { data: existing } = await supabase
+      .from('contacts')
+      .select('id')
+      .eq('firm_id', profile.firm_id)
+      .eq('name', params.brokerName)
+      .maybeSingle()
+
+    let contactId: string | null = existing?.id ?? null
+
+    if (existing) {
+      console.log('[createDealFromOM] broker contact already exists, id:', existing.id)
+    } else {
+      const { data: newContact, error: contactErr } = await supabase
+        .from('contacts')
+        .insert({
+          firm_id:      profile.firm_id,
+          name:         params.brokerName,
+          company:      params.brokerCompany ?? null,
+          contact_type: 'broker',
+          created_by:   user.id,
+        })
+        .select('id')
+        .single()
+
+      if (contactErr) {
+        console.error('[createDealFromOM] contact insert failed:', contactErr.message, '| code:', contactErr.code)
+      } else {
+        contactId = newContact.id
+        console.log('[createDealFromOM] broker contact created, id:', contactId)
+      }
+    }
+
+    if (contactId) {
+      const { error: linkErr } = await supabase
+        .from('deal_contacts')
+        .insert({
+          deal_id:    deal.id,
+          contact_id: contactId,
+          firm_id:    profile.firm_id,
+          is_source:  true,
+        })
+      if (linkErr) {
+        console.error('[createDealFromOM] deal_contacts link failed:', linkErr.message, '| code:', linkErr.code)
+      } else {
+        console.log('[createDealFromOM] broker linked to deal as source contact')
+      }
     }
   }
 
