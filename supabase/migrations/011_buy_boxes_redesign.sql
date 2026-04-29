@@ -32,11 +32,18 @@ CREATE INDEX IF NOT EXISTS buy_box_criteria_firm_id_idx    ON buy_box_criteria(f
 
 ALTER TABLE buy_box_criteria ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS "buy_box_criteria_select" ON buy_box_criteria
+DROP POLICY IF EXISTS "buy_box_criteria_select" ON buy_box_criteria;
+CREATE POLICY "buy_box_criteria_select" ON buy_box_criteria
   FOR SELECT USING (firm_id = (SELECT firm_id FROM profiles WHERE id = auth.uid()));
-CREATE POLICY IF NOT EXISTS "buy_box_criteria_insert" ON buy_box_criteria
+
+DROP POLICY IF EXISTS "buy_box_criteria_insert" ON buy_box_criteria;
+CREATE POLICY "buy_box_criteria_insert" ON buy_box_criteria
   FOR INSERT WITH CHECK (firm_id = (SELECT firm_id FROM profiles WHERE id = auth.uid()));
-CREATE POLICY IF NOT EXISTS "buy_box_criteria_update" ON buy_box_criteria
+
+DROP POLICY IF EXISTS "buy_box_criteria_update" ON buy_box_criteria;
+CREATE POLICY "buy_box_criteria_update" ON buy_box_criteria
   FOR UPDATE USING (firm_id = (SELECT firm_id FROM profiles WHERE id = auth.uid()));
-CREATE POLICY IF NOT EXISTS "buy_box_criteria_delete" ON buy_box_criteria
+
+DROP POLICY IF EXISTS "buy_box_criteria_delete" ON buy_box_criteria;
+CREATE POLICY "buy_box_criteria_delete" ON buy_box_criteria
   FOR DELETE USING (firm_id = (SELECT firm_id FROM profiles WHERE id = auth.uid()));
