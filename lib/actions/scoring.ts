@@ -194,9 +194,10 @@ export async function deleteScoringCriteria(id: string) {
 // ─── AI Auto-Scoring ──────────────────────────────────────────────────────────
 
 export async function autoScoreDeal(dealId: string, firmId: string): Promise<void> {
-  console.log('[auto-score] starting — dealId:', dealId, 'firmId:', firmId)
+  console.log('autoScoreDeal called for deal ID:', dealId, '| firmId:', firmId)
   try {
     const supabase = await createClient()
+    console.log('[auto-score] supabase client created')
 
     const { data: criteria, error: criteriaError } = await supabase
       .from('scoring_criteria')
