@@ -240,6 +240,25 @@ export async function autoScoreDeal(dealId: string, firmId: string): Promise<Aut
     }
     console.log('[auto-score] deal fetched:', deal.title)
 
+    const [{ data: snapshot }, { data: overviewNote }] = await Promise.all([
+      supabase
+        .from('deal_financial_snapshots')
+        .select('purchase_price, noi, cap_rate')
+        .eq('deal_id', dealId)
+        .eq('firm_id', firmId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from('deal_notes')
+        .select('content')
+        .eq('deal_id', dealId)
+        .eq('firm_id', firmId)
+        .eq('section', 'overview')
+        .maybeSingle(),
+    ])
+    console.log('[auto-score] snapshot:', snapshot ? 'found' : 'none', '| overview note:', overviewNote ? 'found' : 'none')
+
     const dealContext = [
       `Deal name: ${deal.title}`,
       deal.address        && `Address: ${deal.address}`,
@@ -249,6 +268,10 @@ export async function autoScoreDeal(dealId: string, firmId: string): Promise<Aut
       deal.property_size  && `Property size: ${deal.property_size}`,
       deal.deal_structure && `Deal structure: ${deal.deal_structure}`,
       deal.financing_type && `Financing type: ${deal.financing_type}`,
+      snapshot?.noi         != null && `NOI: $${Number(snapshot.noi).toLocaleString()}`,
+      snapshot?.cap_rate    != null && `Cap rate: ${Number(snapshot.cap_rate).toFixed(2)}%`,
+      snapshot?.purchase_price != null && `Purchase price: $${Number(snapshot.purchase_price).toLocaleString()}`,
+      overviewNote?.content && `Property details: ${overviewNote.content}`,
     ].filter(Boolean).join('\n')
 
     const criteriaText = criteria
