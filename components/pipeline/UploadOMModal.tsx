@@ -199,7 +199,7 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
     setAskingPrice(data.asking_price ? formatCurrency(data.asking_price) : '')
     setNoi(data.noi ? formatCurrency(data.noi) : '')
     setCapRate(data.cap_rate ? (data.cap_rate * 100).toFixed(2) : '')
-    setAddBroker(!!data.broker_name)
+    setAddBroker(false)
     console.log('[OM] Setting step to preview')
     setStep('preview')
   }

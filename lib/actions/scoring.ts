@@ -323,7 +323,7 @@ export async function autoScoreDeal(dealId: string, firmId: string): Promise<Aut
 
     console.log('[auto-score] calling Claude...')
     const msg = await client.messages.create({
-      model: 'claude-3-haiku-20240307',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 500,
       tool_choice: { type: 'tool', name: 'score_deal' },
       tools: [
