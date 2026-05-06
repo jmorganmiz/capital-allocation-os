@@ -61,7 +61,7 @@ export async function createDeal(formData: FormData) {
   console.log('[createDeal] autoScoreDeal result:', JSON.stringify(scoreResult))
 
   revalidatePath('/pipeline')
-  return { deal }
+  return { deal, scoreResult }
 }
 
 export async function updateDealStage(
@@ -348,6 +348,7 @@ export async function createDealFromOM(params: {
     asking_price: number | null
     noi: number | null
     cap_rate: number | null
+    irr: number | null
   }
   addBrokerContact: boolean
   brokerName: string | null       // raw broker name for contact record
@@ -400,10 +401,10 @@ export async function createDealFromOM(params: {
   })
 
   // Create financial snapshot if any data was extracted
-  const { asking_price, noi, cap_rate } = params.financials
+  const { asking_price, noi, cap_rate, irr } = params.financials
   const { square_footage, year_built, num_units, occupancy_rate } = params.propertyDetails
   if (
-    asking_price !== null || noi !== null || cap_rate !== null ||
+    asking_price !== null || noi !== null || cap_rate !== null || irr !== null ||
     square_footage !== null || year_built !== null || num_units !== null || occupancy_rate !== null
   ) {
     const { error: snapshotErr } = await supabase.from('deal_financial_snapshots').insert({
@@ -412,6 +413,7 @@ export async function createDealFromOM(params: {
       purchase_price: asking_price,
       noi,
       cap_rate,
+      irr,
       square_footage,
       year_built,
       num_units,
@@ -507,7 +509,7 @@ export async function createDealFromOM(params: {
 
   revalidatePath('/pipeline')
   revalidatePath('/contacts')
-  return { deal }
+  return { deal, scoreResult }
 }
 
 export async function listArchivedDeals(filters?: {

@@ -218,8 +218,21 @@ export async function autoScoreDeal(dealId: string, firmId: string): Promise<Aut
       return { criteriaCount: 0, scoresWritten: 0, error: `criteria fetch failed: ${criteriaError.message}` }
     }
     console.log('[auto-score] criteria fetched:', criteria?.length ?? 0)
-    if (!criteria || criteria.length === 0) {
-      console.log('[auto-score] no active criteria — skipping')
+    let activeCriteria = criteria ?? []
+    if (activeCriteria.length === 0) {
+      console.log('[auto-score] no criteria for firm — seeding defaults now')
+      await seedDefaultCriteria(firmId, supabase)
+      const { data: seeded } = await supabase
+        .from('scoring_criteria')
+        .select('id, name, description')
+        .eq('firm_id', firmId)
+        .eq('is_active', true)
+        .order('position')
+      activeCriteria = seeded ?? []
+      console.log('[auto-score] post-seed criteria count:', activeCriteria.length)
+    }
+    if (activeCriteria.length === 0) {
+      console.log('[auto-score] still no criteria after seed — skipping')
       return { criteriaCount: 0, scoresWritten: 0, skippedReason: 'no active criteria' }
     }
 
@@ -232,11 +245,11 @@ export async function autoScoreDeal(dealId: string, firmId: string): Promise<Aut
 
     if (dealError) {
       console.error('[auto-score] failed to fetch deal:', dealError.message, '| code:', dealError.code)
-      return { criteriaCount: criteria.length, scoresWritten: 0, error: `deal fetch failed: ${dealError.message}` }
+      return { criteriaCount: activeCriteria.length, scoresWritten: 0, error: `deal fetch failed: ${dealError.message}` }
     }
     if (!deal) {
       console.error('[auto-score] deal not found for id:', dealId)
-      return { criteriaCount: criteria.length, scoresWritten: 0, error: 'deal not found' }
+      return { criteriaCount: activeCriteria.length, scoresWritten: 0, error: 'deal not found' }
     }
     console.log('[auto-score] deal fetched:', deal.title)
 
@@ -295,7 +308,7 @@ export async function autoScoreDeal(dealId: string, firmId: string): Promise<Aut
       buyBoxCriteria.length > 0      && `- Custom criteria to evaluate: ${buyBoxCriteria.map((c: any) => c.name + (c.description ? ` (${c.description})` : '')).join('; ')}`,
     ].filter(Boolean).join('\n') : ''
 
-    const criteriaText = criteria
+    const criteriaText = activeCriteria
       .map(c => `- id: ${c.id} | name: ${c.name}${c.description ? ` | description: ${c.description}` : ''}`)
       .join('\n')
 
@@ -303,7 +316,7 @@ export async function autoScoreDeal(dealId: string, firmId: string): Promise<Aut
     console.log('[auto-score] ANTHROPIC_API_KEY present:', !!apiKey, '| length:', apiKey?.length ?? 0)
     if (!apiKey) {
       console.error('[auto-score] ANTHROPIC_API_KEY is not set — cannot call Claude')
-      return { criteriaCount: criteria.length, scoresWritten: 0, error: 'ANTHROPIC_API_KEY not set' }
+      return { criteriaCount: activeCriteria.length, scoresWritten: 0, error: 'ANTHROPIC_API_KEY not set' }
     }
 
     const client = new Anthropic({ apiKey, timeout: 25_000 })
@@ -359,7 +372,7 @@ ${criteriaText}`,
     const toolUse = msg.content.find(b => b.type === 'tool_use')
     if (!toolUse || toolUse.type !== 'tool_use') {
       console.error('[auto-score] no tool_use block in response — content:', JSON.stringify(msg.content))
-      return { criteriaCount: criteria.length, scoresWritten: 0, error: 'no tool_use block in Claude response' }
+      return { criteriaCount: activeCriteria.length, scoresWritten: 0, error: 'no tool_use block in Claude response' }
     }
 
     const { scores } = toolUse.input as {
@@ -368,11 +381,11 @@ ${criteriaText}`,
     console.log('[auto-score] scores returned by Claude:', scores?.length ?? 0)
     if (!Array.isArray(scores) || scores.length === 0) {
       console.error('[auto-score] scores array missing or empty — raw input:', JSON.stringify(toolUse.input))
-      return { criteriaCount: criteria.length, scoresWritten: 0, error: 'Claude returned empty scores array' }
+      return { criteriaCount: activeCriteria.length, scoresWritten: 0, error: 'Claude returned empty scores array' }
     }
 
     // Only insert scores for criteria that actually belong to this firm
-    const validIds = new Set(criteria.map(c => c.id))
+    const validIds = new Set(activeCriteria.map(c => c.id))
     const rows = scores
       .filter(s =>
         validIds.has(s.criteria_id) &&
@@ -394,17 +407,17 @@ ${criteriaText}`,
       console.warn('[auto-score] all scores filtered out — Claude criteria IDs did not match firm criteria')
       console.warn('[auto-score] Claude criteria_ids:', scores.map(s => s.criteria_id))
       console.warn('[auto-score] valid firm criteria_ids:', [...validIds])
-      return { criteriaCount: criteria.length, scoresWritten: 0, error: 'all Claude scores filtered (criteria ID mismatch)' }
+      return { criteriaCount: activeCriteria.length, scoresWritten: 0, error: 'all Claude scores filtered (criteria ID mismatch)' }
     }
 
     const { error: insertError } = await supabase.from('deal_scores').insert(rows)
     if (insertError) {
       console.error('[auto-score] insert failed:', insertError.message, '| code:', insertError.code, '| hint:', insertError.hint, '| details:', insertError.details)
-      return { criteriaCount: criteria.length, scoresWritten: 0, error: `insert failed: ${insertError.message}` }
+      return { criteriaCount: activeCriteria.length, scoresWritten: 0, error: `insert failed: ${insertError.message}` }
     }
 
     console.log('[auto-score] done — inserted', rows.length, 'scores for deal', dealId)
-    return { criteriaCount: criteria.length, scoresWritten: rows.length }
+    return { criteriaCount: activeCriteria.length, scoresWritten: rows.length }
   } catch (err) {
     const msg = err instanceof Error ? `${err.name}: ${err.message}` : String(err)
     console.error('[auto-score] uncaught exception:', msg)

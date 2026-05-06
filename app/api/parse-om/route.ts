@@ -15,13 +15,15 @@ const EXTRACTION_PROMPT = `You are a real estate data extraction assistant. Extr
 
 - address (string): Full property address
 - asking_price (number): Asking/list price in dollars, digits only, no formatting
-- noi (number): Net Operating Income in dollars, digits only, no formatting
-- cap_rate (number): Cap rate as a decimal (e.g. 0.065 for 6.5%)
+- noi (number): Net Operating Income in dollars — look for "Net Operating Income", "NOI", "Stabilized NOI", "Year 1 NOI", "T-12 NOI". Digits only, no formatting.
+- cap_rate (number): Cap rate as a decimal (e.g. 0.065 for 6.5%). Look for "Cap Rate", "Going-In Cap Rate", "Stabilized Cap Rate". If expressed as a percentage like "6.50%" convert to 0.065.
+- irr (number): Projected Internal Rate of Return as a decimal (e.g. 0.18 for 18%). Look for "IRR", "Projected IRR", "Levered IRR", "Unlevered IRR" in any returns analysis or pro forma section. null if not shown.
+- debt_service (number): Annual debt service in dollars if explicitly shown in a sources & uses table or cash flow summary. Digits only, null if not shown.
 - property_type (string): One of: multifamily, retail, office, industrial, hospitality, self_storage, mixed_use, land, other
-- square_footage (number): Total square footage, digits only
+- square_footage (number): Total square footage (GLA, GBA, or NRA), digits only
 - year_built (number): Four-digit year the property was built
 - num_units (number): Number of units for multifamily/self-storage, null otherwise
-- occupancy_rate (number): Occupancy as decimal (e.g. 0.95 for 95%)
+- occupancy_rate (number): Current or in-place occupancy as decimal (e.g. 0.95 for 95%). Look for "Occupancy", "Leased %", "Physical Occupancy".
 - broker_name (string): Broker's full name
 - brokerage (string): Brokerage firm name
 - market (string): City and state (e.g. "Austin, TX")
@@ -124,7 +126,7 @@ async function handleParseOM(req: NextRequest): Promise<NextResponse> {
     try {
       const message = await client.messages.create({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 1024,
+        max_tokens: 1536,
         messages: [
           {
             role: 'user',
@@ -172,7 +174,7 @@ async function handleParseOM(req: NextRequest): Promise<NextResponse> {
     const message = await client.beta.messages.create(
       {
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 1024,
+        max_tokens: 1536,
         messages: [{ role: 'user', content: [docBlock, textBlock] }],
       },
       { headers: { 'anthropic-beta': 'pdfs-2024-09-25' } },

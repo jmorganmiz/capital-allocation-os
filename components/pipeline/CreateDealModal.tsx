@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { Deal, DealStage } from '@/lib/types/database'
 import { createDeal } from '@/lib/actions/deals'
+import { showToast } from '@/lib/toast'
 
 interface Props {
   stages: DealStage[]
@@ -24,6 +25,10 @@ export default function CreateDealModal({ stages, onCreated, onCancel }: Props) 
       if (result.error) {
         setError(result.error)
       } else if (result.deal) {
+        const sr = result.scoreResult
+        if (sr?.error) showToast(`AI scoring failed: ${sr.error}`, 'error')
+        else if (sr?.skippedReason) showToast(`AI scoring skipped: ${sr.skippedReason}`, 'info')
+        else if (sr?.scoresWritten) showToast(`AI scored ${sr.scoresWritten} criteria`, 'success')
         onCreated(result.deal as Deal)
       }
     })

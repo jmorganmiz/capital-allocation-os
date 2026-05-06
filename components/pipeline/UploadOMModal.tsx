@@ -4,12 +4,15 @@ import { useState, useRef, useTransition } from 'react'
 import { Deal, DealStage } from '@/lib/types/database'
 import { createClient } from '@/lib/supabase/client'
 import { createDealFromUpload, createDealFromOM } from '@/lib/actions/deals'
+import { showToast } from '@/lib/toast'
 
 interface ParsedOM {
   address: string | null
   asking_price: number | null
   noi: number | null
   cap_rate: number | null
+  irr: number | null
+  debt_service: number | null
   property_type: string | null
   square_footage: number | null
   year_built: number | null
@@ -266,6 +269,7 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
             asking_price: parseCurrency(askingPrice),
             noi:          parseCurrency(noi),
             cap_rate:     capRateNum !== null && !isNaN(capRateNum) ? capRateNum : null,
+            irr:          parsedOM?.irr ?? null,
           },
           // Use the raw AI-extracted broker name for the contact (not the combined source_name)
           addBrokerContact: addBroker && !!(parsedOM?.broker_name ?? sourceName.trim()),
@@ -284,6 +288,10 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
           setError(result.error)
         } else if (result.deal) {
           console.log('[OM] Deal created successfully:', result.deal.id)
+          const sr = result.scoreResult
+          if (sr?.error) showToast(`AI scoring failed: ${sr.error}`, 'error')
+          else if (sr?.skippedReason) showToast(`AI scoring skipped: ${sr.skippedReason}`, 'info')
+          else if (sr?.scoresWritten) showToast(`AI scored ${sr.scoresWritten} criteria`, 'success')
           onCreated(result.deal as Deal)
           return
         }
@@ -570,7 +578,7 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
               </div>
 
               {/* Additional details (read-only) */}
-              {parsedOM && (parsedOM.square_footage || parsedOM.year_built || parsedOM.num_units || parsedOM.occupancy_rate) && (
+              {parsedOM && (parsedOM.square_footage || parsedOM.year_built || parsedOM.num_units || parsedOM.occupancy_rate || parsedOM.irr || parsedOM.debt_service) && (
                 <div className="bg-gray-50 rounded-md p-3">
                   <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">Additional Details</p>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1">
@@ -585,6 +593,12 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
                     )}
                     {parsedOM.occupancy_rate && (
                       <p className="text-xs text-gray-600">Occupancy: {(parsedOM.occupancy_rate * 100).toFixed(1)}%</p>
+                    )}
+                    {parsedOM.irr && (
+                      <p className="text-xs text-gray-600">Projected IRR: {(parsedOM.irr * 100).toFixed(1)}%</p>
+                    )}
+                    {parsedOM.debt_service && (
+                      <p className="text-xs text-gray-600">Debt Service: ${parsedOM.debt_service.toLocaleString()}/yr</p>
                     )}
                   </div>
                 </div>
