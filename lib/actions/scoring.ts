@@ -321,26 +321,40 @@ export async function autoScoreDeal(dealId: string, firmId: string): Promise<Aut
 
     const client = new Anthropic({ apiKey, timeout: 25_000 })
 
-    console.log('[auto-score] calling Claude...')
+    const userPrompt = `You are a CRE underwriting assistant. You MUST call the score_deal tool with one entry in the scores array for EVERY criterion ID listed below — the array must never be empty.
+
+Rate each criterion 1–5 (1 = very poor, 3 = neutral/insufficient info, 5 = excellent). Keep reasoning to one concise sentence. Default to 3 when there is not enough information. When a buy box is provided, use its thresholds as the primary rubric.
+
+Deal:
+${dealContext}
+${buyBoxContext}
+
+Criteria to score (include ALL of these in the scores array — use the exact criteria_id shown):
+${criteriaText}`
+
+    console.log('[auto-score] sending prompt to Claude, criteria count:', activeCriteria.length)
+    console.log('[auto-score] prompt:\n', userPrompt)
+
     const msg = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 500,
+      max_tokens: 2000,
       tool_choice: { type: 'tool', name: 'score_deal' },
       tools: [
         {
           name: 'score_deal',
-          description: 'Score a CRE deal on each underwriting criterion.',
+          description: 'Score a CRE deal on each underwriting criterion. The scores array MUST contain one entry per criterion — never return an empty array.',
           input_schema: {
             type: 'object' as const,
             properties: {
               scores: {
                 type: 'array',
+                minItems: 1,
                 items: {
                   type: 'object',
                   properties: {
-                    criteria_id: { type: 'string' },
+                    criteria_id: { type: 'string', description: 'Exact criteria_id from the prompt' },
                     score:       { type: 'integer', minimum: 1, maximum: 5 },
-                    reasoning:   { type: 'string' },
+                    reasoning:   { type: 'string', description: 'One concise sentence' },
                   },
                   required: ['criteria_id', 'score', 'reasoning'],
                 },
@@ -350,24 +364,11 @@ export async function autoScoreDeal(dealId: string, firmId: string): Promise<Aut
           },
         },
       ],
-      messages: [
-        {
-          role: 'user',
-          content: `You are a CRE underwriting assistant. Score this deal against the firm's criteria.
-
-Rate each criterion 1–5 (1 = very poor, 3 = neutral / insufficient info, 5 = excellent). Keep reasoning to one concise sentence. Default to 3 if there is not enough information to assess a criterion. When a firm buy box is provided, use its thresholds as the primary grading rubric for relevant criteria.
-
-Deal:
-${dealContext}
-${buyBoxContext}
-
-Criteria (score every one):
-${criteriaText}`,
-        },
-      ],
+      messages: [{ role: 'user', content: userPrompt }],
     })
 
     console.log('[auto-score] Claude responded — stop_reason:', msg.stop_reason, '| content blocks:', msg.content.length)
+    console.log('[auto-score] full response:', JSON.stringify(msg.content))
 
     const toolUse = msg.content.find(b => b.type === 'tool_use')
     if (!toolUse || toolUse.type !== 'tool_use') {
