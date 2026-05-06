@@ -400,7 +400,7 @@ ${criteriaText}`
         firm_id:     firmId,
         score:       s.score,
         notes:       s.reasoning || null,
-        scored_by:   'ai-auto',
+        scored_by:   null,
       }))
 
     console.log('[auto-score] rows to insert:', rows.length, '(filtered from', scores.length, 'returned)')
