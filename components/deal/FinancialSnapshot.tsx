@@ -165,7 +165,7 @@ export default function FinancialSnapshot({ dealId, firmId, snapshots: initial }
 
               {showHistory && (
                 <div className="mt-3 space-y-3">
-                  {snapshots.slice(1).map((snap, i) => (
+                  {snapshots.slice(1).map((snap) => (
                     <div key={snap.id} className="border border-gray-100 rounded-lg p-3 bg-gray-50">
                       <p className="text-xs text-gray-400 mb-2">
                         {new Date(snap.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}

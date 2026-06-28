@@ -11,7 +11,7 @@ interface Props {
   onCancel: () => void
 }
 
-export default function CreateDealModal({ stages, onCreated, onCancel }: Props) {
+export default function CreateDealModal({ onCreated, onCancel }: Props) {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
 

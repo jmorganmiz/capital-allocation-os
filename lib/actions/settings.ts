@@ -1,15 +1,16 @@
 'use server'
 
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { getResend } from '@/lib/resend'
 
 export async function createDealStage(name: string, position: number) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data: profile } = await supabase.from('profiles').select('firm_id').single()
-  if (!profile) return { error: 'Profile not found' }
+  const { data: profile } = await supabase.from('profiles').select('firm_id, role').single()
+  if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   const { data, error } = await supabase
     .from('deal_stages')
@@ -26,8 +27,8 @@ export async function updateDealStage(id: string, updates: { name?: string; posi
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data: profile } = await supabase.from('profiles').select('firm_id').single()
-  if (!profile) return { error: 'Profile not found' }
+  const { data: profile } = await supabase.from('profiles').select('firm_id, role').single()
+  if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   const { error } = await supabase
     .from('deal_stages')
@@ -45,8 +46,8 @@ export async function deleteDealStage(id: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data: profile } = await supabase.from('profiles').select('firm_id').single()
-  if (!profile) return { error: 'Profile not found' }
+  const { data: profile } = await supabase.from('profiles').select('firm_id, role').single()
+  if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   const { error } = await supabase
     .from('deal_stages')
@@ -64,8 +65,8 @@ export async function createKillReason(name: string, position: number) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data: profile } = await supabase.from('profiles').select('firm_id').single()
-  if (!profile) return { error: 'Profile not found' }
+  const { data: profile } = await supabase.from('profiles').select('firm_id, role').single()
+  if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   const { data, error } = await supabase
     .from('kill_reasons')
@@ -82,8 +83,8 @@ export async function updateKillReason(id: string, updates: { name?: string; pos
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data: profile } = await supabase.from('profiles').select('firm_id').single()
-  if (!profile) return { error: 'Profile not found' }
+  const { data: profile } = await supabase.from('profiles').select('firm_id, role').single()
+  if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   const { error } = await supabase
     .from('kill_reasons')
@@ -101,8 +102,8 @@ export async function deleteKillReason(id: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data: profile } = await supabase.from('profiles').select('firm_id').single()
-  if (!profile) return { error: 'Profile not found' }
+  const { data: profile } = await supabase.from('profiles').select('firm_id, role').single()
+  if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   const { error } = await supabase
     .from('kill_reasons')
@@ -122,10 +123,10 @@ export async function inviteTeamMember(email: string) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('firm_id, firms(name)')
+    .select('firm_id, role, firms(name)')
     .eq('id', user.id)
     .single()
-  if (!profile) return { error: 'Profile not found' }
+  if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   // Check if already a member
   const { data: existing } = await supabase
@@ -161,17 +162,15 @@ export async function inviteTeamMember(email: string) {
 
   if (inviteError) return { error: inviteError.message }
 
-  // Send invite email via Supabase
+  // Send a normal application invite. Signup validates both token and email.
   const firmName = (profile.firms as any)?.name ?? 'your team'
   const inviteUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://getdealstash.com'}/signup?invite=${invite.token}&email=${encodeURIComponent(email)}`
 
-  const adminClient = createAdminClient()
-  const { error: emailError } = await adminClient.auth.admin.inviteUserByEmail(email, {
-    data: {
-      firm_id: profile.firm_id,
-      invite_token: invite.token,
-    },
-    redirectTo: inviteUrl,
+  const { error: emailError } = await getResend().emails.send({
+    from: 'team@getdealstash.com',
+    to: email,
+    subject: `Join ${firmName} on Dealstash`,
+    text: `You have been invited to join ${firmName} on Dealstash. Accept your invite: ${inviteUrl}`,
   })
 
   if (emailError) return { error: emailError.message }

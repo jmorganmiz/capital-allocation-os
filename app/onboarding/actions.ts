@@ -4,7 +4,10 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 
 export async function setupWorkspaceAction(prevState: any, formData: FormData) {
-  const firmName = formData.get('firm_name') as string
+  const firmName = String(formData.get('firm_name') ?? '').trim()
+  if (!firmName || firmName.length > 160) {
+    return { error: 'Firm name must be between 1 and 160 characters.' }
+  }
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -34,6 +37,11 @@ export async function setupWorkspaceAction(prevState: any, formData: FormData) {
     return { error: firmError?.message ?? 'Failed to create workspace.' }
   }
 
+  const rollbackFirm = async () => {
+    const { error } = await adminClient.from('firms').delete().eq('id', firm.id)
+    if (error) console.error('[onboarding] workspace rollback failed:', error.code)
+  }
+
   // Create profile
   const { error: profileError } = await adminClient.from('profiles').upsert({
     id: user.id,
@@ -44,11 +52,12 @@ export async function setupWorkspaceAction(prevState: any, formData: FormData) {
   })
 
   if (profileError) {
+    await rollbackFirm()
     return { error: profileError.message }
   }
 
   // Seed default deal stages
-  const { data: seededStages } = await adminClient.from('deal_stages').insert([
+  const { data: seededStages, error: stagesError } = await adminClient.from('deal_stages').insert([
     { firm_id: firm.id, name: 'New',           position: 0, is_terminal: false },
     { firm_id: firm.id, name: 'Screening',     position: 1, is_terminal: false },
     { firm_id: firm.id, name: 'LOI',           position: 2, is_terminal: false },
@@ -57,9 +66,13 @@ export async function setupWorkspaceAction(prevState: any, formData: FormData) {
     { firm_id: firm.id, name: 'Killed',        position: 5, is_terminal: true  },
   ]).select()
 
-  if (seededStages) {
-    const stageId = (name: string) => seededStages.find(s => s.name === name)?.id
-    const checklistRows = [
+  if (stagesError || !seededStages) {
+    await rollbackFirm()
+    return { error: 'Failed to initialize workspace stages.' }
+  }
+
+  const stageId = (name: string) => seededStages.find(s => s.name === name)?.id
+  const checklistRows = [
       // Screening
       { firm_id: firm.id, stage_id: stageId('Screening'), name: 'Review offering memorandum', position: 0 },
       { firm_id: firm.id, stage_id: stageId('Screening'), name: 'Run comparable sales analysis', position: 1 },
@@ -77,18 +90,28 @@ export async function setupWorkspaceAction(prevState: any, formData: FormData) {
       { firm_id: firm.id, stage_id: stageId('Due Diligence'), name: 'Review title and survey', position: 3 },
       { firm_id: firm.id, stage_id: stageId('Due Diligence'), name: 'Finalize loan commitment', position: 4 },
       { firm_id: firm.id, stage_id: stageId('Due Diligence'), name: 'IC final approval', position: 5 },
-    ].filter(r => r.stage_id)
-    await adminClient.from('stage_checklist_items').insert(checklistRows)
+  ].filter(r => r.stage_id)
+  const { error: checklistError } = await adminClient
+    .from('stage_checklist_items')
+    .insert(checklistRows)
+  if (checklistError) {
+    await rollbackFirm()
+    return { error: 'Failed to initialize workspace checklist.' }
   }
 
   // Seed default kill reasons
-  await adminClient.from('kill_reasons').insert([
+  const { error: reasonsError } = await adminClient.from('kill_reasons').insert([
     { firm_id: firm.id, name: 'Price Too High', position: 0 },
     { firm_id: firm.id, name: 'Market Concerns', position: 1 },
     { firm_id: firm.id, name: 'Due Diligence Issues', position: 2 },
     { firm_id: firm.id, name: 'Financing Fell Through', position: 3 },
     { firm_id: firm.id, name: 'Passed on Returns', position: 4 },
   ])
+
+  if (reasonsError) {
+    await rollbackFirm()
+    return { error: 'Failed to initialize workspace settings.' }
+  }
 
   redirect('/pipeline')
 }

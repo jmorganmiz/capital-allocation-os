@@ -15,7 +15,7 @@ interface Props {
   firmUsers: { id: string; full_name: string | null }[]
 }
 
-export default function DealHeader({ deal, stages, killReasons, currentStage, firmUsers }: Props) {
+export default function DealHeader({ deal, stages, killReasons, firmUsers }: Props) {
   const [showKillModal, setShowKillModal] = useState(false)
   const [ownerId, setOwnerId] = useState(deal.owner_user_id ?? '')
   const [address, setAddress] = useState(deal.address ?? '')

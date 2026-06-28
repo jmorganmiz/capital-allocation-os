@@ -1,4 +1,23 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Capital Allocation OS
+
+Dealstash is a multi-tenant commercial-real-estate deal pipeline built with
+Next.js, Supabase, Stripe, Resend, and Anthropic.
+
+## Local setup
+
+1. Copy `.env.example` to `.env.local` and populate every required secret.
+2. Apply Supabase migrations in numeric order.
+3. Run `npm ci`.
+4. Run `npm run dev`.
+
+Run `npm run check` before deployment. GitHub Actions runs the same typecheck,
+lint, security regression tests, and production dependency audit.
+
+Stripe, Resend, and digest webhooks fail closed when their required secrets are
+missing. Supabase row-level security is the tenant boundary, so migrations must
+be applied before deploying application code.
+
+## Original Next.js notes
 
 ## Getting Started
 

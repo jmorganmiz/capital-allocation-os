@@ -9,13 +9,18 @@ export async function POST() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('firm_id, firms(stripe_subscription_id)')
+    .select('firm_id, role, firms(stripe_subscription_id)')
     .eq('id', user.id)
     .single()
 
-  if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 400 })
+  if (!profile || profile.role !== 'admin') {
+    return NextResponse.json({ error: 'Administrator access required' }, { status: 403 })
+  }
 
-  const subscriptionId = (profile.firms as any)?.stripe_subscription_id as string | null
+  const firmRecord = (Array.isArray(profile.firms) ? profile.firms[0] : profile.firms) as {
+    stripe_subscription_id?: string | null
+  } | null
+  const subscriptionId = firmRecord?.stripe_subscription_id ?? null
 
   if (!subscriptionId) {
     return NextResponse.json({ error: 'No active subscription found' }, { status: 400 })
@@ -27,9 +32,26 @@ export async function POST() {
     cancel_at_period_end: true,
   })
 
+  const currentPeriodEnd = subscription.items.data[0]?.current_period_end ?? null
+  const { error: updateError } = await supabase
+    .from('firms')
+    .update({
+      stripe_subscription_status: subscription.status,
+      stripe_cancel_at_period_end: subscription.cancel_at_period_end,
+      stripe_current_period_end: currentPeriodEnd
+        ? new Date(currentPeriodEnd * 1000).toISOString()
+        : null,
+    })
+    .eq('id', profile.firm_id)
+
+  if (updateError) {
+    console.error('[stripe] failed to persist cancellation state:', updateError.code)
+    return NextResponse.json({ error: 'Could not update billing state' }, { status: 500 })
+  }
+
   return NextResponse.json({
     ok: true,
     cancelAtPeriodEnd: subscription.cancel_at_period_end,
-    currentPeriodEnd: subscription.items.data[0]?.current_period_end ?? null,
+    currentPeriodEnd,
   })
 }

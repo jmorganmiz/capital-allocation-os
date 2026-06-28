@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { checkAiRateLimit } from '@/lib/rate-limit'
 
 const anthropic = new Anthropic()
 
@@ -112,6 +113,10 @@ export async function POST(request: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+  const rateLimit = await checkAiRateLimit(supabase, 'map-columns', 10)
+  if (!rateLimit.allowed) {
+    return NextResponse.json({ error: rateLimit.error }, { status: 429 })
+  }
 
   let body: { headers?: unknown; sampleRows?: unknown }
   try {
@@ -122,7 +127,12 @@ export async function POST(request: NextRequest) {
 
   const { headers, sampleRows } = body
 
-  if (!Array.isArray(headers) || headers.length === 0) {
+  if (
+    !Array.isArray(headers) ||
+    headers.length === 0 ||
+    headers.length > 50 ||
+    headers.some(header => typeof header !== 'string' || header.length > 120)
+  ) {
     return NextResponse.json(
       { error: 'headers must be a non-empty array' },
       { status: 400 },
@@ -135,6 +145,9 @@ export async function POST(request: NextRequest) {
       { status: 400 },
     )
   }
+  if (JSON.stringify(sampleRows.slice(0, 3)).length > 50_000) {
+    return NextResponse.json({ error: 'Sample data is too large' }, { status: 413 })
+  }
 
   const sampleData = (sampleRows as Record<string, string>[])
     .slice(0, 3)
@@ -143,7 +156,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-opus-4-7',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 1024,
       system: [
         {

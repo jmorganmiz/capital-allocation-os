@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import { resend } from '@/lib/resend'
+import { getResend } from '@/lib/resend'
+import { timingSafeEqual } from 'node:crypto'
 
 const FROM = 'team@getdealstash.com'
 const SUBJECT = 'Your Dealstash Weekly Digest'
@@ -10,8 +11,10 @@ const SITE_URL = 'https://getdealstash.com'
 function isAuthorized(request: Request): boolean {
   const auth = request.headers.get('authorization')
   const secret = process.env.DIGEST_SECRET
-  if (!secret) return true // open in dev if not set
-  return auth === `Bearer ${secret}`
+  if (!secret || !auth?.startsWith('Bearer ')) return false
+  const provided = Buffer.from(auth.slice(7))
+  const expected = Buffer.from(secret)
+  return provided.length === expected.length && timingSafeEqual(provided, expected)
 }
 
 function buildEmailHtml({
@@ -270,7 +273,7 @@ export async function POST(request: Request) {
       // Send individually so recipients cannot see each other's email addresses
       await Promise.all(
         emails.map(email =>
-          resend.emails.send({
+          getResend().emails.send({
             from:    FROM,
             to:      email,
             subject: SUBJECT,
@@ -284,5 +287,8 @@ export async function POST(request: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true, results })
+  return NextResponse.json({
+    ok: true,
+    results: results.map(({ firm, status }) => ({ firm, status })),
+  })
 }
