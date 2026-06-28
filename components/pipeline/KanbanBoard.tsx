@@ -39,7 +39,6 @@ export default function KanbanBoard({
   initialStages,
   initialDeals,
   killReasons,
-  currentUserId,
   checklistItems,
   dealProgress,
 }: Props) {
@@ -50,7 +49,7 @@ export default function KanbanBoard({
   const [pendingMove, setPendingMove] = useState<PendingMove | null>(null)
   const [showCreate, setShowCreate] = useState(false)
   const [showUploadOM, setShowUploadOM] = useState(false)
-  const [isPending, startTransition] = useTransition()
+  const [, startTransition] = useTransition()
 
   const sensors = useSensors(useSensor(PointerSensor, {
     activationConstraint: { distance: 8 },

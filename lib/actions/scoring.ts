@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import Anthropic from '@anthropic-ai/sdk'
+import { checkAiRateLimit } from '@/lib/rate-limit'
 
 const DEFAULT_CRITERIA = [
   'Location Grade',
@@ -134,8 +135,8 @@ export async function createScoringCriteria(name: string, position: number) {
   if (!user) return { error: 'Not authenticated' }
 
   const { data: profile } = await supabase
-    .from('profiles').select('firm_id').single()
-  if (!profile) return { error: 'Profile not found' }
+    .from('profiles').select('firm_id, role').single()
+  if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   const { data, error } = await supabase
     .from('scoring_criteria')
@@ -155,8 +156,8 @@ export async function updateScoringCriteria(id: string, updates: { name?: string
   if (!user) return { error: 'Not authenticated' }
 
   const { data: profile } = await supabase
-    .from('profiles').select('firm_id').single()
-  if (!profile) return { error: 'Profile not found' }
+    .from('profiles').select('firm_id, role').single()
+  if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   const { error } = await supabase
     .from('scoring_criteria')
@@ -176,8 +177,8 @@ export async function deleteScoringCriteria(id: string) {
   if (!user) return { error: 'Not authenticated' }
 
   const { data: profile } = await supabase
-    .from('profiles').select('firm_id').single()
-  if (!profile) return { error: 'Profile not found' }
+    .from('profiles').select('firm_id, role').single()
+  if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   const { error } = await supabase
     .from('scoring_criteria')
@@ -204,7 +205,12 @@ export async function autoScoreDeal(dealId: string, firmId: string): Promise<Aut
   console.log('autoScoreDeal called for deal ID:', dealId, '| firmId:', firmId)
   try {
     const supabase = await createClient()
-    console.log('[auto-score] supabase client created')
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { criteriaCount: 0, scoresWritten: 0, error: 'Not authenticated' }
+    const rateLimit = await checkAiRateLimit(supabase, user.id, 'auto-score', 10)
+    if (!rateLimit.allowed) {
+      return { criteriaCount: 0, scoresWritten: 0, error: rateLimit.error }
+    }
 
     const { data: criteria, error: criteriaError } = await supabase
       .from('scoring_criteria')
@@ -313,7 +319,6 @@ export async function autoScoreDeal(dealId: string, firmId: string): Promise<Aut
       .join('\n')
 
     const apiKey = process.env.ANTHROPIC_API_KEY
-    console.log('[auto-score] ANTHROPIC_API_KEY present:', !!apiKey, '| length:', apiKey?.length ?? 0)
     if (!apiKey) {
       console.error('[auto-score] ANTHROPIC_API_KEY is not set — cannot call Claude')
       return { criteriaCount: activeCriteria.length, scoresWritten: 0, error: 'ANTHROPIC_API_KEY not set' }
@@ -333,7 +338,6 @@ Criteria to score (include ALL of these in the scores array — use the exact cr
 ${criteriaText}`
 
     console.log('[auto-score] sending prompt to Claude, criteria count:', activeCriteria.length)
-    console.log('[auto-score] prompt:\n', userPrompt)
 
     const msg = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
@@ -368,7 +372,6 @@ ${criteriaText}`
     })
 
     console.log('[auto-score] Claude responded — stop_reason:', msg.stop_reason, '| content blocks:', msg.content.length)
-    console.log('[auto-score] full response:', JSON.stringify(msg.content))
 
     const toolUse = msg.content.find(b => b.type === 'tool_use')
     if (!toolUse || toolUse.type !== 'tool_use') {
@@ -381,7 +384,7 @@ ${criteriaText}`
     }
     console.log('[auto-score] scores returned by Claude:', scores?.length ?? 0)
     if (!Array.isArray(scores) || scores.length === 0) {
-      console.error('[auto-score] scores array missing or empty — raw input:', JSON.stringify(toolUse.input))
+      console.error('[auto-score] scores array missing or empty')
       return { criteriaCount: activeCriteria.length, scoresWritten: 0, error: 'Claude returned empty scores array' }
     }
 

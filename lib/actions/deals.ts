@@ -67,8 +67,9 @@ export async function createDeal(formData: FormData) {
 export async function updateDealStage(
   dealId: string,
   newStageId: string,
-  fromStageId: string | null
+  _fromStageId: string | null
 ) {
+  void _fromStageId
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
@@ -77,10 +78,27 @@ export async function updateDealStage(
     .from('profiles').select('firm_id').single()
   if (!profile) return { error: 'Profile not found' }
 
+  const [{ data: stage }, { data: currentDeal }] = await Promise.all([
+    supabase
+      .from('deal_stages')
+      .select('id')
+      .eq('id', newStageId)
+      .eq('firm_id', profile.firm_id)
+      .maybeSingle(),
+    supabase
+      .from('deals')
+      .select('stage_id')
+      .eq('id', dealId)
+      .eq('firm_id', profile.firm_id)
+      .maybeSingle(),
+  ])
+  if (!stage || !currentDeal) return { error: 'Invalid deal or stage' }
+
   const { error } = await supabase
     .from('deals')
     .update({ stage_id: newStageId })
     .eq('id', dealId)
+    .eq('firm_id', profile.firm_id)
 
   if (error) return { error: error.message }
 
@@ -88,7 +106,7 @@ export async function updateDealStage(
     firm_id:       profile.firm_id,
     deal_id:       dealId,
     event_type:    'stage_changed',
-    from_stage_id: fromStageId,
+    from_stage_id: currentDeal.stage_id,
     to_stage_id:   newStageId,
     actor_user_id: user.id,
   })
@@ -101,7 +119,7 @@ export async function killDeal(
   dealId: string,
   killReasonId: string,
   notes: string | null,
-  fromStageId: string | null,
+  _fromStageId: string | null,
   killedStageId: string
 ) {
   const supabase = await createClient()
@@ -112,6 +130,18 @@ export async function killDeal(
     .from('profiles').select('firm_id').single()
   if (!profile) return { error: 'Profile not found' }
 
+  const [{ data: killedStage }, { data: killReason }, { data: currentDeal }] = await Promise.all([
+    supabase.from('deal_stages').select('id').eq('id', killedStageId)
+      .eq('firm_id', profile.firm_id).maybeSingle(),
+    supabase.from('kill_reasons').select('id').eq('id', killReasonId)
+      .eq('firm_id', profile.firm_id).maybeSingle(),
+    supabase.from('deals').select('stage_id').eq('id', dealId)
+      .eq('firm_id', profile.firm_id).maybeSingle(),
+  ])
+  if (!killedStage || !killReason || !currentDeal) {
+    return { error: 'Invalid deal, stage, or kill reason' }
+  }
+
   const { error: dealError } = await supabase
     .from('deals')
     .update({
@@ -120,6 +150,7 @@ export async function killDeal(
       archived_at: new Date().toISOString(),
     })
     .eq('id', dealId)
+    .eq('firm_id', profile.firm_id)
   if (dealError) return { error: dealError.message }
 
   // Copy most recent financial snapshot so the numbers at kill time are preserved
@@ -148,7 +179,7 @@ export async function killDeal(
     firm_id:        profile.firm_id,
     deal_id:        dealId,
     event_type:     'killed',
-    from_stage_id:  fromStageId,
+    from_stage_id:  currentDeal.stage_id,
     to_stage_id:    killedStageId,
     kill_reason_id: killReasonId,
     notes:          notes || null,
@@ -279,6 +310,24 @@ export async function createDealFromUpload({
 
   let dealId = existingDealId
 
+  const { data: validStage } = await supabase
+    .from('deal_stages')
+    .select('id')
+    .eq('id', stageId)
+    .eq('firm_id', profile.firm_id)
+    .maybeSingle()
+  if (!validStage) return { error: 'Invalid stage' }
+
+  if (mode === 'existing') {
+    const { data: existingDeal } = await supabase
+      .from('deals')
+      .select('id')
+      .eq('id', existingDealId)
+      .eq('firm_id', profile.firm_id)
+      .maybeSingle()
+    if (!existingDeal) return { error: 'Invalid deal' }
+  }
+
   if (mode === 'new') {
     const { data: deal, error: dealError } = await supabase
       .from('deals')
@@ -370,6 +419,14 @@ export async function createDealFromOM(params: {
     .eq('id', user.id)
     .single()
   if (!profile) return { error: 'Profile not found' }
+
+  const { data: validStage } = await supabase
+    .from('deal_stages')
+    .select('id')
+    .eq('id', params.stageId)
+    .eq('firm_id', profile.firm_id)
+    .maybeSingle()
+  if (!validStage) return { error: 'Invalid stage' }
 
   const { data: deal, error: dealError } = await supabase
     .from('deals')
@@ -604,6 +661,16 @@ export async function updateDealOwner(dealId: string, ownerUserId: string | null
   const { data: profile } = await supabase
     .from('profiles').select('firm_id').single()
   if (!profile) return { error: 'Profile not found' }
+
+  if (ownerUserId) {
+    const { data: owner } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', ownerUserId)
+      .eq('firm_id', profile.firm_id)
+      .maybeSingle()
+    if (!owner) return { error: 'Invalid owner assignment' }
+  }
 
   const { error } = await supabase
     .from('deals')

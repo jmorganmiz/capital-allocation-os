@@ -41,8 +41,8 @@ export async function createBuyBox(input: BuyBoxInput): Promise<{ buyBox?: BuyBo
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data: profile } = await supabase.from('profiles').select('firm_id').single()
-  if (!profile) return { error: 'Profile not found' }
+  const { data: profile } = await supabase.from('profiles').select('firm_id, role').single()
+  if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   const { criteria, ...fields } = input
 
@@ -84,8 +84,8 @@ export async function updateBuyBox(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data: profile } = await supabase.from('profiles').select('firm_id').single()
-  if (!profile) return { error: 'Profile not found' }
+  const { data: profile } = await supabase.from('profiles').select('firm_id, role').single()
+  if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   const { criteria, ...fields } = input
 
@@ -127,8 +127,8 @@ export async function deleteBuyBox(id: string): Promise<{ error?: string }> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data: profile } = await supabase.from('profiles').select('firm_id').single()
-  if (!profile) return { error: 'Profile not found' }
+  const { data: profile } = await supabase.from('profiles').select('firm_id, role').single()
+  if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   const { error } = await supabase
     .from('buy_boxes')

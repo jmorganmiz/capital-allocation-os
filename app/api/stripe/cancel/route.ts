@@ -9,11 +9,13 @@ export async function POST() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('firm_id, firms(stripe_subscription_id)')
+    .select('firm_id, role, firms(stripe_subscription_id)')
     .eq('id', user.id)
     .single()
 
-  if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 400 })
+  if (!profile || profile.role !== 'admin') {
+    return NextResponse.json({ error: 'Administrator access required' }, { status: 403 })
+  }
 
   const subscriptionId = (profile.firms as any)?.stripe_subscription_id as string | null
 

@@ -10,8 +10,8 @@ export async function createChecklistItem(stageId: string, name: string, positio
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data: profile } = await supabase.from('profiles').select('firm_id').single()
-  if (!profile) return { error: 'Profile not found' }
+  const { data: profile } = await supabase.from('profiles').select('firm_id, role').single()
+  if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   const { data, error } = await supabase
     .from('stage_checklist_items')
@@ -29,8 +29,8 @@ export async function updateChecklistItem(id: string, updates: { name?: string; 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data: profile } = await supabase.from('profiles').select('firm_id').single()
-  if (!profile) return { error: 'Profile not found' }
+  const { data: profile } = await supabase.from('profiles').select('firm_id, role').single()
+  if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   const { error } = await supabase
     .from('stage_checklist_items')
@@ -48,8 +48,8 @@ export async function deleteChecklistItem(id: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data: profile } = await supabase.from('profiles').select('firm_id').single()
-  if (!profile) return { error: 'Profile not found' }
+  const { data: profile } = await supabase.from('profiles').select('firm_id, role').single()
+  if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   const { error } = await supabase
     .from('stage_checklist_items')
@@ -68,8 +68,8 @@ export async function reorderChecklistItems(items: { id: string; position: numbe
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data: profile } = await supabase.from('profiles').select('firm_id').single()
-  if (!profile) return { error: 'Profile not found' }
+  const { data: profile } = await supabase.from('profiles').select('firm_id, role').single()
+  if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   for (const { id, position } of items) {
     await supabase

@@ -21,6 +21,21 @@ export type ImportResponse = {
 // asking_price is numeric; property_size is TEXT in the deals table — do not coerce it
 const NUMERIC_FIELDS = new Set(['asking_price'])
 const BATCH_SIZE = 100
+const MAX_ROWS = 5_000
+const IMPORT_FIELDS = new Set([
+  'title',
+  'stage_id',
+  'owner_user_id',
+  'market',
+  'deal_type',
+  'source_type',
+  'source_name',
+  'asking_price',
+  'property_size',
+  'address',
+  'deal_structure',
+  'financing_type',
+])
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -78,6 +93,10 @@ function rowToDeal(
 // ─── Route handler ────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
+  const contentLength = Number(request.headers.get('content-length') ?? 0)
+  if (contentLength > 5 * 1024 * 1024) {
+    return NextResponse.json({ error: 'Import payload is too large' }, { status: 413 })
+  }
   const supabase = await createClient()
   const {
     data: { user },
@@ -110,14 +129,51 @@ export async function POST(request: NextRequest) {
 
   const { allRows, columnMappings, stageResolutions, ownerUserId } = body
 
-  if (!Array.isArray(allRows) || !Array.isArray(columnMappings)) {
+  if (
+    !Array.isArray(allRows) ||
+    allRows.length > MAX_ROWS ||
+    allRows.some(row => !row || typeof row !== 'object' || Array.isArray(row)) ||
+    !Array.isArray(columnMappings) ||
+    columnMappings.length > 50 ||
+    !columnMappings.every(mapping =>
+      mapping &&
+      typeof mapping.csv_column === 'string' &&
+      mapping.csv_column.length <= 120 &&
+      (mapping.schema_field === null || IMPORT_FIELDS.has(mapping.schema_field))
+    ) ||
+    !stageResolutions ||
+    typeof stageResolutions !== 'object' ||
+    Array.isArray(stageResolutions)
+  ) {
     return NextResponse.json({ error: 'Invalid request shape' }, { status: 400 })
   }
 
+  const requestedStageIds = [...new Set(Object.values(stageResolutions).filter(Boolean))]
+  if (requestedStageIds.length > 0) {
+    const { data: stages } = await supabase
+      .from('deal_stages')
+      .select('id')
+      .eq('firm_id', firmId)
+      .in('id', requestedStageIds)
+    const validStageIds = new Set((stages ?? []).map(stage => stage.id))
+    if (requestedStageIds.some(id => !validStageIds.has(id as string))) {
+      return NextResponse.json({ error: 'Invalid stage assignment' }, { status: 400 })
+    }
+  }
+
+  if (ownerUserId) {
+    const { data: owner } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', ownerUserId)
+      .eq('firm_id', firmId)
+      .maybeSingle()
+    if (!owner) {
+      return NextResponse.json({ error: 'Invalid owner assignment' }, { status: 400 })
+    }
+  }
+
   console.log('[import] Received', allRows.length, 'rows,', columnMappings.length, 'mappings')
-  console.log('[import] Column mappings:', JSON.stringify(columnMappings))
-  console.log('[import] Stage resolutions:', JSON.stringify(stageResolutions))
-  console.log('[import] Owner user ID:', ownerUserId)
 
   const { data: existing, error: fetchError } = await supabase
     .from('deals')
@@ -156,9 +212,6 @@ export async function POST(request: NextRequest) {
   }
 
   console.log('[import] Prepared', toInsert.length, 'deals to insert,', skipped, 'skipped')
-  if (toInsert.length > 0) {
-    console.log('[import] Sample deal (first row):', JSON.stringify(toInsert[0]))
-  }
 
   let imported = 0
   for (let i = 0; i < toInsert.length; i += BATCH_SIZE) {

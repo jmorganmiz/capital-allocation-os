@@ -5,22 +5,39 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 
 export async function signUpAction(prevState: any, formData: FormData) {
-  const email = formData.get('email') as string
+  const email = (formData.get('email') as string).trim().toLowerCase()
   const password = formData.get('password') as string
-  const fullName = formData.get('full_name') as string
-  const firmName = formData.get('firm_name') as string
+  const fullName = (formData.get('full_name') as string).trim()
+  const firmName = (formData.get('firm_name') as string).trim()
   const inviteToken = formData.get('invite_token') as string | null
 
-  console.log('[signup] attempting signup for:', email, 'invite:', !!inviteToken)
+  if (!email || !fullName || password.length < 8 || fullName.length > 120 || firmName.length > 160) {
+    return { error: 'Please provide valid signup details.' }
+  }
 
   const adminClient = createAdminClient()
+  let validatedInvite: { firm_id: string; email: string } | null = null
 
-  // Use admin to create user so email confirmation is bypassed
-  const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
+  if (inviteToken) {
+    const { data: invite } = await adminClient
+      .from('invites')
+      .select('firm_id, email')
+      .eq('token', inviteToken)
+      .is('accepted_at', null)
+      .single()
+    if (!invite || invite.email.trim().toLowerCase() !== email) {
+      return { error: 'Invalid, expired, or mismatched invite link.' }
+    }
+    validatedInvite = invite
+  } else if (!firmName) {
+    return { error: 'Firm name is required.' }
+  }
+
+  const supabase = await createClient()
+  const { data: authData, error: authError } = await supabase.auth.signUp({
     email,
     password,
-    email_confirm: true,
-    user_metadata: { full_name: fullName },
+    options: { data: { full_name: fullName } },
   })
 
   if (authError) {
@@ -30,27 +47,16 @@ export async function signUpAction(prevState: any, formData: FormData) {
   if (!authData.user) return { error: 'Signup failed — no user returned.' }
 
   const userId = authData.user.id
-  console.log('[signup] user created:', userId)
-
-  if (inviteToken) {
-    const { data: invite } = await adminClient
-      .from('invites')
-      .select('firm_id')
-      .eq('token', inviteToken)
-      .is('accepted_at', null)
-      .single()
-
-    if (!invite) return { error: 'Invalid or expired invite link.' }
-
+  if (validatedInvite && inviteToken) {
     const { error: profileError } = await adminClient.from('profiles').upsert({
       id: userId,
-      firm_id: invite.firm_id,
+      firm_id: validatedInvite.firm_id,
       full_name: fullName,
       email,
       role: 'member',
     })
     if (profileError) {
-      console.error('[signup] profile error:', profileError.message)
+      await adminClient.auth.admin.deleteUser(userId)
       return { error: profileError.message }
     }
 
@@ -67,7 +73,7 @@ export async function signUpAction(prevState: any, formData: FormData) {
       .single()
 
     if (firmError || !firm) {
-      console.error('[signup] firm error:', firmError?.message)
+      await adminClient.auth.admin.deleteUser(userId)
       return { error: firmError?.message ?? 'Failed to create firm' }
     }
 
@@ -79,7 +85,10 @@ export async function signUpAction(prevState: any, formData: FormData) {
       role: 'admin',
     })
     if (profileError) {
-      console.error('[signup] profile error:', profileError.message)
+      await Promise.all([
+        adminClient.from('firms').delete().eq('id', firm.id),
+        adminClient.auth.admin.deleteUser(userId),
+      ])
       return { error: profileError.message }
     }
 
@@ -125,14 +134,6 @@ export async function signUpAction(prevState: any, formData: FormData) {
     ])
   }
 
-  // Sign in with the new credentials to establish the session
-  const supabase = await createClient()
-  const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
-  if (signInError) {
-    console.error('[signup] sign in after signup failed:', signInError.message)
-    return { error: `Account created but sign-in failed: ${signInError.message}` }
-  }
-
-  console.log('[signup] complete, redirecting to /pipeline')
-  redirect('/pipeline')
+  if (authData.session) redirect('/pipeline')
+  return { success: 'Check your email to verify your account, then sign in.' }
 }
