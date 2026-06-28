@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { parseOMBuffer } from '@/lib/parse-om-core'
 import { getResend } from '@/lib/resend'
+import { createHash } from 'node:crypto'
 
 export const runtime = 'nodejs'
 export const maxDuration = 120
@@ -91,16 +92,21 @@ export async function POST(req: NextRequest) {
   const attachments: ResendAttachment[] = []
   for (const attachment of pdfMetadata) {
     if (attachment.size > MAX_ATTACHMENT_BYTES) continue
-    const response = await fetch(attachment.download_url)
-    if (!response.ok) continue
-    const bytes = Buffer.from(await response.arrayBuffer())
-    if (bytes.length > MAX_ATTACHMENT_BYTES) continue
-    attachments.push({
-      filename: attachment.filename ?? 'attachment.pdf',
-      content: bytes.toString('base64'),
-      contentType: attachment.content_type ?? 'application/pdf',
-      size: bytes.length,
-    })
+    try {
+      const response = await fetch(attachment.download_url)
+      if (!response.ok) throw new Error(`download returned ${response.status}`)
+      const bytes = Buffer.from(await response.arrayBuffer())
+      if (bytes.length > MAX_ATTACHMENT_BYTES) continue
+      attachments.push({
+        filename: attachment.filename ?? 'attachment.pdf',
+        content: bytes.toString('base64'),
+        contentType: attachment.content_type ?? 'application/pdf',
+        size: bytes.length,
+      })
+    } catch (error) {
+      console.error('[inbox] attachment download failed:', error instanceof Error ? error.message : 'unknown error')
+      return NextResponse.json({ error: 'attachment_download_failed' }, { status: 502 })
+    }
   }
 
   const payload: ResendInboundPayload = {
@@ -127,18 +133,6 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = createAdminClient()
-
-  const { error: receiptError } = await supabase
-    .from('inbound_email_events')
-    .insert({ id: emailId })
-
-  if (receiptError?.code === '23505') {
-    return NextResponse.json({ received: true, duplicate: true })
-  }
-  if (receiptError) {
-    console.error('[inbox] failed to record webhook receipt:', receiptError.message)
-    return NextResponse.json({ error: 'receipt_failed' }, { status: 500 })
-  }
 
   // Look up firm by inbox_email
   const { data: firm, error: firmErr } = await supabase
@@ -171,6 +165,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true, skipped: 'no PDF attachments' })
   }
 
+  const { data: claimStatus, error: claimError } = await supabase.rpc(
+    'claim_inbound_email_event',
+    { p_event_id: emailId },
+  )
+  if (claimError) {
+    console.error('[inbox] failed to claim webhook:', claimError.code)
+    return NextResponse.json({ error: 'receipt_failed' }, { status: 500 })
+  }
+  if (claimStatus === 'processed') {
+    return NextResponse.json({ received: true, duplicate: true })
+  }
+  if (claimStatus !== 'claimed') {
+    return NextResponse.json({ error: 'processing_in_progress' }, { status: 503 })
+  }
+
   console.log('[inbox] PDF attachments count:', pdfAttachments.length)
 
   // Pre-fetch firm's first stage and an actor profile (for created_by / audit fields)
@@ -194,6 +203,7 @@ export async function POST(req: NextRequest) {
   const actorId: string | null = memberRows?.[0]?.id ?? null
 
   const createdDeals: Array<{ id: string; title: string }> = []
+  let processingFailed = false
 
   for (const attachment of pdfAttachments) {
     console.log('[inbox] processing:', attachment.filename, '| size:', attachment.size ?? 'unknown')
@@ -205,14 +215,40 @@ export async function POST(req: NextRequest) {
         actorId,
         attachment,
         payload,
+        intakeKey: createHash('sha256')
+          .update(`${emailId}:`)
+          .update(attachment.content)
+          .digest('hex'),
       })
       if (result) {
         createdDeals.push(result)
         console.log('[inbox] deal created:', result.id, '|', result.title)
       }
     } catch (err) {
+      processingFailed = true
       console.error('[inbox] error processing attachment:', attachment.filename, err)
     }
+  }
+
+  if (processingFailed || createdDeals.length !== pdfAttachments.length) {
+    await supabase
+      .from('inbound_email_events')
+      .update({ status: 'failed', last_error: 'attachment_processing_failed' })
+      .eq('id', emailId)
+    return NextResponse.json({ error: 'attachment_processing_failed' }, { status: 500 })
+  }
+
+  const { error: completeError } = await supabase
+    .from('inbound_email_events')
+    .update({
+      status: 'processed',
+      processed_at: new Date().toISOString(),
+      last_error: null,
+    })
+    .eq('id', emailId)
+  if (completeError) {
+    console.error('[inbox] failed to complete webhook receipt:', completeError.code)
+    return NextResponse.json({ error: 'receipt_completion_failed' }, { status: 500 })
   }
 
   // Notify firm members
@@ -237,6 +273,7 @@ async function processAttachment({
   actorId,
   attachment,
   payload,
+  intakeKey,
 }: {
   supabase: ReturnType<typeof createAdminClient>
   firmId: string
@@ -244,23 +281,31 @@ async function processAttachment({
   actorId: string | null
   attachment: ResendAttachment
   payload: ResendInboundPayload
+  intakeKey: string
 }): Promise<{ id: string; title: string } | null> {
+
+  const { data: existingDeal, error: existingDealError } = await supabase
+    .from('deals')
+    .select('id, title')
+    .eq('firm_id', firmId)
+    .eq('inbound_intake_key', intakeKey)
+    .maybeSingle()
+  if (existingDealError) throw existingDealError
+  if (existingDeal) return existingDeal
 
   // Decode base64 attachment content
   const buffer = Buffer.from(attachment.content, 'base64')
 
   // Upload to Supabase Storage
-  const timestamp = Date.now()
   const safeFilename = (attachment.filename ?? 'om.pdf').replace(/[^a-zA-Z0-9._-]/g, '_')
-  const storagePath = `${firmId}/email-inbox/${timestamp}_${safeFilename}`
+  const storagePath = `${firmId}/email-inbox/${intakeKey}_${safeFilename}`
 
   const { error: uploadErr } = await supabase.storage
     .from('deal-files')
-    .upload(storagePath, buffer, { contentType: 'application/pdf', upsert: false })
+    .upload(storagePath, buffer, { contentType: 'application/pdf', upsert: true })
 
   if (uploadErr) {
-    console.error('[inbox] storage upload failed:', uploadErr.message)
-    return null
+    throw uploadErr
   }
 
   console.log('[inbox] uploaded to storage:', storagePath)
@@ -306,13 +351,22 @@ async function processAttachment({
       intake_type:   'email',
       created_by:    actorId,
       owner_user_id: actorId,
+      inbound_intake_key: intakeKey,
     })
     .select('id')
     .single()
 
   if (dealErr) {
-    console.error('[inbox] deal insert failed:', dealErr.message)
-    return null
+    if (dealErr.code === '23505') {
+      const { data: duplicate } = await supabase
+        .from('deals')
+        .select('id, title')
+        .eq('firm_id', firmId)
+        .eq('inbound_intake_key', intakeKey)
+        .single()
+      if (duplicate) return duplicate
+    }
+    throw dealErr
   }
 
   const dealId = deal.id

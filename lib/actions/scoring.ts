@@ -207,7 +207,7 @@ export async function autoScoreDeal(dealId: string, firmId: string): Promise<Aut
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { criteriaCount: 0, scoresWritten: 0, error: 'Not authenticated' }
-    const rateLimit = await checkAiRateLimit(supabase, user.id, 'auto-score', 10)
+    const rateLimit = await checkAiRateLimit(supabase, 'auto-score', 10)
     if (!rateLimit.allowed) {
       return { criteriaCount: 0, scoresWritten: 0, error: rateLimit.error }
     }

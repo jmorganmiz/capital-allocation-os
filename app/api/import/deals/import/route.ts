@@ -22,6 +22,9 @@ export type ImportResponse = {
 const NUMERIC_FIELDS = new Set(['asking_price'])
 const BATCH_SIZE = 100
 const MAX_ROWS = 5_000
+const MAX_BODY_BYTES = 5 * 1024 * 1024
+const MAX_CELL_LENGTH = 10_000
+const MAX_COLUMNS = 50
 const IMPORT_FIELDS = new Set([
   'title',
   'stage_id',
@@ -46,6 +49,30 @@ function parseNumeric(value: string): number | null {
 }
 
 type DealInsert = Record<string, string | number | null>
+
+class PayloadTooLargeError extends Error {}
+
+async function readJsonBody(request: NextRequest): Promise<unknown> {
+  if (!request.body) return null
+
+  const reader = request.body.getReader()
+  const chunks: Uint8Array[] = []
+  let totalBytes = 0
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    totalBytes += value.byteLength
+    if (totalBytes > MAX_BODY_BYTES) {
+      await reader.cancel()
+      throw new PayloadTooLargeError()
+    }
+    chunks.push(value)
+  }
+
+  const raw = Buffer.concat(chunks.map(chunk => Buffer.from(chunk))).toString('utf8')
+  return JSON.parse(raw)
+}
 
 function rowToDeal(
   row: Record<string, string>,
@@ -94,7 +121,7 @@ function rowToDeal(
 
 export async function POST(request: NextRequest) {
   const contentLength = Number(request.headers.get('content-length') ?? 0)
-  if (contentLength > 5 * 1024 * 1024) {
+  if (contentLength > MAX_BODY_BYTES) {
     return NextResponse.json({ error: 'Import payload is too large' }, { status: 413 })
   }
   const supabase = await createClient()
@@ -118,12 +145,18 @@ export async function POST(request: NextRequest) {
   }
 
   const firmId: string = profile.firm_id
-  console.log('[import] Starting import — user:', user.id, 'firm:', firmId)
 
   let body: RequestBody
   try {
-    body = await request.json()
-  } catch {
+    const parsed = await readJsonBody(request)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
+    body = parsed as RequestBody
+  } catch (error) {
+    if (error instanceof PayloadTooLargeError) {
+      return NextResponse.json({ error: 'Import payload is too large' }, { status: 413 })
+    }
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
@@ -132,9 +165,17 @@ export async function POST(request: NextRequest) {
   if (
     !Array.isArray(allRows) ||
     allRows.length > MAX_ROWS ||
-    allRows.some(row => !row || typeof row !== 'object' || Array.isArray(row)) ||
+    allRows.some(row =>
+      !row ||
+      typeof row !== 'object' ||
+      Array.isArray(row) ||
+      Object.keys(row).length > MAX_COLUMNS ||
+      Object.entries(row).some(([key, value]) =>
+        key.length > 120 || typeof value !== 'string' || value.length > MAX_CELL_LENGTH
+      )
+    ) ||
     !Array.isArray(columnMappings) ||
-    columnMappings.length > 50 ||
+    columnMappings.length > MAX_COLUMNS ||
     !columnMappings.every(mapping =>
       mapping &&
       typeof mapping.csv_column === 'string' &&
@@ -143,7 +184,13 @@ export async function POST(request: NextRequest) {
     ) ||
     !stageResolutions ||
     typeof stageResolutions !== 'object' ||
-    Array.isArray(stageResolutions)
+    Array.isArray(stageResolutions) ||
+    Object.keys(stageResolutions).length > MAX_ROWS ||
+    Object.entries(stageResolutions).some(([key, value]) =>
+      key.length > MAX_CELL_LENGTH ||
+      (value !== null && (typeof value !== 'string' || value.length > 120))
+    ) ||
+    (ownerUserId !== null && typeof ownerUserId !== 'string')
   ) {
     return NextResponse.json({ error: 'Invalid request shape' }, { status: 400 })
   }
@@ -173,8 +220,6 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  console.log('[import] Received', allRows.length, 'rows,', columnMappings.length, 'mappings')
-
   const { data: existing, error: fetchError } = await supabase
     .from('deals')
     .select('title')
@@ -195,14 +240,12 @@ export async function POST(request: NextRequest) {
   for (const row of allRows) {
     const deal = rowToDeal(row, columnMappings, stageResolutions, ownerUserId, firmId, user.id)
     if (!deal) {
-      console.log('[import] Skipping row — no title after mapping:', JSON.stringify(row))
       skipped++
       continue
     }
 
     const titleKey = (deal['title'] as string).toLowerCase().trim()
     if (existingTitles.has(titleKey)) {
-      console.log('[import] Skipping duplicate title:', deal['title'])
       skipped++
       continue
     }
@@ -211,31 +254,18 @@ export async function POST(request: NextRequest) {
     toInsert.push(deal)
   }
 
-  console.log('[import] Prepared', toInsert.length, 'deals to insert,', skipped, 'skipped')
-
   let imported = 0
   for (let i = 0; i < toInsert.length; i += BATCH_SIZE) {
     const batch = toInsert.slice(i, i + BATCH_SIZE)
-    console.log(`[import] Inserting batch ${Math.floor(i / BATCH_SIZE) + 1} (${batch.length} rows)`)
-
     const { error } = await supabase.from('deals').insert(batch)
 
     if (error) {
       console.error('[import] Batch insert failed:', {
-        message: error.message,
         code:    error.code,
-        details: error.details,
-        hint:    error.hint,
         batch_size: batch.length,
-        sample_deal: JSON.stringify(batch[0]),
       })
       return NextResponse.json(
-        {
-          error:   'Import failed during insert',
-          details: error.message,
-          hint:    error.hint ?? null,
-          code:    error.code ?? null,
-        },
+        { error: 'Import failed during insert' },
         { status: 500 },
       )
     }
@@ -244,6 +274,5 @@ export async function POST(request: NextRequest) {
     console.log('[import] Batch inserted OK, running total:', imported)
   }
 
-  console.log('[import] Complete — imported:', imported, 'skipped:', skipped)
   return NextResponse.json({ imported, skipped } satisfies ImportResponse)
 }

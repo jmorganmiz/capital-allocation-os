@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const detail = err instanceof Error ? `${err.name}: ${err.message}` : String(err)
     console.error('[parse-om] UNHANDLED top-level exception:', detail)
-    return NextResponse.json({ error: 'parse_failed', detail }, { status: 500 })
+    return NextResponse.json({ error: 'parse_failed' }, { status: 500 })
   }
 }
 
@@ -21,7 +21,7 @@ async function handleParseOM(req: NextRequest): Promise<NextResponse> {
   if (!context.ok) {
     return NextResponse.json({ error: context.error }, { status: context.status })
   }
-  const rateLimit = await checkAiRateLimit(context.supabase, context.user.id, 'parse-om', 5)
+  const rateLimit = await checkAiRateLimit(context.supabase, 'parse-om', 5)
   if (!rateLimit.allowed) {
     return NextResponse.json({ error: rateLimit.error }, { status: 429 })
   }
@@ -58,7 +58,7 @@ async function handleParseOM(req: NextRequest): Promise<NextResponse> {
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err)
     console.error('[parse-om] storage download failed:', detail)
-    return NextResponse.json({ error: 'storage_error', detail }, { status: 500 })
+    return NextResponse.json({ error: 'storage_error' }, { status: 500 })
   }
 
   // ── Parse via shared core (text path → vision fallback) ───────────────────
@@ -68,7 +68,7 @@ async function handleParseOM(req: NextRequest): Promise<NextResponse> {
     const status = result.error === 'pdf_too_large'  ? 413
                  : result.error === 'api_key_missing' ? 503
                  : 500
-    return NextResponse.json(result, { status })
+    return NextResponse.json({ error: result.error }, { status })
   }
 
   return NextResponse.json(result)

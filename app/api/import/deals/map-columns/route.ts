@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
-  const rateLimit = await checkAiRateLimit(supabase, user.id, 'map-columns', 10)
+  const rateLimit = await checkAiRateLimit(supabase, 'map-columns', 10)
   if (!rateLimit.allowed) {
     return NextResponse.json({ error: rateLimit.error }, { status: 429 })
   }
