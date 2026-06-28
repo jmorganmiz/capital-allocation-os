@@ -35,10 +35,26 @@ BEGIN
 END;
 $$;
 
--- Enforce uniqueness after backfill
-ALTER TABLE firms
-  ADD CONSTRAINT firms_inbox_slug_unique  UNIQUE (inbox_slug),
-  ADD CONSTRAINT firms_inbox_email_unique UNIQUE (inbox_email);
+-- Enforce uniqueness after backfill. Guard each constraint because this
+-- migration may reconcile a project where the inbox columns were added
+-- manually before migration history was enabled.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'firms_inbox_slug_unique'
+  ) THEN
+    ALTER TABLE firms
+      ADD CONSTRAINT firms_inbox_slug_unique UNIQUE (inbox_slug);
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'firms_inbox_email_unique'
+  ) THEN
+    ALTER TABLE firms
+      ADD CONSTRAINT firms_inbox_email_unique UNIQUE (inbox_email);
+  END IF;
+END;
+$$;
 
 -- Trigger function: automatically assign inbox_slug + inbox_email for new firms
 CREATE OR REPLACE FUNCTION firms_assign_inbox_email()
@@ -70,6 +86,7 @@ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS firms_inbox_email_on_insert ON firms;
 CREATE TRIGGER firms_inbox_email_on_insert
   BEFORE INSERT ON firms
   FOR EACH ROW EXECUTE FUNCTION firms_assign_inbox_email();
