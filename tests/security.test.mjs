@@ -12,6 +12,13 @@ test('critical endpoints fail closed', async () => {
   assert.match(digest, /timingSafeEqual/)
   assert.match(parseOm, /getFirmContext/)
   assert.doesNotMatch(parseOm, /createAdminClient/)
-  assert.match(inbox, /resend\.webhooks\.verify/)
+  assert.match(inbox, /getResend\(\)\.webhooks\.verify/)
   assert.match(inbox, /inbound_email_events/)
+})
+
+test('Resend is initialized lazily so builds do not require runtime secrets', async () => {
+  const resend = await read('lib/resend.ts')
+  assert.doesNotMatch(resend, /export const resend = new Resend/)
+  assert.match(resend, /export function getResend/)
+  assert.match(resend, /if \(!apiKey\) throw new Error/)
 })

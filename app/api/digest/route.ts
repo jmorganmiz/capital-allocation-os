@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import { resend } from '@/lib/resend'
+import { getResend } from '@/lib/resend'
 import { timingSafeEqual } from 'node:crypto'
 
 const FROM = 'team@getdealstash.com'
@@ -273,7 +273,7 @@ export async function POST(request: Request) {
       // Send individually so recipients cannot see each other's email addresses
       await Promise.all(
         emails.map(email =>
-          resend.emails.send({
+          getResend().emails.send({
             from:    FROM,
             to:      email,
             subject: SUBJECT,

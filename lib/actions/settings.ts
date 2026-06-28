@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { resend } from '@/lib/resend'
+import { getResend } from '@/lib/resend'
 
 export async function createDealStage(name: string, position: number) {
   const supabase = await createClient()
@@ -166,7 +166,7 @@ export async function inviteTeamMember(email: string) {
   const firmName = (profile.firms as any)?.name ?? 'your team'
   const inviteUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://getdealstash.com'}/signup?invite=${invite.token}&email=${encodeURIComponent(email)}`
 
-  const { error: emailError } = await resend.emails.send({
+  const { error: emailError } = await getResend().emails.send({
     from: 'team@getdealstash.com',
     to: email,
     subject: `Join ${firmName} on Dealstash`,

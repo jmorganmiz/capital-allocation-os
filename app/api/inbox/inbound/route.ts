@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { parseOMBuffer } from '@/lib/parse-om-core'
-import { resend } from '@/lib/resend'
+import { getResend } from '@/lib/resend'
 
 export const runtime = 'nodejs'
 export const maxDuration = 120
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
   const rawBody = await req.text()
   let event: ResendWebhookEvent
   try {
-    event = await resend.webhooks.verify({
+    event = await getResend().webhooks.verify({
       payload: rawBody,
       headers: {
         id: req.headers.get('svix-id') ?? '',
@@ -75,8 +75,8 @@ export async function POST(req: NextRequest) {
 
   const [{ data: email, error: emailError }, { data: attachmentList, error: attachmentError }] =
     await Promise.all([
-      resend.emails.receiving.get(emailId),
-      resend.emails.receiving.attachments.list({ emailId }),
+      getResend().emails.receiving.get(emailId),
+      getResend().emails.receiving.attachments.list({ emailId }),
     ])
 
   if (emailError || attachmentError || !email) {
@@ -505,7 +505,7 @@ async function notifyFirmMembers({
 
   await Promise.all(
     emails.map(email =>
-      resend.emails.send({ from: FROM_EMAIL, to: email, subject, html })
+      getResend().emails.send({ from: FROM_EMAIL, to: email, subject, html })
     )
   )
 
