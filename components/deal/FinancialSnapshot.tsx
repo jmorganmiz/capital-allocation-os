@@ -25,7 +25,14 @@ interface Props {
 function fmt(val: number | null, isPercent = false): string {
   if (val === null || val === undefined) return '—'
   if (isPercent) return `${val.toFixed(2)}%`
-  return `${val.toLocaleString()}`
+  return `$${val.toLocaleString()}`
+}
+
+const metricBoxStyle = {
+  background: 'var(--graphite)',
+  border: '1px solid rgba(112,112,125,0.18)',
+  borderRadius: '6px',
+  padding: '12px 14px',
 }
 
 export default function FinancialSnapshot({ dealId, firmId, snapshots: initial }: Props) {
@@ -34,13 +41,7 @@ export default function FinancialSnapshot({ dealId, firmId, snapshots: initial }
   const [showHistory, setShowHistory] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [form, setForm] = useState({
-    purchase_price: '',
-    noi: '',
-    cap_rate: '',
-    debt_rate: '',
-    ltv: '',
-    irr: '',
-    notes: '',
+    purchase_price: '', noi: '', cap_rate: '', debt_rate: '', ltv: '', irr: '', notes: '',
   })
 
   const latest = snapshots[0]
@@ -58,9 +59,7 @@ export default function FinancialSnapshot({ dealId, firmId, snapshots: initial }
       const { data, error } = await supabase
         .from('deal_financial_snapshots')
         .insert({
-          deal_id: dealId,
-          firm_id: firmId,
-          created_by: user.id,
+          deal_id: dealId, firm_id: firmId, created_by: user.id,
           purchase_price: form.purchase_price ? parseFloat(form.purchase_price) : null,
           noi: form.noi ? parseFloat(form.noi) : null,
           cap_rate: form.cap_rate ? parseFloat(form.cap_rate) : null,
@@ -82,45 +81,56 @@ export default function FinancialSnapshot({ dealId, firmId, snapshots: initial }
     })
   }
 
+  const FIELDS = [
+    { field: 'purchase_price', label: 'Purchase Price ($)' },
+    { field: 'noi', label: 'NOI ($)' },
+    { field: 'cap_rate', label: 'Cap Rate (%)' },
+    { field: 'debt_rate', label: 'Debt Rate (%)' },
+    { field: 'ltv', label: 'LTV (%)' },
+    { field: 'irr', label: 'Projected IRR (%)' },
+  ]
+
+  const METRICS = latest ? [
+    { label: 'Purchase Price', value: fmt(latest.purchase_price) },
+    { label: 'NOI', value: fmt(latest.noi) },
+    { label: 'Cap Rate', value: fmt(latest.cap_rate, true) },
+    { label: 'Debt Rate', value: fmt(latest.debt_rate, true) },
+    { label: 'LTV', value: fmt(latest.ltv, true) },
+    { label: 'Projected IRR', value: fmt(latest.irr, true) },
+  ] : []
+
   return (
     <section>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-base font-semibold text-gray-900">Financial Snapshot</h2>
-        <button onClick={() => setShowForm(!showForm)} className="btn-secondary text-sm">
-          {showForm ? 'Cancel' : '+ New Snapshot'}
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Financials</h2>
+        <button onClick={() => setShowForm(!showForm)} className="btn-secondary" style={{ fontSize: '12px', padding: '5px 14px' }}>
+          {showForm ? 'Cancel' : '+ Snapshot'}
         </button>
       </div>
 
       {showForm && (
-        <div className="border border-gray-200 rounded-lg p-4 mb-4 bg-gray-50">
+        <div className="rounded-lg p-4 mb-4" style={{ background: 'var(--midnight-slate)', border: '1px solid rgba(112,112,125,0.18)' }}>
           <div className="grid grid-cols-1 gap-3 mb-3 sm:grid-cols-2">
-            {[
-              { field: 'purchase_price', label: 'Purchase Price ($)' },
-              { field: 'noi', label: 'NOI ($)' },
-              { field: 'cap_rate', label: 'Cap Rate (%)' },
-              { field: 'debt_rate', label: 'Debt Rate (%)' },
-              { field: 'ltv', label: 'LTV (%)' },
-              { field: 'irr', label: 'Projected IRR (%)' },
-            ].map(({ field, label }) => (
+            {FIELDS.map(({ field, label }) => (
               <div key={field}>
-                <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--lead)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '6px' }}>{label}</label>
                 <input
                   type="number"
                   step="any"
                   value={form[field as keyof typeof form]}
                   onChange={e => handleChange(field, e.target.value)}
-                  className="input-base"
+                  className="input-base w-full"
                   placeholder="—"
                 />
               </div>
             ))}
           </div>
           <div className="mb-3">
-            <label className="block text-xs font-medium text-gray-600 mb-1">Notes</label>
+            <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--lead)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '6px' }}>Notes</label>
             <input
               value={form.notes}
               onChange={e => handleChange('notes', e.target.value)}
-              className="input-base"
+              className="input-base w-full"
               placeholder="Assumptions, context…"
             />
           </div>
@@ -135,25 +145,19 @@ export default function FinancialSnapshot({ dealId, firmId, snapshots: initial }
       {latest ? (
         <div>
           <div className="grid grid-cols-2 gap-3 mb-3 sm:grid-cols-3">
-            {[
-              { label: 'Purchase Price', value: fmt(latest.purchase_price) },
-              { label: 'NOI', value: fmt(latest.noi) },
-              { label: 'Cap Rate', value: fmt(latest.cap_rate, true) },
-              { label: 'Debt Rate', value: fmt(latest.debt_rate, true) },
-              { label: 'LTV', value: fmt(latest.ltv, true) },
-              { label: 'Projected IRR', value: fmt(latest.irr, true) },
-            ].map(({ label, value }) => (
-              <div key={label} className="bg-white border border-gray-100 rounded-lg p-3">
-                <p className="text-xs text-gray-400 mb-1">{label}</p>
-                <p className="text-sm font-semibold text-gray-900">{value}</p>
+            {METRICS.map(({ label, value }) => (
+              <div key={label} style={metricBoxStyle}>
+                <p style={{ fontSize: '10px', fontWeight: 600, color: 'var(--lead)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '6px' }}>{label}</p>
+                <p style={{ fontSize: '15px', fontWeight: 600, color: value === '—' ? 'var(--lead)' : 'var(--starlight)' }}>{value}</p>
               </div>
             ))}
           </div>
+
           {latest.notes && (
-            <p className="text-xs text-gray-500 italic">{latest.notes}</p>
+            <p style={{ fontSize: '12px', color: 'var(--silver)', fontStyle: 'italic', marginBottom: '8px' }}>{latest.notes}</p>
           )}
-          <p className="text-xs text-gray-400 mt-2">
-            Last updated {new Date(latest.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          <p style={{ fontSize: '11px', color: 'var(--lead)' }}>
+            Updated {new Date(latest.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             {snapshots.length > 1 && ` · ${snapshots.length} versions`}
           </p>
 
@@ -161,21 +165,22 @@ export default function FinancialSnapshot({ dealId, firmId, snapshots: initial }
             <div className="mt-4">
               <button
                 onClick={() => setShowHistory(!showHistory)}
-                className="text-xs text-blue-600 hover:underline"
+                style={{ fontSize: '12px', color: 'var(--mercury-blue)' }}
+                className="hover:opacity-70 transition-opacity"
               >
                 {showHistory ? 'Hide' : 'Show'} version history ({snapshots.length - 1} previous)
               </button>
 
               {showHistory && (
                 <div className="mt-3 space-y-3">
-                  {snapshots.slice(1).map((snap) => (
-                    <div key={snap.id} className="border border-gray-100 rounded-lg p-3 bg-gray-50">
-                      <p className="text-xs text-gray-400 mb-2">
+                  {snapshots.slice(1).map(snap => (
+                    <div key={snap.id} className="rounded-lg p-3" style={{ background: 'var(--midnight-slate)', border: '1px solid rgba(112,112,125,0.15)' }}>
+                      <p style={{ fontSize: '11px', color: 'var(--lead)', marginBottom: '8px' }}>
                         {new Date(snap.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </p>
                       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                         {[
-                          { label: 'Purchase Price', value: fmt(snap.purchase_price) },
+                          { label: 'Price', value: fmt(snap.purchase_price) },
                           { label: 'NOI', value: fmt(snap.noi) },
                           { label: 'Cap Rate', value: fmt(snap.cap_rate, true) },
                           { label: 'Debt Rate', value: fmt(snap.debt_rate, true) },
@@ -183,12 +188,12 @@ export default function FinancialSnapshot({ dealId, firmId, snapshots: initial }
                           { label: 'IRR', value: fmt(snap.irr, true) },
                         ].map(({ label, value }) => (
                           <div key={label}>
-                            <p className="text-xs text-gray-400">{label}</p>
-                            <p className="text-xs font-medium text-gray-700">{value}</p>
+                            <p style={{ fontSize: '10px', color: 'var(--lead)' }}>{label}</p>
+                            <p style={{ fontSize: '12px', fontWeight: 500, color: 'var(--silver)' }}>{value}</p>
                           </div>
                         ))}
                       </div>
-                      {snap.notes && <p className="text-xs text-gray-500 italic mt-2">{snap.notes}</p>}
+                      {snap.notes && <p style={{ fontSize: '11px', color: 'var(--lead)', fontStyle: 'italic', marginTop: '6px' }}>{snap.notes}</p>}
                     </div>
                   ))}
                 </div>
@@ -197,8 +202,8 @@ export default function FinancialSnapshot({ dealId, firmId, snapshots: initial }
           )}
         </div>
       ) : (
-        <div className="border border-dashed border-gray-200 rounded-lg p-8 text-center text-sm text-gray-400">
-          No financial data yet. Add a snapshot to track assumptions.
+        <div className="rounded-lg p-8 text-center" style={{ border: '1px dashed rgba(112,112,125,0.25)' }}>
+          <p style={{ fontSize: '13px', color: 'var(--lead)' }}>No financial data yet. Add a snapshot to track assumptions.</p>
         </div>
       )}
     </section>

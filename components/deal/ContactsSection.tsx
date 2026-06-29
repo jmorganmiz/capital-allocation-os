@@ -125,8 +125,8 @@ export default function ContactsSection({ dealId, initialDealContacts }: Props) 
 
   return (
     <section>
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-base font-semibold text-gray-900">Contacts</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Contacts</h2>
         <button
           onClick={() => setShowAddPanel(v => !v)}
           className="btn-secondary text-sm"
@@ -139,7 +139,7 @@ export default function ContactsSection({ dealId, initialDealContacts }: Props) 
 
       {/* Add panel */}
       {showAddPanel && (
-        <div className="mb-4 border border-gray-200 rounded-lg p-4 space-y-3 bg-gray-50">
+        <div className="mb-4 rounded-lg p-4 space-y-3" style={{ border: '1px solid rgba(112,112,125,0.18)', background: 'var(--midnight-slate)' }}>
           {!showCreateForm ? (
             <>
               <input
@@ -151,7 +151,7 @@ export default function ContactsSection({ dealId, initialDealContacts }: Props) 
               />
               {searching && <p className="text-sm text-gray-400">Searching…</p>}
               {searchResults.length > 0 && (
-                <div className="border border-gray-200 rounded-lg bg-white divide-y divide-gray-100">
+                <div className="rounded-lg overflow-hidden" style={{ border: '1px solid rgba(112,112,125,0.18)' }}>
                   {searchResults.map(c => (
                     <button
                       key={c.id}
@@ -236,11 +236,11 @@ export default function ContactsSection({ dealId, initialDealContacts }: Props) 
       )}
 
       {dealContacts.length === 0 ? (
-        <div className="border border-dashed border-gray-300 rounded-lg p-8 text-center text-sm text-gray-400">
-          No contacts linked to this deal.
+        <div className="rounded-lg p-8 text-center" style={{ border: '1px dashed rgba(112,112,125,0.25)' }}>
+          <p style={{ fontSize: '13px', color: 'var(--lead)' }}>No contacts linked to this deal.</p>
         </div>
       ) : (
-        <div className="border border-gray-200 rounded-lg divide-y divide-gray-100">
+        <div className="rounded-lg overflow-hidden" style={{ border: '1px solid rgba(112,112,125,0.18)' }}>
           {dealContacts.map(dc => {
             const c = dc.contacts
             if (!c) return null

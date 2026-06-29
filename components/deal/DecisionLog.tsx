@@ -13,14 +13,9 @@ interface EventRow {
 }
 
 interface SnapshotRow {
-  id: string
-  created_at: string
-  purchase_price: number | null
-  noi: number | null
-  cap_rate: number | null
-  debt_rate: number | null
-  ltv: number | null
-  irr: number | null
+  id: string; created_at: string
+  purchase_price: number | null; noi: number | null; cap_rate: number | null
+  debt_rate: number | null; ltv: number | null; irr: number | null
 }
 
 interface Props {
@@ -28,32 +23,27 @@ interface Props {
   snapshots?: SnapshotRow[]
 }
 
-const EVENT_STYLES: Record<string, { label: string; dot: string }> = {
-  deal_created:  { label: 'Deal Created',    dot: 'bg-blue-500'   },
-  stage_changed: { label: 'Stage Changed',   dot: 'bg-gray-400'   },
-  killed:        { label: 'Deal Killed',     dot: 'bg-red-500'    },
-  note_added:    { label: 'Note Updated',    dot: 'bg-green-400'  },
-  file_added:    { label: 'File Uploaded',   dot: 'bg-purple-400' },
+const EVENT_META: Record<string, { label: string; color: string }> = {
+  deal_created:  { label: 'Deal Created',  color: 'var(--mercury-blue)' },
+  stage_changed: { label: 'Stage Changed', color: 'var(--lead)'         },
+  killed:        { label: 'Deal Killed',   color: '#f87171'             },
+  note_added:    { label: 'Note Updated',  color: '#4ade80'             },
+  file_added:    { label: 'File Uploaded', color: '#c084fc'             },
 }
 
-function fmt(n: number | null, type: 'currency' | 'percent' | 'raw'): string | null {
+function fmt(n: number | null, type: 'currency' | 'percent'): string | null {
   if (n == null) return null
   if (type === 'currency') return '$' + n.toLocaleString('en-US', { maximumFractionDigits: 0 })
-  if (type === 'percent') return (n * 100).toFixed(2) + '%'
-  return String(n)
+  return (n * 100).toFixed(2) + '%'
 }
 
-// Find the snapshot created closest to (and after) a given ISO timestamp, within 10 seconds
 function findKillSnapshot(snapshots: SnapshotRow[], eventCreatedAt: string): SnapshotRow | null {
   const eventMs = new Date(eventCreatedAt).getTime()
   let best: SnapshotRow | null = null
   let bestDiff = Infinity
   for (const s of snapshots) {
     const diff = Math.abs(new Date(s.created_at).getTime() - eventMs)
-    if (diff < bestDiff && diff < 10_000) {
-      bestDiff = diff
-      best = s
-    }
+    if (diff < bestDiff && diff < 10_000) { bestDiff = diff; best = s }
   }
   return best
 }
@@ -62,75 +52,85 @@ export default function DecisionLog({ events, snapshots = [] }: Props) {
   if (events.length === 0) {
     return (
       <section>
-        <h2 className="text-base font-semibold text-gray-900 mb-3">Decision Log</h2>
-        <p className="text-sm text-gray-400">No events yet.</p>
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Activity</h2>
+        <p style={{ fontSize: '13px', color: 'var(--lead)' }}>No activity yet.</p>
       </section>
     )
   }
 
   return (
     <section>
-      <h2 className="text-base font-semibold text-gray-900 mb-4">Decision Log</h2>
-      <div className="relative border-l-2 border-gray-100 pl-5 space-y-5">
-        {events.map(event => {
-          const style = EVENT_STYLES[event.event_type] ?? { label: event.event_type, dot: 'bg-gray-300' }
+      <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-5">Activity</h2>
+
+      <div style={{ position: 'relative', paddingLeft: '20px', borderLeft: '1px solid rgba(112,112,125,0.15)' }}>
+        {events.map((event, i) => {
+          const meta = EVENT_META[event.event_type] ?? { label: event.event_type, color: 'var(--lead)' }
           const actor = event.profiles?.full_name ?? 'Unknown'
-          const killSnapshot = event.event_type === 'killed'
-            ? findKillSnapshot(snapshots, event.created_at)
-            : null
+          const killSnapshot = event.event_type === 'killed' ? findKillSnapshot(snapshots, event.created_at) : null
 
           return (
-            <div key={event.id} className="relative">
-              <div className={`absolute -left-[23px] top-1 w-3 h-3 rounded-full border-2 border-white ${style.dot}`} />
-              <div className="bg-white border border-gray-100 rounded-lg px-4 py-3">
+            <div key={event.id} style={{ position: 'relative', marginBottom: i < events.length - 1 ? '16px' : 0 }}>
+              {/* Timeline dot */}
+              <div style={{
+                position: 'absolute',
+                left: '-26px',
+                top: '14px',
+                width: '9px', height: '9px',
+                borderRadius: '50%',
+                background: meta.color,
+                border: '2px solid var(--deep-space)',
+                flexShrink: 0,
+              }} />
+
+              <div style={{
+                background: 'var(--midnight-slate)',
+                border: '1px solid rgba(112,112,125,0.15)',
+                borderRadius: '8px',
+                padding: '12px 16px',
+              }}>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-800">{style.label}</span>
-                  <span className="text-xs text-gray-400">
+                  <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--starlight)' }}>{meta.label}</span>
+                  <span style={{ fontSize: '11px', color: 'var(--lead)' }}>
                     {formatDistanceToNow(new Date(event.created_at), { addSuffix: true })}
                   </span>
                 </div>
+
                 {event.event_type === 'stage_changed' && event.from_stage && event.to_stage && (
-                  <p className="text-xs text-gray-500 mb-1">
+                  <p style={{ fontSize: '12px', color: 'var(--silver)', marginBottom: '4px' }}>
                     {event.from_stage.name} → {event.to_stage.name}
                   </p>
                 )}
                 {event.event_type === 'killed' && event.kill_reasons && (
-                  <p className="text-xs font-medium text-red-700 mb-1">
+                  <p style={{ fontSize: '12px', color: '#f87171', fontWeight: 500, marginBottom: '4px' }}>
                     Reason: {event.kill_reasons.name}
                   </p>
                 )}
                 {event.notes && event.event_type !== 'note_added' && event.event_type !== 'file_added' && (
-                  <p className="text-xs text-gray-600 italic">"{event.notes}"</p>
+                  <p style={{ fontSize: '12px', color: 'var(--silver)', fontStyle: 'italic' }}>"{event.notes}"</p>
                 )}
                 {event.event_type === 'file_added' && event.notes && (
-                  <p className="text-xs text-gray-500">{event.notes}</p>
+                  <p style={{ fontSize: '12px', color: 'var(--silver)' }}>{event.notes}</p>
                 )}
+
                 {killSnapshot && (
-                  <div className="mt-2 pt-2 border-t border-gray-100">
-                    <p className="text-xs text-gray-400 mb-1 font-medium">Snapshot at time of kill</p>
-                    <div className="flex flex-wrap gap-x-4 gap-y-0.5">
-                      {fmt(killSnapshot.purchase_price, 'currency') && (
-                        <span className="text-xs text-gray-600">Price: {fmt(killSnapshot.purchase_price, 'currency')}</span>
-                      )}
-                      {fmt(killSnapshot.noi, 'currency') && (
-                        <span className="text-xs text-gray-600">NOI: {fmt(killSnapshot.noi, 'currency')}</span>
-                      )}
-                      {fmt(killSnapshot.cap_rate, 'percent') && (
-                        <span className="text-xs text-gray-600">Cap: {fmt(killSnapshot.cap_rate, 'percent')}</span>
-                      )}
-                      {fmt(killSnapshot.debt_rate, 'percent') && (
-                        <span className="text-xs text-gray-600">Debt: {fmt(killSnapshot.debt_rate, 'percent')}</span>
-                      )}
-                      {fmt(killSnapshot.ltv, 'percent') && (
-                        <span className="text-xs text-gray-600">LTV: {fmt(killSnapshot.ltv, 'percent')}</span>
-                      )}
-                      {fmt(killSnapshot.irr, 'percent') && (
-                        <span className="text-xs text-gray-600">IRR: {fmt(killSnapshot.irr, 'percent')}</span>
-                      )}
+                  <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(112,112,125,0.12)' }}>
+                    <p style={{ fontSize: '10px', fontWeight: 600, color: 'var(--lead)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '6px' }}>Snapshot at kill</p>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1">
+                      {[
+                        { l: 'Price', v: fmt(killSnapshot.purchase_price, 'currency') },
+                        { l: 'NOI',   v: fmt(killSnapshot.noi, 'currency') },
+                        { l: 'Cap',   v: fmt(killSnapshot.cap_rate, 'percent') },
+                        { l: 'Debt',  v: fmt(killSnapshot.debt_rate, 'percent') },
+                        { l: 'LTV',   v: fmt(killSnapshot.ltv, 'percent') },
+                        { l: 'IRR',   v: fmt(killSnapshot.irr, 'percent') },
+                      ].filter(x => x.v).map(({ l, v }) => (
+                        <span key={l} style={{ fontSize: '11px', color: 'var(--silver)' }}>{l}: {v}</span>
+                      ))}
                     </div>
                   </div>
                 )}
-                <p className="text-xs text-gray-400 mt-1">by {actor}</p>
+
+                <p style={{ fontSize: '11px', color: 'var(--lead)', marginTop: '8px' }}>by {actor}</p>
               </div>
             </div>
           )

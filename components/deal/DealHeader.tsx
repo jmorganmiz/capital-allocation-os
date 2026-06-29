@@ -155,7 +155,8 @@ export default function DealHeader({ deal, stages, killReasons, firmUsers }: Pro
               value={ownerId}
               onChange={e => handleOwnerChange(e.target.value)}
               disabled={deal.is_archived || isPending}
-              className="text-sm border border-gray-200 rounded-md px-2 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              className="input-base disabled:opacity-50"
+              style={{ padding: '5px 10px', fontSize: '12px' }}
             >
               <option value="">Unassigned</option>
               {firmUsers.map(u => (
@@ -168,7 +169,8 @@ export default function DealHeader({ deal, stages, killReasons, firmUsers }: Pro
             value={stageId}
             onChange={e => handleStageChange(e.target.value)}
             disabled={deal.is_archived || isPending}
-            className="text-sm border border-gray-200 rounded-md px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            className="input-base disabled:opacity-50"
+            style={{ padding: '5px 10px', fontSize: '12px' }}
           >
             {stages.filter(s => s.name !== 'Killed').map(s => (
               <option key={s.id} value={s.id}>{s.name}</option>

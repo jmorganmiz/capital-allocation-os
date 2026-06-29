@@ -32,20 +32,25 @@ export default function NotesSection({ dealId, section, title, initialContent, p
     debounceRef.current = setTimeout(() => save(value), 1500)
   }
 
-  // Only apply the highlight treatment on the first (overview) section when content is empty
   const isEmpty = highlight && !content.trim()
 
   return (
     <section>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-base font-semibold text-gray-900">
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
           {title}
           {isEmpty && (
-            <span className="ml-2 text-xs font-normal text-blue-500">— start here</span>
+            <span style={{ marginLeft: '8px', fontSize: '11px', fontWeight: 400, color: 'var(--mercury-blue)', textTransform: 'none', letterSpacing: 0 }}>
+              — start here
+            </span>
           )}
         </h2>
-        <span className={`text-xs transition-opacity ${saved ? 'text-gray-400' : 'text-amber-500'}`}>
-          {isPending ? 'Saving…' : saved ? 'Saved' : 'Unsaved changes'}
+        <span style={{
+          fontSize: '11px',
+          color: isPending ? 'var(--amber)' : saved ? 'var(--lead)' : 'var(--amber)',
+          transition: 'color 0.2s',
+        }}>
+          {isPending ? 'Saving…' : saved ? '' : 'Unsaved'}
         </span>
       </div>
       <textarea
@@ -57,13 +62,24 @@ export default function NotesSection({ dealId, section, title, initialContent, p
             : (placeholder ?? `Add ${title.toLowerCase()}…`)
         }
         rows={6}
-        className={`w-full rounded-lg p-3 text-sm text-gray-800
-                   focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y
-                   placeholder:text-gray-400 font-mono leading-relaxed
-                   ${isEmpty
-                     ? 'border-2 border-dashed border-blue-300 bg-blue-50'
-                     : 'border border-gray-200 bg-gray-100'
-                   }`}
+        style={{
+          width: '100%',
+          background: isEmpty ? 'rgba(82,102,235,0.06)' : 'var(--midnight-slate)',
+          border: isEmpty
+            ? '1px dashed rgba(82,102,235,0.4)'
+            : '1px solid rgba(112,112,125,0.18)',
+          borderRadius: '8px',
+          padding: '12px 14px',
+          fontSize: '13px',
+          lineHeight: 1.7,
+          color: 'var(--silver)',
+          resize: 'vertical',
+          outline: 'none',
+          fontFamily: 'inherit',
+          transition: 'border-color 0.15s',
+        }}
+        onFocus={e => { e.currentTarget.style.borderColor = 'rgba(82,102,235,0.4)' }}
+        onBlur={e => { e.currentTarget.style.borderColor = isEmpty ? 'rgba(82,102,235,0.4)' : 'rgba(112,112,125,0.18)' }}
       />
     </section>
   )

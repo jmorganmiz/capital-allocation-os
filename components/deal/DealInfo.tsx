@@ -21,19 +21,37 @@ function parsePrice(raw: string): number | null {
   return Number.isFinite(n) ? n : null
 }
 
-// A single inline-editable field
-function EditableText({
-  label,
-  value,
-  placeholder,
-  onSave,
-  disabled,
-}: {
-  label: string
-  value: string | null
-  placeholder: string
-  onSave: (v: string | null) => void
-  disabled: boolean
+const cellStyle = {
+  background: 'var(--graphite)',
+  border: '1px solid rgba(112,112,125,0.18)',
+  borderRadius: '6px',
+  padding: '12px 14px',
+}
+
+const labelStyle: React.CSSProperties = {
+  fontSize: '10px',
+  fontWeight: 600,
+  color: 'var(--lead)',
+  letterSpacing: '0.08em',
+  textTransform: 'uppercase',
+  marginBottom: '6px',
+}
+
+const valueStyle: React.CSSProperties = {
+  fontSize: '14px',
+  fontWeight: 500,
+  color: 'var(--starlight)',
+}
+
+const emptyValueStyle: React.CSSProperties = {
+  fontSize: '14px',
+  color: 'var(--lead)',
+  fontStyle: 'italic',
+}
+
+function EditableText({ label, value, placeholder, onSave, disabled }: {
+  label: string; value: string | null; placeholder: string
+  onSave: (v: string | null) => void; disabled: boolean
 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(value ?? '')
@@ -44,94 +62,72 @@ function EditableText({
     onSave(trimmed || null)
   }
 
-  if (editing) {
-    return (
-      <div>
-        <p className="text-xs text-gray-400 mb-1">{label}</p>
+  return (
+    <div style={cellStyle}>
+      <p style={labelStyle}>{label}</p>
+      {editing ? (
         <input
           autoFocus
           value={draft}
           onChange={e => setDraft(e.target.value)}
           onBlur={commit}
           onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') { setDraft(value ?? ''); setEditing(false) } }}
-          className="w-full text-sm border border-blue-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input-base w-full"
           placeholder={placeholder}
+          style={{ padding: '4px 8px', fontSize: '13px' }}
         />
-      </div>
-    )
-  }
-
-  return (
-    <div>
-      <p className="text-xs text-gray-400 mb-1">{label}</p>
-      <button
-        disabled={disabled}
-        onClick={() => { setDraft(value ?? ''); setEditing(true) }}
-        className="text-sm text-left w-full text-gray-800 hover:text-blue-600 disabled:cursor-default disabled:hover:text-gray-800 truncate"
-      >
-        {value ?? <span className="text-gray-300 italic">{placeholder}</span>}
-      </button>
+      ) : (
+        <button
+          disabled={disabled}
+          onClick={() => { setDraft(value ?? ''); setEditing(true) }}
+          className="text-left w-full transition-colors hover:opacity-70 disabled:cursor-default"
+          style={value ? valueStyle : emptyValueStyle}
+        >
+          {value ?? placeholder}
+        </button>
+      )}
     </div>
   )
 }
 
-function EditableSelect({
-  label,
-  value,
-  options,
-  onSave,
-  disabled,
-}: {
-  label: string
-  value: string | null
-  options: string[]
-  onSave: (v: string | null) => void
-  disabled: boolean
+function EditableSelect({ label, value, options, onSave, disabled }: {
+  label: string; value: string | null; options: string[]
+  onSave: (v: string | null) => void; disabled: boolean
 }) {
   const [editing, setEditing] = useState(false)
 
-  if (editing) {
-    return (
-      <div>
-        <p className="text-xs text-gray-400 mb-1">{label}</p>
+  return (
+    <div style={cellStyle}>
+      <p style={labelStyle}>{label}</p>
+      {editing ? (
         <select
           autoFocus
           defaultValue={value ?? ''}
           onBlur={e => { onSave(e.target.value || null); setEditing(false) }}
           onChange={e => { onSave(e.target.value || null); setEditing(false) }}
-          className="w-full text-sm border border-blue-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input-base w-full"
+          style={{ padding: '4px 8px', fontSize: '13px' }}
         >
-          <option value="">None</option>
+          <option value="">—</option>
           {options.map(o => <option key={o}>{o}</option>)}
         </select>
-      </div>
-    )
-  }
-
-  return (
-    <div>
-      <p className="text-xs text-gray-400 mb-1">{label}</p>
-      <button
-        disabled={disabled}
-        onClick={() => setEditing(true)}
-        className="text-sm text-left w-full text-gray-800 hover:text-blue-600 disabled:cursor-default disabled:hover:text-gray-800 truncate"
-      >
-        {value ?? <span className="text-gray-300 italic">—</span>}
-      </button>
+      ) : (
+        <button
+          disabled={disabled}
+          onClick={() => setEditing(true)}
+          className="text-left w-full transition-colors hover:opacity-70 disabled:cursor-default"
+          style={value ? valueStyle : emptyValueStyle}
+        >
+          {value ?? '—'}
+        </button>
+      )}
     </div>
   )
 }
 
-function EditablePrice({
-  label,
-  value,
-  onSave,
-  disabled,
-}: {
-  label: string
-  value: number | null
-  onSave: (v: number | null) => void
-  disabled: boolean
+function EditablePrice({ label, value, onSave, disabled }: {
+  label: string; value: number | null
+  onSave: (v: number | null) => void; disabled: boolean
 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(value != null ? String(value) : '')
@@ -141,10 +137,10 @@ function EditablePrice({
     onSave(parsePrice(draft))
   }
 
-  if (editing) {
-    return (
-      <div>
-        <p className="text-xs text-gray-400 mb-1">{label}</p>
+  return (
+    <div style={cellStyle}>
+      <p style={labelStyle}>{label}</p>
+      {editing ? (
         <input
           autoFocus
           type="number"
@@ -154,23 +150,20 @@ function EditablePrice({
           onChange={e => setDraft(e.target.value)}
           onBlur={commit}
           onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') { setDraft(value != null ? String(value) : ''); setEditing(false) } }}
-          className="w-full text-sm border border-blue-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input-base w-full"
           placeholder="5000000"
+          style={{ padding: '4px 8px', fontSize: '13px' }}
         />
-      </div>
-    )
-  }
-
-  return (
-    <div>
-      <p className="text-xs text-gray-400 mb-1">{label}</p>
-      <button
-        disabled={disabled}
-        onClick={() => { setDraft(value != null ? String(value) : ''); setEditing(true) }}
-        className="text-sm text-left w-full text-gray-800 hover:text-blue-600 disabled:cursor-default disabled:hover:text-gray-800"
-      >
-        {value != null ? formatPrice(value) : <span className="text-gray-300 italic">—</span>}
-      </button>
+      ) : (
+        <button
+          disabled={disabled}
+          onClick={() => { setDraft(value != null ? String(value) : ''); setEditing(true) }}
+          className="text-left w-full transition-colors hover:opacity-70 disabled:cursor-default"
+          style={value != null ? valueStyle : emptyValueStyle}
+        >
+          {value != null ? formatPrice(value) : '—'}
+        </button>
+      )}
     </div>
   )
 }
@@ -195,10 +188,10 @@ export default function DealInfo({ deal }: Props) {
   return (
     <section>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-base font-semibold text-gray-900">Deal Info</h2>
-        {isPending && <span className="text-xs text-amber-500">Saving…</span>}
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Deal Info</h2>
+        {isPending && <span style={{ fontSize: '11px', color: 'var(--amber)' }}>Saving…</span>}
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-4 bg-gray-50 border border-gray-100 rounded-lg px-4 py-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <EditablePrice
           label="Asking Price"
           value={fields.asking_price}
