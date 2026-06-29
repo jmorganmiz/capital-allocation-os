@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { parseOMBuffer } from '@/lib/parse-om-core'
 import { getResend } from '@/lib/resend'
 import { createHash } from 'node:crypto'
+import { scoreInboundDeal } from '@/lib/score-inbound'
 
 export const runtime = 'nodejs'
 export const maxDuration = 120
@@ -179,6 +180,11 @@ export async function POST(req: NextRequest) {
   if (claimStatus !== 'claimed') {
     return NextResponse.json({ error: 'processing_in_progress' }, { status: 503 })
   }
+
+  await supabase
+    .from('inbound_email_events')
+    .update({ firm_id: firm.id })
+    .eq('id', emailId)
 
   console.log('[inbox] PDF attachments count:', pdfAttachments.length)
 
@@ -459,6 +465,13 @@ async function processAttachment({
         is_source:  true,
       })
     }
+  }
+
+  const scoreResult = await scoreInboundDeal(supabase, dealId, firmId)
+  if (scoreResult.error) {
+    console.error('[inbox] automatic scoring failed:', scoreResult.error)
+  } else {
+    console.log('[inbox] automatic scores created:', scoreResult.scoresWritten)
   }
 
   return { id: dealId, title: dealTitle }

@@ -18,6 +18,7 @@ import MoveSheet from './MoveSheet'
 import CreateDealModal from './CreateDealModal'
 import UploadOMModal from './UploadOMModal'
 import ChecklistWarningModal from './ChecklistWarningModal'
+import { showToast } from '@/lib/toast'
 
 interface PendingMove {
   deal: Deal
@@ -49,6 +50,9 @@ export default function KanbanBoard({
   const [pendingMove, setPendingMove] = useState<PendingMove | null>(null)
   const [showCreate, setShowCreate] = useState(false)
   const [showUploadOM, setShowUploadOM] = useState(false)
+  const [query, setQuery] = useState('')
+  const [ownerFilter, setOwnerFilter] = useState('')
+  const [typeFilter, setTypeFilter] = useState('')
   const [, startTransition] = useTransition()
 
   const sensors = useSensors(useSensor(PointerSensor, {
@@ -57,6 +61,24 @@ export default function KanbanBoard({
 
   const activeStages = initialStages.filter(s => s.name !== 'Killed')
   const activeDeal = activeId ? deals.find(d => d.id === activeId) : null
+  const owners = useMemo(() => {
+    const unique = new Map<string, string>()
+    deals.forEach(deal => {
+      if (deal.owner_user_id && deal.owner?.full_name) unique.set(deal.owner_user_id, deal.owner.full_name)
+    })
+    return [...unique.entries()].sort((a, b) => a[1].localeCompare(b[1]))
+  }, [deals])
+  const dealTypes = useMemo(() => [...new Set(deals.map(deal => deal.deal_type).filter(Boolean) as string[])].sort(), [deals])
+  const visibleDeals = useMemo(() => {
+    const term = query.trim().toLowerCase()
+    return deals.filter(deal => {
+      if (ownerFilter === 'unassigned' && deal.owner_user_id) return false
+      if (ownerFilter && ownerFilter !== 'unassigned' && deal.owner_user_id !== ownerFilter) return false
+      if (typeFilter && deal.deal_type !== typeFilter) return false
+      if (term && ![deal.title, deal.market, deal.source_name].some(value => value?.toLowerCase().includes(term))) return false
+      return true
+    })
+  }, [deals, ownerFilter, query, typeFilter])
 
   // Build deal_id → Set<checklist_item_id> for fast incomplete lookups
   const progressMap = useMemo(() => {
@@ -74,7 +96,13 @@ export default function KanbanBoard({
         ? { ...d, stage_id: newStageId, latest_stage_event_at: new Date().toISOString() }
         : d
     ))
-    startTransition(async () => { await updateDealStage(dealId, newStageId, oldStageId) })
+    startTransition(async () => {
+      const result = await updateDealStage(dealId, newStageId, oldStageId)
+      if (result.error) {
+        setDeals(prev => prev.map(deal => deal.id === dealId ? { ...deal, stage_id: oldStageId } : deal))
+        showToast(result.error, 'error')
+      }
+    })
   }
 
   // Check for incomplete checklist items; show warning or proceed immediately
@@ -113,20 +141,40 @@ export default function KanbanBoard({
     const killedStage = initialStages.find(s => s.name === 'Killed')
     if (!killedStage) return
 
-    setDeals(prev => prev.filter(d => d.id !== killTarget.id))
-    startTransition(async () => { await killDeal(killTarget.id, killReasonId, notes || null, killTarget.stage_id ?? '', killedStage.id) })
+    const target = killTarget
+    setDeals(prev => prev.filter(d => d.id !== target.id))
+    startTransition(async () => {
+      const result = await killDeal(target.id, killReasonId, notes || null, target.stage_id ?? '', killedStage.id)
+      if (result.error) {
+        setDeals(prev => [target, ...prev])
+        showToast(result.error, 'error')
+      }
+    })
     setKillTarget(null)
   }
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex justify-end gap-2 px-4 md:px-6 pb-3">
-        <button onClick={() => setShowUploadOM(true)} className="btn-secondary">
-          Upload OM
-        </button>
-        <button onClick={() => setShowCreate(true)} className="btn-primary">
-          + Add Deal
-        </button>
+      <div className="flex flex-col gap-3 px-4 pb-3 md:flex-row md:items-center md:justify-between md:px-6">
+        <div className="flex flex-wrap gap-2">
+          <input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search pipeline..." className="input-base w-full sm:w-48" />
+          <select value={ownerFilter} onChange={event => setOwnerFilter(event.target.value)} className="input-base w-36">
+            <option value="">All owners</option>
+            <option value="unassigned">Unassigned</option>
+            {owners.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+          </select>
+          <select value={typeFilter} onChange={event => setTypeFilter(event.target.value)} className="input-base w-36">
+            <option value="">All asset types</option>
+            {dealTypes.map(type => <option key={type} value={type}>{type}</option>)}
+          </select>
+          {(query || ownerFilter || typeFilter) && (
+            <button onClick={() => { setQuery(''); setOwnerFilter(''); setTypeFilter('') }} className="btn-ghost">Clear</button>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <button onClick={() => setShowUploadOM(true)} className="btn-secondary">Upload OM</button>
+          <button onClick={() => setShowCreate(true)} className="btn-primary">+ Add Deal</button>
+        </div>
       </div>
 
       <DndContext
@@ -140,7 +188,7 @@ export default function KanbanBoard({
             <DealColumn
               key={stage.id}
               stage={stage}
-              deals={deals.filter(d => d.stage_id === stage.id)}
+              deals={visibleDeals.filter(d => d.stage_id === stage.id)}
               onKill={setKillTarget}
               onMove={setMoveTarget}
             />

@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { upsertDealScore } from '@/lib/actions/scoring'
+import { showToast } from '@/lib/toast'
 
 interface Criteria {
   id: string
@@ -64,7 +65,16 @@ export default function ScoringSection({ dealId, criteria, initialScores }: Prop
     }))
 
     setSaving(prev => new Set(prev).add(criteriaId))
-    await upsertDealScore(dealId, criteriaId, score, notes)
+    const result = await upsertDealScore(dealId, criteriaId, score, notes)
+    if (result.error) {
+      setScores(prev => {
+        const next = { ...prev }
+        if (existing) next[criteriaId] = existing
+        else delete next[criteriaId]
+        return next
+      })
+      showToast(result.error, 'error')
+    }
     setSaving(prev => { const n = new Set(prev); n.delete(criteriaId); return n })
   }, [dealId, scores])
 
@@ -78,7 +88,11 @@ export default function ScoringSection({ dealId, criteria, initialScores }: Prop
     }))
 
     setSaving(prev => new Set(prev).add(criteriaId))
-    await upsertDealScore(dealId, criteriaId, existing.score, notes || null)
+    const result = await upsertDealScore(dealId, criteriaId, existing.score, notes || null)
+    if (result.error) {
+      setScores(prev => ({ ...prev, [criteriaId]: existing }))
+      showToast(result.error, 'error')
+    }
     setSaving(prev => { const n = new Set(prev); n.delete(criteriaId); return n })
   }, [dealId, scores])
 

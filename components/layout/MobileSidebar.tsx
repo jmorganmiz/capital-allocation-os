@@ -11,11 +11,10 @@ interface Props {
 }
 
 const navLinks = [
+  { href: '/intake', label: 'Intake' },
   { href: '/pipeline', label: 'Pipeline' },
-  { href: '/import/deals', label: 'Import Deals' },
-  { href: '/contacts', label: 'Contacts' },
   { href: '/dashboard', label: 'Dashboard' },
-  { href: '/buy-box', label: 'Buy Box' },
+  { href: '/contacts', label: 'Contacts' },
   { href: '/graveyard', label: 'Graveyard' },
   { href: '/settings', label: 'Settings' },
 ]

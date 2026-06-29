@@ -113,5 +113,5 @@ export async function setupWorkspaceAction(prevState: any, formData: FormData) {
     return { error: 'Failed to initialize workspace settings.' }
   }
 
-  redirect('/pipeline')
+  redirect('/intake')
 }

@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from 'react'
 
 const TABS = [
-  { label: 'Notes',      id: 'section-notes'      },
   { label: 'Financials', id: 'section-financials'  },
   { label: 'Scoring',    id: 'section-scoring'     },
+  { label: 'Notes',      id: 'section-notes'      },
   { label: 'Files',      id: 'section-files'       },
   { label: 'Contacts',   id: 'section-contacts'    },
   { label: 'Activity',   id: 'section-activity'    },

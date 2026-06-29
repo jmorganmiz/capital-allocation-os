@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { showToast } from '@/lib/toast'
 
 interface Snapshot {
   id: string
@@ -75,6 +76,8 @@ export default function FinancialSnapshot({ dealId, firmId, snapshots: initial }
         setSnapshots(prev => [data, ...prev])
         setShowForm(false)
         setForm({ purchase_price: '', noi: '', cap_rate: '', debt_rate: '', ltv: '', irr: '', notes: '' })
+      } else if (error) {
+        showToast(error.message, 'error')
       }
     })
   }
@@ -90,7 +93,7 @@ export default function FinancialSnapshot({ dealId, firmId, snapshots: initial }
 
       {showForm && (
         <div className="border border-gray-200 rounded-lg p-4 mb-4 bg-gray-50">
-          <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="grid grid-cols-1 gap-3 mb-3 sm:grid-cols-2">
             {[
               { field: 'purchase_price', label: 'Purchase Price ($)' },
               { field: 'noi', label: 'NOI ($)' },
@@ -131,7 +134,7 @@ export default function FinancialSnapshot({ dealId, firmId, snapshots: initial }
 
       {latest ? (
         <div>
-          <div className="grid grid-cols-3 gap-3 mb-3">
+          <div className="grid grid-cols-2 gap-3 mb-3 sm:grid-cols-3">
             {[
               { label: 'Purchase Price', value: fmt(latest.purchase_price) },
               { label: 'NOI', value: fmt(latest.noi) },
@@ -170,7 +173,7 @@ export default function FinancialSnapshot({ dealId, firmId, snapshots: initial }
                       <p className="text-xs text-gray-400 mb-2">
                         {new Date(snap.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </p>
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                         {[
                           { label: 'Purchase Price', value: fmt(snap.purchase_price) },
                           { label: 'NOI', value: fmt(snap.noi) },

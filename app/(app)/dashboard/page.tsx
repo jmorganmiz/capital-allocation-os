@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import AttentionQueue from '@/components/dashboard/AttentionQueue'
+import { classifyAttention } from '@/lib/workflow.mjs'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -24,7 +26,7 @@ export default async function DashboardPage() {
       .order('position'),
     supabase
       .from('deals')
-      .select('id, stage_id')
+      .select('id, title, stage_id, intake_type, created_at, updated_at, deal_scores(score)')
       .eq('firm_id', firmId)
       .eq('is_archived', false),
     supabase
@@ -41,6 +43,8 @@ export default async function DashboardPage() {
     count: (activeDeals ?? []).filter(d => d.stage_id === stage.id).length,
   }))
   const totalActive = (activeDeals ?? []).length
+  const firstStageId = activeStages[0]?.id
+  const { needsReview, staleDeals } = classifyAttention(activeDeals ?? [], firstStageId)
 
   // Kill reason breakdown
   const killCounts: Record<string, number> = {}
@@ -57,6 +61,8 @@ export default async function DashboardPage() {
         <h1 className="text-xl font-semibold text-gray-900">Dashboard</h1>
         <p className="text-sm text-gray-500 mt-0.5">{totalActive} active deals across {activeStages.length} stages</p>
       </div>
+
+      <AttentionQueue needsReview={needsReview} staleDeals={staleDeals} />
 
       {/* Deals by Stage */}
       <section className="mb-10">

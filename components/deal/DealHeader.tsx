@@ -6,6 +6,7 @@ import { MapPin } from 'lucide-react'
 import { Deal, DealStage, KillReason } from '@/lib/types/database'
 import { updateDealStage, killDeal, updateDealOwner, updateDealFields } from '@/lib/actions/deals'
 import KillModal from '@/components/pipeline/KillModal'
+import { showToast } from '@/lib/toast'
 
 interface Props {
   deal: Deal
@@ -18,6 +19,7 @@ interface Props {
 export default function DealHeader({ deal, stages, killReasons, firmUsers }: Props) {
   const [showKillModal, setShowKillModal] = useState(false)
   const [ownerId, setOwnerId] = useState(deal.owner_user_id ?? '')
+  const [stageId, setStageId] = useState(deal.stage_id ?? '')
   const [address, setAddress] = useState(deal.address ?? '')
   const [editingAddress, setEditingAddress] = useState(false)
   const [isPending, startTransition] = useTransition()
@@ -30,18 +32,37 @@ export default function DealHeader({ deal, stages, killReasons, firmUsers }: Pro
       setShowKillModal(true)
       return
     }
-    startTransition(async () => { await updateDealStage(deal.id, newStageId, deal.stage_id ?? '') })
+    const previous = stageId
+    setStageId(newStageId)
+    startTransition(async () => {
+      const result = await updateDealStage(deal.id, newStageId, previous)
+      if (result.error) {
+        setStageId(previous)
+        showToast(result.error, 'error')
+      }
+    })
   }
 
   function handleOwnerChange(newOwnerId: string) {
+    const previous = ownerId
     setOwnerId(newOwnerId)
-    startTransition(async () => { await updateDealOwner(deal.id, newOwnerId || null) })
+    startTransition(async () => {
+      const result = await updateDealOwner(deal.id, newOwnerId || null)
+      if (result.error) {
+        setOwnerId(previous)
+        showToast(result.error, 'error')
+      }
+    })
   }
 
   function handleKillConfirm(killReasonId: string, notes: string) {
     if (!killedStage) return
     startTransition(async () => {
-      await killDeal(deal.id, killReasonId, notes || null, deal.stage_id ?? '', killedStage.id)
+      const result = await killDeal(deal.id, killReasonId, notes || null, stageId, killedStage.id)
+      if (result.error) {
+        showToast(result.error, 'error')
+        return
+      }
       setShowKillModal(false)
     })
   }
@@ -50,7 +71,13 @@ export default function DealHeader({ deal, stages, killReasons, firmUsers }: Pro
     setEditingAddress(false)
     const trimmed = value.trim()
     setAddress(trimmed)
-    startTransition(async () => { await updateDealFields(deal.id, { address: trimmed || null }) })
+    startTransition(async () => {
+      const result = await updateDealFields(deal.id, { address: trimmed || null })
+      if (result.error) {
+        setAddress(deal.address ?? '')
+        showToast(result.error, 'error')
+      }
+    })
   }
 
   // Use full address for Maps link when available, otherwise fall back to market
@@ -67,7 +94,7 @@ export default function DealHeader({ deal, stages, killReasons, firmUsers }: Pro
         <span className="text-gray-800">{deal.title}</span>
       </div>
 
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-semibold text-gray-900">{deal.title}</h1>
 
@@ -138,7 +165,7 @@ export default function DealHeader({ deal, stages, killReasons, firmUsers }: Pro
           </div>
 
           <select
-            value={deal.stage_id ?? ''}
+            value={stageId}
             onChange={e => handleStageChange(e.target.value)}
             disabled={deal.is_archived || isPending}
             className="text-sm border border-gray-200 rounded-md px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"

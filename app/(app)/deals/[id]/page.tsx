@@ -92,7 +92,7 @@ export default async function DealPage({ params }: Props) {
 
       <DealTabs />
 
-      <div className="space-y-8">
+      <div className="flex flex-col gap-8">
         {/* Stage Checklist */}
         {(checklistItems ?? []).length > 0 && currentStage && !deal.is_archived && (
           <StageChecklist
@@ -104,7 +104,7 @@ export default async function DealPage({ params }: Props) {
         )}
 
         {/* Notes */}
-        <section id="section-notes" className="space-y-6">
+        <section id="section-notes" className="order-4 space-y-6">
           <NotesSection
             dealId={deal.id}
             section="overview"
@@ -129,10 +129,10 @@ export default async function DealPage({ params }: Props) {
         </section>
 
         {/* Deal Info */}
-        <DealInfo deal={deal} />
+        <div className="order-2"><DealInfo deal={deal} /></div>
 
         {/* Financials */}
-        <section id="section-financials">
+        <section id="section-financials" className="order-3">
           <FinancialSnapshot
             dealId={deal.id}
             firmId={deal.firm_id}
@@ -141,7 +141,7 @@ export default async function DealPage({ params }: Props) {
         </section>
 
         {/* Scoring */}
-        <section id="section-scoring">
+        <section id="section-scoring" className="order-3">
           <ScoringSection
             dealId={deal.id}
             criteria={(scoringCriteriaResult.criteria ?? []) as any}
@@ -150,7 +150,7 @@ export default async function DealPage({ params }: Props) {
         </section>
 
         {/* Files */}
-        <section id="section-files">
+        <section id="section-files" className="order-5">
           <FilesSection
             dealId={deal.id}
             files={files ?? []}
@@ -158,7 +158,7 @@ export default async function DealPage({ params }: Props) {
         </section>
 
         {/* Contacts */}
-        <section id="section-contacts">
+        <section id="section-contacts" className="order-6">
           <ContactsSection
             dealId={deal.id}
             initialDealContacts={(dealContacts ?? []) as any}
@@ -166,7 +166,7 @@ export default async function DealPage({ params }: Props) {
         </section>
 
         {/* Activity */}
-        <section id="section-activity">
+        <section id="section-activity" className="order-7">
           <DecisionLog events={events ?? []} snapshots={snapshots ?? []} />
         </section>
       </div>

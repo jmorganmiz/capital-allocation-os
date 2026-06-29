@@ -100,7 +100,7 @@ export default async function HomePage() {
             {
               title: 'Firm Deal Inbox',
               desc: 'Get a dedicated email address for your firm — brokers send OMs directly to it. AI parses and scores every deal automatically on arrival. Your pipeline builds itself.',
-              comingSoon: true,
+              comingSoon: false,
             },
           ].map(({ title, desc, comingSoon }) => (
             <div key={title} className="p-6 bg-gray-50 rounded-xl">
@@ -148,7 +148,7 @@ export default async function HomePage() {
                   { feature: 'Full decision history',           spreadsheets: false, dealcloud: true,  dealstash: true },
                   { feature: 'Setup in minutes',                spreadsheets: true,  dealcloud: false, dealstash: true },
                   { feature: 'No implementation fee',           spreadsheets: true,  dealcloud: false, dealstash: true },
-                  { feature: 'Firm deal inbox with AI intake',  spreadsheets: false, dealcloud: false, dealstash: 'soon' },
+                  { feature: 'Firm deal inbox with AI intake',  spreadsheets: false, dealcloud: false, dealstash: true as boolean | 'soon' },
                 ].map(({ feature, spreadsheets, dealcloud, dealstash }, i) => (
                   <tr key={feature} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
                     <td className="py-3 pr-6 text-gray-700">{feature}</td>
@@ -240,7 +240,7 @@ export default async function HomePage() {
             ))}
             <li className="flex items-center gap-3 text-sm text-gray-500">
               <span className="text-blue-400 font-bold">✓</span>
-              Firm deal inbox with AI intake <span className="ml-1 text-xs text-blue-500 font-medium">(coming soon)</span>
+              Firm deal inbox with AI intake
             </li>
           </ul>
           <Link href="/signup" className="block w-full bg-gray-900 text-white text-center py-3 rounded-md text-sm font-semibold hover:bg-gray-800 transition-colors">
