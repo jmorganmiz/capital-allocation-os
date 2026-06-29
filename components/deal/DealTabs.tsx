@@ -71,12 +71,12 @@ export default function DealTabs() {
 
   return (
     <div className="sticky top-0 z-20 bg-white border-b border-gray-100 -mx-8 px-8 mb-10">
-      <div className="flex gap-0 overflow-x-auto scrollbar-none">
+      <div className="flex gap-2 overflow-x-auto scrollbar-none">
         {TABS.map(tab => (
           <button
             key={tab.id}
             onClick={() => scrollTo(tab.id)}
-            className={`px-4 py-3.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors
+            className={`px-3.5 py-3.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors rounded-t-md
               ${active === tab.id
                 ? 'border-gray-900 text-gray-900'
                 : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-200'

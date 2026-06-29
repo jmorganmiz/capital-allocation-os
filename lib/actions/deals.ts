@@ -188,6 +188,7 @@ export async function killDeal(
 
   revalidatePath('/pipeline')
   revalidatePath('/graveyard')
+  revalidatePath(`/deals/${dealId}`)
   return { success: true }
 }
 
@@ -608,9 +609,8 @@ export async function searchDeals(query: string) {
   // Search deals by title, market, source_name
   const { data: dealMatches } = await supabase
     .from('deals')
-    .select('id, title, market, stage_id, deal_stages(name)')
+    .select('id, title, market, stage_id, is_archived, deal_stages(name)')
     .eq('firm_id', profile.firm_id)
-    .eq('is_archived', false)
     .or(`title.ilike.${term},market.ilike.${term},source_name.ilike.${term}`)
     .limit(10)
 
@@ -627,9 +627,8 @@ export async function searchDeals(query: string) {
   if (noteIds.length > 0) {
     const { data } = await supabase
       .from('deals')
-      .select('id, title, market, stage_id, deal_stages(name)')
+      .select('id, title, market, stage_id, is_archived, deal_stages(name)')
       .eq('firm_id', profile.firm_id)
-      .eq('is_archived', false)
       .in('id', noteIds)
       .limit(5)
     extra = data ?? []
@@ -647,7 +646,8 @@ export async function searchDeals(query: string) {
     id: d.id,
     title: d.title,
     market: d.market,
-    stage_name: (d.deal_stages as any)?.name ?? null,
+    stage_name: d.is_archived ? 'Killed' : ((d.deal_stages as any)?.name ?? null),
+    is_archived: d.is_archived,
   }))
 
   return { deals }

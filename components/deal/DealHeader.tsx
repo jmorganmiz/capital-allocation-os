@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { MapPin } from 'lucide-react'
 import { Deal, DealStage, KillReason } from '@/lib/types/database'
 import { updateDealStage, killDeal, updateDealOwner, updateDealFields } from '@/lib/actions/deals'
@@ -17,9 +18,11 @@ interface Props {
 }
 
 export default function DealHeader({ deal, stages, killReasons, firmUsers }: Props) {
+  const router = useRouter()
   const [showKillModal, setShowKillModal] = useState(false)
   const [ownerId, setOwnerId] = useState(deal.owner_user_id ?? '')
   const [stageId, setStageId] = useState(deal.stage_id ?? '')
+  const [isArchived, setIsArchived] = useState(deal.is_archived)
   const [address, setAddress] = useState(deal.address ?? '')
   const [editingAddress, setEditingAddress] = useState(false)
   const [isPending, startTransition] = useTransition()
@@ -63,7 +66,11 @@ export default function DealHeader({ deal, stages, killReasons, firmUsers }: Pro
         showToast(result.error, 'error')
         return
       }
+      setIsArchived(true)
+      setStageId(killedStage.id)
       setShowKillModal(false)
+      showToast('Deal moved to Graveyard', 'success')
+      router.refresh()
     })
   }
 
@@ -116,14 +123,14 @@ export default function DealHeader({ deal, stages, killReasons, firmUsers }: Pro
             ) : (
               <span className="flex items-center gap-1.5">
                 <button
-                  onClick={() => !deal.is_archived && setEditingAddress(true)}
-                  disabled={deal.is_archived}
+                  onClick={() => !isArchived && setEditingAddress(true)}
+                  disabled={isArchived}
                   className={`text-sm transition-colors ${
                     address
                       ? 'text-gray-500 hover:text-gray-700'
                       : 'text-gray-300 hover:text-gray-400 italic'
                   } disabled:cursor-default`}
-                  title={deal.is_archived ? undefined : 'Click to edit address'}
+                  title={isArchived ? undefined : 'Click to edit address'}
                 >
                   {address || 'Add address'}
                 </button>
@@ -154,7 +161,7 @@ export default function DealHeader({ deal, stages, killReasons, firmUsers }: Pro
             <select
               value={ownerId}
               onChange={e => handleOwnerChange(e.target.value)}
-              disabled={deal.is_archived || isPending}
+              disabled={isArchived || isPending}
               className="input-base disabled:opacity-50"
               style={{ padding: '5px 10px', fontSize: '12px' }}
             >
@@ -168,7 +175,7 @@ export default function DealHeader({ deal, stages, killReasons, firmUsers }: Pro
           <select
             value={stageId}
             onChange={e => handleStageChange(e.target.value)}
-            disabled={deal.is_archived || isPending}
+            disabled={isArchived || isPending}
             className="input-base disabled:opacity-50"
             style={{ padding: '5px 10px', fontSize: '12px' }}
           >
@@ -177,13 +184,13 @@ export default function DealHeader({ deal, stages, killReasons, firmUsers }: Pro
             ))}
           </select>
 
-          {!deal.is_archived && (
+          {!isArchived && (
             <button onClick={() => setShowKillModal(true)} className="btn-danger-outline text-sm">
               Kill Deal
             </button>
           )}
 
-          {deal.is_archived && (
+          {isArchived && (
             <span className="text-xs bg-red-50 text-red-700 border border-red-200 rounded px-2 py-1 font-medium">
               Killed
             </span>

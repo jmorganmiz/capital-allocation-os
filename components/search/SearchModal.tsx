@@ -9,6 +9,7 @@ interface Result {
   title: string
   market: string | null
   stage_name: string | null
+  is_archived?: boolean
 }
 
 interface Props {
@@ -97,7 +98,7 @@ export default function SearchModal({ onClose }: Props) {
                       <span className="text-xs text-gray-400">{deal.market}</span>
                     )}
                     {deal.stage_name && (
-                      <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">
+                      <span className={`text-xs px-2 py-0.5 rounded ${deal.is_archived ? 'bg-red-50 text-red-700' : 'bg-gray-100 text-gray-500'}`}>
                         {deal.stage_name}
                       </span>
                     )}

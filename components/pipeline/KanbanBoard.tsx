@@ -60,6 +60,9 @@ export default function KanbanBoard({
   }))
 
   const activeStages = initialStages.filter(s => s.name !== 'Killed')
+  const activeStageIds = useMemo(() => new Set(activeStages.map(stage => stage.id)), [activeStages])
+  const fallbackStageId = activeStages[0]?.id ?? null
+  const displayStageId = (deal: Deal) => deal.stage_id && activeStageIds.has(deal.stage_id) ? deal.stage_id : fallbackStageId
   const activeDeal = activeId ? deals.find(d => d.id === activeId) : null
   const owners = useMemo(() => {
     const unique = new Map<string, string>()
@@ -188,7 +191,7 @@ export default function KanbanBoard({
             <DealColumn
               key={stage.id}
               stage={stage}
-              deals={visibleDeals.filter(d => d.stage_id === stage.id)}
+              deals={visibleDeals.filter(d => displayStageId(d) === stage.id)}
               onKill={setKillTarget}
               onMove={setMoveTarget}
             />
@@ -199,7 +202,7 @@ export default function KanbanBoard({
           {activeDeal ? (
             <DealCard
               deal={activeDeal}
-              stage={initialStages.find(s => s.id === activeDeal.stage_id)!}
+              stage={initialStages.find(s => s.id === displayStageId(activeDeal)) ?? activeStages[0]}
               onKill={() => {}}
               onMove={() => {}}
             />

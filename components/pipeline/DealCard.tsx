@@ -2,7 +2,7 @@
 
 import { useDraggable } from '@dnd-kit/core'
 import { Deal, DealStage } from '@/lib/types/database'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 interface Props {
   deal: Deal & {
@@ -43,6 +43,7 @@ function staleColor(sinceDate: string | null | undefined): string {
 }
 
 export default function DealCard({ deal, stage, onKill, onMove }: Props) {
+  const router = useRouter()
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: deal.id,
     data: { deal, fromStageId: stage.id },
@@ -77,19 +78,18 @@ export default function DealCard({ deal, stage, onKill, onMove }: Props) {
       }}
       onMouseEnter={e => { if (!isDragging) e.currentTarget.style.borderColor = 'rgba(82,102,235,0.35)' }}
       onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(112,112,125,0.2)' }}
+      onClick={() => router.push(`/deals/${deal.id}`)}
     >
       {/* Title + score badge row */}
       <div className="flex items-start justify-between gap-2 mb-1.5">
-        <Link
-          href={`/deals/${deal.id}`}
-          onClick={e => e.stopPropagation()}
+        <span
           className="text-sm font-semibold leading-snug flex-1"
           style={{ color: 'var(--starlight)', fontSize: '13px' }}
           onMouseEnter={e => (e.currentTarget.style.color = 'var(--mercury-blue)')}
           onMouseLeave={e => (e.currentTarget.style.color = 'var(--starlight)')}
         >
           {deal.title}
-        </Link>
+        </span>
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {scoreStyle && (
             <span style={{
