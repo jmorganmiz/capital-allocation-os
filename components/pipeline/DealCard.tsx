@@ -55,7 +55,6 @@ export default function DealCard({ deal, stage, onKill, onMove }: Props) {
   return (
     <div
       ref={setNodeRef}
-      style={style}
       {...listeners}
       {...attributes}
       className={`group rounded-lg p-3.5 select-none transition-colors md:cursor-grab md:active:cursor-grabbing
