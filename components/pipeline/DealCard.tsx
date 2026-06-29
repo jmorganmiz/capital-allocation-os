@@ -68,12 +68,12 @@ export default function DealCard({ deal, stage, onKill, onMove }: Props) {
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      className={`group rounded-lg p-3.5 select-none cursor-pointer md:cursor-grab md:active:cursor-grabbing ${isDragging ? 'opacity-50' : ''}`}
+      className={`app-pipeline-deal-card group select-none cursor-pointer md:cursor-grab md:active:cursor-grabbing ${isDragging ? 'opacity-50' : ''}`}
       style={{
         ...style,
         background: 'linear-gradient(180deg, rgba(39,39,53,0.98), rgba(30,30,42,0.98))',
         border: '1px solid rgba(112,112,125,0.18)',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.18)',
+        boxShadow: '0 14px 34px rgba(0,0,0,0.2)',
         transition: 'border-color 0.15s, background 0.15s',
       }}
       onMouseEnter={e => { if (!isDragging) e.currentTarget.style.borderColor = 'rgba(82,102,235,0.38)' }}

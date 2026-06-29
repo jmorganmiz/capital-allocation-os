@@ -157,16 +157,16 @@ export default function KanbanBoard({
   }
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex flex-col gap-3 px-4 pb-5 md:flex-row md:items-center md:justify-between md:px-10">
-        <div className="flex min-w-0 flex-1 flex-wrap gap-2">
-          <input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search pipeline..." className="input-base w-full sm:w-64" />
-          <select value={ownerFilter} onChange={event => setOwnerFilter(event.target.value)} className="input-base w-40">
+    <div className="app-pipeline-workspace">
+      <div className="app-pipeline-toolbar">
+        <div className="app-pipeline-filters">
+          <input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search pipeline..." className="input-base" />
+          <select value={ownerFilter} onChange={event => setOwnerFilter(event.target.value)} className="input-base">
             <option value="">All owners</option>
             <option value="unassigned">Unassigned</option>
             {owners.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
           </select>
-          <select value={typeFilter} onChange={event => setTypeFilter(event.target.value)} className="input-base w-44">
+          <select value={typeFilter} onChange={event => setTypeFilter(event.target.value)} className="input-base">
             <option value="">All asset types</option>
             {dealTypes.map(type => <option key={type} value={type}>{type}</option>)}
           </select>
@@ -174,7 +174,7 @@ export default function KanbanBoard({
             <button onClick={() => { setQuery(''); setOwnerFilter(''); setTypeFilter('') }} className="btn-ghost">Clear</button>
           )}
         </div>
-        <div className="flex flex-shrink-0 gap-2">
+        <div className="app-pipeline-actions">
           <button onClick={() => setShowUploadOM(true)} className="btn-secondary">Upload OM</button>
           <button onClick={() => setShowCreate(true)} className="btn-primary">+ Add Deal</button>
         </div>
@@ -186,7 +186,7 @@ export default function KanbanBoard({
         onDragEnd={handleDragEnd}
         onDragCancel={() => setActiveId(null)}
       >
-        <div className="flex gap-4 px-4 md:px-10 pb-10 overflow-x-auto flex-1 items-start snap-x snap-mandatory md:snap-none">
+        <div className="app-pipeline-board">
           {activeStages.map(stage => (
             <DealColumn
               key={stage.id}

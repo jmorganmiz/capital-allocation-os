@@ -24,35 +24,17 @@ export default function DealColumn({ stage, deals, onKill, onMove }: Props) {
     : 'Drag deals here'
 
   return (
-    <div className="flex-shrink-0 w-[85vw] md:w-80 snap-start">
-      {/* Column header */}
-      <div className="flex items-center justify-between mb-3 px-1">
-        <h3 style={{
-          fontSize: '11px',
-          fontWeight: 700,
-          letterSpacing: '0.1em',
-          textTransform: 'uppercase',
-          color: isTerminal ? '#4ade80' : 'var(--lead)',
-        }}>
+    <div className="app-pipeline-column">
+      <div className="app-pipeline-column-header">
+        <h3 style={{ color: isTerminal ? '#4ade80' : 'var(--lead)' }}>
           {stage.name}
         </h3>
-        <span style={{
-          fontSize: '11px',
-          fontWeight: 600,
-          color: 'var(--lead)',
-          background: 'rgba(112,112,125,0.1)',
-          border: '1px solid rgba(112,112,125,0.15)',
-          borderRadius: '999px',
-          padding: '1px 7px',
-        }}>
-          {deals.length}
-        </span>
+        <span>{deals.length}</span>
       </div>
 
-      {/* Drop zone */}
       <div
         ref={setNodeRef}
-        className="min-h-[360px] rounded-xl transition-colors space-y-2 p-2.5"
+        className="app-pipeline-column-body"
         style={{
           background: isOver ? 'rgba(82,102,235,0.08)' : 'rgba(30,30,42,0.64)',
           border: isOver
@@ -62,7 +44,7 @@ export default function DealColumn({ stage, deals, onKill, onMove }: Props) {
         }}
       >
         {deals.length === 0 ? (
-          <div className="flex min-h-[330px] items-center justify-center rounded-lg" style={{ border: '1px dashed rgba(112,112,125,0.16)', background: 'rgba(12,12,20,0.18)', fontSize: '12px', color: 'var(--lead)', textAlign: 'center', padding: '24px' }}>
+          <div className="app-pipeline-empty-column">
             <span className="hidden md:block">{emptyCopy}</span>
             <span className="md:hidden">No deals</span>
           </div>

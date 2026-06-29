@@ -60,26 +60,23 @@ export default async function PipelinePage() {
   })
 
   return (
-    <div className="flex h-full flex-col px-10 pt-10">
-      <div className="pb-6">
-        <div className="flex items-end justify-between gap-6">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--mercury-blue)' }}>Pipeline</p>
-            <h1 className="app-title">Deal Pipeline</h1>
-            <p className="text-sm text-gray-500 mt-1">{deals.length} active deal{deals.length === 1 ? '' : 's'} across your firm workflow</p>
-          </div>
+    <div className="app-page-wide app-pipeline-page">
+      <div className="app-page-header app-pipeline-header">
+        <div>
+          <p className="app-eyebrow">Pipeline</p>
+          <h1 className="app-title">Deal Pipeline</h1>
+          <p className="app-subtitle">{deals.length} active deal{deals.length === 1 ? '' : 's'} across your firm workflow</p>
         </div>
       </div>
-      <div className="-mx-10 min-h-0 flex-1 overflow-hidden">
-        <KanbanBoard
-          initialStages={stages ?? []}
-          initialDeals={(deals ?? []) as any}
-          killReasons={killReasons ?? []}
-          currentUserId={user?.id ?? ''}
-          checklistItems={checklistItems ?? []}
-          dealProgress={dealProgress ?? []}
-        />
-      </div>
+
+      <KanbanBoard
+        initialStages={stages ?? []}
+        initialDeals={(deals ?? []) as any}
+        killReasons={killReasons ?? []}
+        currentUserId={user?.id ?? ''}
+        checklistItems={checklistItems ?? []}
+        dealProgress={dealProgress ?? []}
+      />
     </div>
   )
 }
