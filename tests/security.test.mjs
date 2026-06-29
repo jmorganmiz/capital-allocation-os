@@ -59,3 +59,22 @@ test('database baseline and onboarding rollback are reproducible', async () => {
   assert.match(onboarding, /firmName\.length > 160/)
   assert.match(onboarding, /await rollbackFirm\(\)/)
 })
+
+test('OM parsing uses a supported model and deployable PDF runtime', async () => {
+  const parser = await read('lib/parse-om-core.ts')
+  const nextConfig = await read('next.config.ts')
+  const packageJson = JSON.parse(await read('package.json'))
+  assert.match(parser, /claude-sonnet-4-6/)
+  assert.doesNotMatch(parser, /claude-sonnet-4-20250514/)
+  assert.match(parser, /import\('@napi-rs\/canvas'\)/)
+  assert.match(nextConfig, /serverExternalPackages/)
+  assert.equal(packageJson.dependencies['@napi-rs/canvas'], '^0.1.80')
+})
+
+test('firm inbox addresses use the verified production domain', async () => {
+  const originalMigration = await read('supabase/migrations/012_firm_inbox.sql')
+  const correction = await read('supabase/migrations/015_correct_inbox_domain.sql')
+  assert.doesNotMatch(originalMigration, /inbox\.dealstash\.com/)
+  assert.match(originalMigration, /@getdealstash\.com/)
+  assert.match(correction, /@getdealstash\.com/)
+})

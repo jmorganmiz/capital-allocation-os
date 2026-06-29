@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk'
 // Max PDF size for the vision fallback path (Anthropic's hard limit is ~32 MB raw;
 // files above MAX_VISION_BYTES skip vision and return pdf_too_large).
 const MAX_VISION_BYTES = 50 * 1024 * 1024
+const CLAUDE_MODEL = 'claude-sonnet-4-6'
 
 export type ParsedOMData = {
   address: string | null
@@ -82,6 +83,10 @@ export async function parseOMBuffer(buffer: Buffer): Promise<ParseOMResult> {
   let text = ''
   try {
     console.log('[parse-om] attempting pdf-parse text extraction...')
+    const canvas = await import('@napi-rs/canvas')
+    if (!globalThis.DOMMatrix) globalThis.DOMMatrix = canvas.DOMMatrix as typeof globalThis.DOMMatrix
+    if (!globalThis.ImageData) globalThis.ImageData = canvas.ImageData as typeof globalThis.ImageData
+    if (!globalThis.Path2D) globalThis.Path2D = canvas.Path2D as typeof globalThis.Path2D
     const mod = await import('pdf-parse')
     console.log('[parse-om] pdf-parse module loaded, exports:', Object.keys(mod))
     const PDFParse = mod.PDFParse ?? (mod as any).default?.PDFParse
@@ -99,7 +104,7 @@ export async function parseOMBuffer(buffer: Buffer): Promise<ParseOMResult> {
     const truncatedText = text.slice(0, 15000)
     try {
       const message = await client.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: CLAUDE_MODEL,
         max_tokens: 1536,
         messages: [
           {
@@ -135,23 +140,20 @@ export async function parseOMBuffer(buffer: Buffer): Promise<ParseOMResult> {
     const base64 = buffer.toString('base64')
     console.log('[parse-om] base64 length:', base64.length)
 
-    const docBlock: Anthropic.Beta.Messages.BetaRequestDocumentBlock = {
+    const docBlock: Anthropic.Messages.DocumentBlockParam = {
       type: 'document',
       source: { type: 'base64', media_type: 'application/pdf', data: base64 },
     }
-    const textBlock: Anthropic.Beta.Messages.BetaTextBlockParam = {
+    const textBlock: Anthropic.Messages.TextBlockParam = {
       type: 'text',
       text: EXTRACTION_PROMPT,
     }
 
-    const message = await client.beta.messages.create(
-      {
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1536,
-        messages: [{ role: 'user', content: [docBlock, textBlock] }],
-      },
-      { headers: { 'anthropic-beta': 'pdfs-2024-09-25' } },
-    )
+    const message = await client.messages.create({
+      model: CLAUDE_MODEL,
+      max_tokens: 1536,
+      messages: [{ role: 'user', content: [docBlock, textBlock] }],
+    })
 
     console.log('[parse-om] vision path stop_reason:', message.stop_reason)
     const responseText = message.content[0].type === 'text' ? message.content[0].text : ''

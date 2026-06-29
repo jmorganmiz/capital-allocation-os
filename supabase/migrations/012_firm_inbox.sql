@@ -29,7 +29,7 @@ BEGIN
 
     UPDATE firms
     SET inbox_slug  = candidate,
-        inbox_email = candidate || '@inbox.dealstash.com'
+        inbox_email = candidate || '@getdealstash.com'
     WHERE id = r.id;
   END LOOP;
 END;
@@ -81,7 +81,7 @@ BEGIN
   END LOOP;
 
   NEW.inbox_slug  := candidate;
-  NEW.inbox_email := candidate || '@inbox.dealstash.com';
+  NEW.inbox_email := candidate || '@getdealstash.com';
   RETURN NEW;
 END;
 $$;
