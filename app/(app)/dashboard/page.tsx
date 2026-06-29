@@ -46,73 +46,80 @@ export default async function DashboardPage() {
   const killBreakdown = Object.entries(killCounts).sort((a, b) => b[1] - a[1])
   const totalKilled = killBreakdown.reduce((sum, [, n]) => sum + n, 0)
 
-  const th = { fontSize: '11px', fontWeight: 600, color: 'var(--lead)', letterSpacing: '0.07em', textTransform: 'uppercase' as const }
+  const kpis = [
+    { label: 'Total active', value: totalActive, tone: 'blue' },
+    { label: 'New to review', value: needsReview.length, tone: needsReview.length > 0 ? 'blue' : 'neutral' },
+    { label: 'Stale deals', value: staleDeals.length, tone: staleDeals.length > 0 ? 'amber' : 'neutral' },
+    { label: 'Killed memory', value: totalKilled, tone: 'neutral' },
+  ]
 
   return (
-    <div className="app-page">
+    <div className="app-page app-dashboard-page">
       <div className="app-page-header">
         <p className="app-eyebrow">Dashboard</p>
         <h1 className="app-title">Firm overview</h1>
         <p className="app-subtitle">{totalActive} active deals across {activeStages.length} stages</p>
       </div>
 
-      <AttentionQueue needsReview={needsReview} staleDeals={staleDeals} />
-
-      {/* Deals by Stage */}
-      <section className="mb-10">
-        <h2 style={{ ...th, display: 'block', marginBottom: '16px' }}>Deals by Stage</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          {dealsByStage.map(({ name, count }) => (
-            <div key={name} className="rounded-lg p-4" style={{
-              background: 'var(--midnight-slate)',
-              border: '1px solid rgba(112,112,125,0.2)',
-              boxShadow: 'var(--card-shadow)',
-            }}>
-              <p style={{ fontSize: '26px', fontWeight: 700, color: 'var(--starlight)', lineHeight: 1 }}>{count}</p>
-              <p style={{ fontSize: '12px', color: 'var(--lead)', marginTop: '6px' }} className="truncate">{name}</p>
-            </div>
-          ))}
-          <div className="rounded-lg p-4" style={{
-            background: 'rgba(82,102,235,0.12)',
-            border: '1px solid rgba(82,102,235,0.25)',
-            boxShadow: 'var(--card-shadow)',
-          }}>
-            <p style={{ fontSize: '26px', fontWeight: 700, color: 'var(--mercury-blue)', lineHeight: 1 }}>{totalActive}</p>
-            <p style={{ fontSize: '12px', color: 'var(--lead)', marginTop: '6px' }}>Total Active</p>
+      <div className="app-dashboard-kpis">
+        {kpis.map(kpi => (
+          <div key={kpi.label} className="app-dashboard-kpi" data-tone={kpi.tone}>
+            <p>{kpi.value}</p>
+            <span>{kpi.label}</span>
           </div>
-        </div>
-      </section>
+        ))}
+      </div>
 
-      {/* Kill Reason Breakdown */}
-      <section>
-        <h2 style={{ ...th, display: 'block', marginBottom: '16px' }}>
-          Kill Reason Breakdown
-          {totalKilled > 0 && <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, color: 'var(--lead)', marginLeft: '8px', fontSize: '12px' }}>({totalKilled} total)</span>}
-        </h2>
+      <div className="app-dashboard-grid">
+        <AttentionQueue needsReview={needsReview} staleDeals={staleDeals} />
+
+        <section className="app-dashboard-panel app-dashboard-stage-panel">
+          <div className="app-dashboard-panel-header">
+            <div>
+              <p className="app-dashboard-kicker">Deals by stage</p>
+              <h2>Workflow shape</h2>
+            </div>
+            <span>{totalActive} active</span>
+          </div>
+          <div className="app-dashboard-stage-grid">
+            {dealsByStage.map(({ name, count }) => (
+              <div key={name} className="app-dashboard-stage-card">
+                <p>{count}</p>
+                <span>{name}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <section className="app-dashboard-panel app-dashboard-memory-panel">
+        <div className="app-dashboard-panel-header">
+          <div>
+            <p className="app-dashboard-kicker">Deal memory</p>
+            <h2>Kill reason breakdown</h2>
+          </div>
+          {totalKilled > 0 && <span>{totalKilled} total</span>}
+        </div>
 
         {killBreakdown.length === 0 ? (
-          <div className="rounded-lg p-12 text-center" style={{ border: '1px dashed rgba(112,112,125,0.25)' }}>
-            <p style={{ fontSize: '13px', color: 'var(--lead)' }}>No killed deals yet. Kill reasons will appear here once deals are killed.</p>
+          <div className="app-dashboard-empty">
+            <p>No killed deals yet.</p>
+            <span>Kill reasons will appear here once deals are preserved in the graveyard.</span>
           </div>
         ) : (
-          <div className="rounded-lg overflow-hidden" style={{ border: '1px solid rgba(112,112,125,0.2)', boxShadow: 'var(--card-shadow)' }}>
+          <div className="app-dashboard-kill-list">
             {killBreakdown.map(([name, count], i) => {
               const pct = Math.round((count / totalKilled) * 100)
               return (
-                <div key={name} className="px-5 py-4 flex items-center gap-4" style={{
-                  borderTop: i > 0 ? '1px solid rgba(112,112,125,0.1)' : 'none',
-                  background: 'var(--midnight-slate)',
-                }}>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-2">
-                      <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--starlight)' }}>{name}</span>
-                      <span style={{ fontSize: '12px', color: 'var(--lead)', marginLeft: '16px', flexShrink: 0 }}>{count} deal{count !== 1 ? 's' : ''}</span>
-                    </div>
-                    <div className="w-full rounded-full overflow-hidden" style={{ height: '3px', background: 'rgba(112,112,125,0.2)' }}>
-                      <div style={{ width: `${pct}%`, height: '100%', background: 'var(--mercury-blue)', borderRadius: '999px', transition: 'width 0.3s ease' }} />
-                    </div>
+                <div key={name} className="app-dashboard-kill-row" style={{ borderTop: i > 0 ? '1px solid rgba(112,112,125,0.1)' : 'none' }}>
+                  <div>
+                    <p>{name}</p>
+                    <span>{count} deal{count !== 1 ? 's' : ''}</span>
                   </div>
-                  <span style={{ fontSize: '11px', color: 'var(--lead)', width: '36px', textAlign: 'right', flexShrink: 0 }}>{pct}%</span>
+                  <div className="app-dashboard-kill-bar">
+                    <div style={{ width: `${pct}%` }} />
+                  </div>
+                  <strong>{pct}%</strong>
                 </div>
               )
             })}
