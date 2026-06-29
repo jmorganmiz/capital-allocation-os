@@ -8,148 +8,139 @@ interface SearchParams {
   deal_type?: string
 }
 
-const th = {
-  fontSize: '11px' as const,
-  fontWeight: 600,
-  color: 'var(--lead)',
-  letterSpacing: '0.07em',
-  textTransform: 'uppercase' as const,
-  padding: '10px 20px',
-  textAlign: 'left' as const,
+function formatDate(value: string | null) {
+  if (!value) return '—'
+  return new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 export default async function GraveyardPage({ searchParams }: { searchParams: SearchParams }) {
   const supabase = await createClient()
 
-  let query = supabase
+  const { data: dealsData } = await supabase
     .from('deals')
-    .select(`id, title, market, deal_type, archived_at, deal_events(event_type, created_at, notes, kill_reasons(name))`)
+    .select('id, title, market, deal_type, archived_at, deal_events(event_type, created_at, notes, kill_reasons(name))')
     .eq('is_archived', true)
     .order('archived_at', { ascending: false })
 
-  if (searchParams.market)    query = query.eq('market', searchParams.market)
-  if (searchParams.deal_type) query = query.eq('deal_type', searchParams.deal_type)
+  const archivedDeals = ((dealsData ?? []) as any[]).map((deal: any) => ({
+    ...deal,
+    killEvent: deal.deal_events?.find((event: any) => event.event_type === 'killed'),
+  }))
 
-  const { data: dealsData } = await query
-
-  const filtered = ((dealsData ?? []) as any[])
-    .map((d: any) => ({ ...d, killEvent: d.deal_events?.find((e: any) => e.event_type === 'killed') }))
-    .filter(d => !searchParams.q || d.title.toLowerCase().includes(searchParams.q.toLowerCase()))
-
-  const { data: marketsData } = await supabase
-    .from('deals').select('market').eq('is_archived', true).not('market', 'is', null)
-  const uniqueMarkets = [...new Set(((marketsData ?? []) as any[]).map((d: any) => d.market).filter(Boolean))]
-
-  const { data: killStats } = await supabase
-    .from('deal_events').select('kill_reasons(name)').eq('event_type', 'killed').not('kill_reason_id', 'is', null)
-
+  const uniqueMarkets = [...new Set(archivedDeals.map((deal: any) => deal.market).filter(Boolean))].sort()
+  const marketCounts: Record<string, number> = {}
   const killCounts: Record<string, number> = {}
-  ;(killStats ?? []).forEach((e: any) => {
-    const name = e.kill_reasons?.name
-    if (name) killCounts[name] = (killCounts[name] ?? 0) + 1
+
+  archivedDeals.forEach((deal: any) => {
+    if (deal.market) marketCounts[deal.market] = (marketCounts[deal.market] ?? 0) + 1
+    const reason = deal.killEvent?.kill_reasons?.name
+    if (reason) killCounts[reason] = (killCounts[reason] ?? 0) + 1
   })
 
+  const filtered = archivedDeals
+    .filter((deal: any) => !searchParams.market || deal.market === searchParams.market)
+    .filter((deal: any) => !searchParams.deal_type || deal.deal_type === searchParams.deal_type)
+    .filter((deal: any) => !searchParams.q || deal.title.toLowerCase().includes(searchParams.q.toLowerCase()))
+
+  const topKillReason = Object.entries(killCounts).sort((a, b) => b[1] - a[1])[0]
+  const topMarket = Object.entries(marketCounts).sort((a, b) => b[1] - a[1])[0]
+  const withNotes = archivedDeals.filter((deal: any) => deal.killEvent?.notes).length
+  const totalKilled = archivedDeals.length
+
   return (
-    <div className="app-page">
+    <div className="app-page app-graveyard-page">
       <div className="app-page-header">
         <p className="app-eyebrow">Deal memory</p>
         <h1 className="app-title">Graveyard</h1>
         <p className="app-subtitle">{filtered.length} killed deals preserved for future recall.</p>
       </div>
 
-      {/* Kill reason summary pills */}
+      <div className="app-graveyard-kpis">
+        <div className="app-graveyard-kpi">
+          <p>{totalKilled}</p>
+          <span>Killed deals</span>
+        </div>
+        <div className="app-graveyard-kpi">
+          <p>{topKillReason?.[1] ?? 0}</p>
+          <span>{topKillReason?.[0] ?? 'Top kill reason'}</span>
+        </div>
+        <div className="app-graveyard-kpi">
+          <p>{topMarket?.[1] ?? 0}</p>
+          <span>{topMarket?.[0] ?? 'Most common market'}</span>
+        </div>
+        <div className="app-graveyard-kpi">
+          <p>{withNotes}</p>
+          <span>With decision notes</span>
+        </div>
+      </div>
+
       {Object.keys(killCounts).length > 0 && (
-        <div className="app-pill-row">
+        <div className="app-graveyard-reason-row">
           {Object.entries(killCounts).sort((a, b) => b[1] - a[1]).map(([name, count]) => (
-            <div key={name} className="flex items-center gap-2 rounded-lg px-3 py-2" style={{
-              background: 'var(--midnight-slate)',
-              border: '1px solid rgba(112,112,125,0.2)',
-              boxShadow: 'var(--card-shadow)',
-            }}>
-              <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--silver)' }}>{name}</span>
-              <span style={{
-                fontSize: '10px', fontWeight: 700,
-                background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.2)',
-                color: '#f87171', borderRadius: '999px', padding: '1px 7px',
-              }}>{count}</span>
+            <div key={name}>
+              <span>{name}</span>
+              <strong>{count}</strong>
             </div>
           ))}
         </div>
       )}
 
-      {/* Filters */}
-      <div className="app-filter-bar">
-        <form className="flex w-full gap-3 flex-wrap">
-          <input name="q" defaultValue={searchParams.q} placeholder="Search deals…" className="input-base w-48" />
-          <select name="market" defaultValue={searchParams.market} className="input-base w-44">
-            <option value="">All Markets</option>
-            {uniqueMarkets.map(m => <option key={m} value={m!}>{m}</option>)}
+      <section className="app-graveyard-panel">
+        <div className="app-graveyard-panel-header">
+          <div>
+            <p className="app-dashboard-kicker">Archive</p>
+            <h2>Killed deal memory</h2>
+          </div>
+          <span>{filtered.length} shown</span>
+        </div>
+
+        <form className="app-graveyard-toolbar">
+          <input name="q" defaultValue={searchParams.q} placeholder="Search deals..." className="input-base" />
+          <select name="market" defaultValue={searchParams.market} className="input-base">
+            <option value="">All markets</option>
+            {uniqueMarkets.map(market => <option key={market} value={market}>{market}</option>)}
           </select>
           <button type="submit" className="btn-secondary">Filter</button>
           {(searchParams.q || searchParams.market) && (
             <a href="/graveyard" className="btn-ghost">Clear</a>
           )}
         </form>
-      </div>
 
-      {filtered.length === 0 ? (
-        <div className="rounded-xl py-16 text-center" style={{ border: '1px dashed rgba(112,112,125,0.25)', background: 'rgba(30,30,42,0.5)' }}>
-          <p style={{ fontSize: '13px', color: 'var(--lead)' }}>No killed deals found.</p>
-        </div>
-      ) : (
-        <div className="app-table-card">
-          <table className="w-full min-w-[640px] text-sm">
-            <thead style={{ background: 'var(--graphite)', borderBottom: '1px solid rgba(112,112,125,0.15)' }}>
-              <tr>
-                <th style={th}>Deal</th>
-                <th style={th}>Market</th>
-                <th style={th}>Kill Reason</th>
-                <th style={th}>Killed</th>
-                <th style={th}>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((deal, i) => (
-                <tr
-                  key={deal.id}
-                  style={{ borderTop: i > 0 ? '1px solid rgba(112,112,125,0.1)' : 'none', background: 'var(--midnight-slate)' }}
-                >
-                  <td style={{ padding: '14px 20px' }}>
-                    <Link href={`/deals/${deal.id}`} style={{ fontSize: '13px', fontWeight: 500, color: 'var(--mercury-blue)' }}>
-                      {deal.title}
-                    </Link>
-                    {deal.killEvent?.notes && (
-                      <p style={{ fontSize: '11px', color: 'var(--lead)', marginTop: '3px', fontStyle: 'italic' }}>"{deal.killEvent.notes}"</p>
-                    )}
-                  </td>
-                  <td style={{ padding: '14px 20px', fontSize: '13px', color: 'var(--silver)' }}>{deal.market ?? '—'}</td>
-                  <td style={{ padding: '14px 20px' }}>
-                    <span style={{
-                      fontSize: '10px', fontWeight: 600,
-                      background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)',
-                      color: '#f87171', borderRadius: '999px', padding: '3px 8px',
-                    }}>
-                      {(deal.killEvent as any)?.kill_reasons?.name ?? '—'}
-                    </span>
-                  </td>
-                  <td style={{ padding: '14px 20px', fontSize: '12px', color: 'var(--lead)' }}>
-                    {deal.archived_at
-                      ? new Date(deal.archived_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                      : '—'}
-                  </td>
-                  <td style={{ padding: '14px 20px' }}>
-                    <form action={reactivateDeal.bind(null, deal.id)}>
-                      <button type="submit" className="btn-secondary" style={{ fontSize: '12px', padding: '7px 12px' }}>
-                        Reactivate
-                      </button>
-                    </form>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+        {filtered.length === 0 ? (
+          <div className="app-dashboard-empty">
+            <p>No killed deals found.</p>
+            <span>Try clearing filters or killing a deal from the pipeline to preserve the decision.</span>
+          </div>
+        ) : (
+          <div className="app-graveyard-table">
+            <div className="app-graveyard-row app-graveyard-head">
+              <span>Deal</span>
+              <span>Market</span>
+              <span>Kill reason</span>
+              <span>Killed</span>
+              <span>Action</span>
+            </div>
+            {filtered.map((deal: any) => (
+              <div key={deal.id} className="app-graveyard-row">
+                <div>
+                  <Link href={`/deals/${deal.id}`}>{deal.title}</Link>
+                  {deal.killEvent?.notes ? (
+                    <p>{deal.killEvent.notes}</p>
+                  ) : (
+                    <p className="muted">No decision note captured.</p>
+                  )}
+                </div>
+                <span>{deal.market ?? '—'}</span>
+                <span className="app-graveyard-reason">{deal.killEvent?.kill_reasons?.name ?? '—'}</span>
+                <span>{formatDate(deal.archived_at)}</span>
+                <form action={reactivateDeal.bind(null, deal.id)}>
+                  <button type="submit" className="btn-secondary">Reactivate</button>
+                </form>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   )
 }

@@ -1783,6 +1783,224 @@ body {
   margin-top: 6px;
 }
 
+.app-root .app-graveyard-page {
+  max-width: 1200px;
+}
+
+.app-root .app-graveyard-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.app-root .app-graveyard-kpi {
+  min-height: 118px;
+  border: 1px solid rgba(112,112,125,0.18);
+  border-radius: 16px;
+  background: rgba(30,30,42,0.72);
+  box-shadow: var(--app-shadow);
+  padding: 22px;
+}
+
+.app-root .app-graveyard-kpi:first-child {
+  border-color: rgba(248,113,113,0.22);
+  background: rgba(248,113,113,0.06);
+}
+
+.app-root .app-graveyard-kpi p {
+  color: var(--app-text);
+  font-size: 36px;
+  font-weight: 720;
+  letter-spacing: -0.055em;
+  line-height: 0.95;
+}
+
+.app-root .app-graveyard-kpi:first-child p {
+  color: #f87171;
+}
+
+.app-root .app-graveyard-kpi span {
+  display: block;
+  overflow: hidden;
+  color: var(--app-faint);
+  font-size: 12px;
+  margin-top: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-root .app-graveyard-reason-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.app-root .app-graveyard-reason-row div {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid rgba(112,112,125,0.18);
+  border-radius: 999px;
+  background: rgba(30,30,42,0.78);
+  padding: 7px 10px 7px 12px;
+}
+
+.app-root .app-graveyard-reason-row span {
+  color: var(--app-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.app-root .app-graveyard-reason-row strong {
+  min-width: 20px;
+  border: 1px solid rgba(248,113,113,0.22);
+  border-radius: 999px;
+  background: rgba(248,113,113,0.1);
+  color: #f87171;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 7px;
+  text-align: center;
+}
+
+.app-root .app-graveyard-panel {
+  border: 1px solid var(--app-border);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(30,30,42,0.9), rgba(30,30,42,0.72));
+  box-shadow: var(--app-shadow);
+  padding: 24px;
+}
+
+.app-root .app-graveyard-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.app-root .app-graveyard-panel-header h2 {
+  color: var(--app-text);
+  font-size: 18px;
+  font-weight: 680;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin-top: 6px;
+}
+
+.app-root .app-graveyard-panel-header > span {
+  color: var(--ghost-blue);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.app-root .app-graveyard-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 14px;
+  border: 1px solid var(--app-border-soft);
+  border-radius: 14px;
+  background: rgba(23,23,33,0.58);
+}
+
+.app-root .app-graveyard-toolbar input {
+  width: min(100%, 320px) !important;
+}
+
+.app-root .app-graveyard-toolbar select {
+  width: 180px !important;
+}
+
+.app-root .app-graveyard-table {
+  overflow: hidden;
+  border: 1px solid rgba(112,112,125,0.16);
+  border-radius: 14px;
+  background: rgba(23,23,33,0.56);
+}
+
+.app-root .app-graveyard-row {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.45fr) minmax(110px, 0.55fr) minmax(180px, 0.9fr) minmax(120px, 0.55fr) minmax(120px, 0.45fr);
+  gap: 18px;
+  align-items: center;
+  min-height: 76px;
+  padding: 14px 20px;
+  border-top: 1px solid rgba(112,112,125,0.1);
+}
+
+.app-root .app-graveyard-row:first-child {
+  border-top: 0;
+}
+
+.app-root .app-graveyard-head {
+  min-height: 42px;
+  background: rgba(39,39,53,0.78);
+}
+
+.app-root .app-graveyard-head span {
+  color: var(--app-faint);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.app-root .app-graveyard-row:not(.app-graveyard-head) {
+  transition: background 0.16s ease;
+}
+
+.app-root .app-graveyard-row:not(.app-graveyard-head):hover {
+  background: var(--app-card-hover);
+}
+
+.app-root .app-graveyard-row a {
+  color: var(--ghost-blue);
+  font-size: 13px;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.app-root .app-graveyard-row p {
+  color: var(--app-muted);
+  font-size: 12px;
+  line-height: 1.45;
+  margin-top: 5px;
+}
+
+.app-root .app-graveyard-row p.muted {
+  color: var(--app-faint);
+}
+
+.app-root .app-graveyard-row > span {
+  color: var(--app-muted);
+  font-size: 13px;
+}
+
+.app-root .app-graveyard-reason {
+  justify-self: start;
+  border: 1px solid rgba(248,113,113,0.22);
+  border-radius: 999px;
+  background: rgba(248,113,113,0.08);
+  color: #f87171 !important;
+  font-size: 10px !important;
+  font-weight: 750;
+  line-height: 1.1;
+  padding: 5px 9px;
+}
+
+.app-root .app-graveyard-row form {
+  justify-self: start;
+}
+
+.app-root .app-graveyard-row form button {
+  font-size: 12px;
+  padding: 8px 13px;
+}
+
 .app-root .app-pipeline-page {
   display: flex;
   flex-direction: column;
@@ -2002,6 +2220,14 @@ body {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .app-root .app-graveyard-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .app-root .app-graveyard-row {
+    grid-template-columns: minmax(240px, 1.4fr) minmax(100px, 0.55fr) minmax(160px, 0.8fr) minmax(110px, 0.55fr) minmax(110px, 0.45fr);
+  }
+
   .app-root .app-dashboard-grid {
     grid-template-columns: 1fr;
   }
@@ -2058,9 +2284,45 @@ body {
   }
 
   .app-root .app-dashboard-kpis,
+  .app-root .app-graveyard-kpis,
   .app-root .app-dashboard-attention-summary,
   .app-root .app-dashboard-stage-grid {
     grid-template-columns: 1fr;
+  }
+
+  .app-root .app-graveyard-panel {
+    padding: 18px;
+  }
+
+  .app-root .app-graveyard-toolbar input,
+  .app-root .app-graveyard-toolbar select {
+    width: 100% !important;
+  }
+
+  .app-root .app-graveyard-toolbar button,
+  .app-root .app-graveyard-toolbar a {
+    flex: 1;
+    text-align: center;
+  }
+
+  .app-root .app-graveyard-table {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+
+  .app-root .app-graveyard-head {
+    display: none;
+  }
+
+  .app-root .app-graveyard-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+    border: 1px solid rgba(112,112,125,0.16);
+    border-radius: 14px;
+    background: rgba(23,23,33,0.58);
   }
 
   .app-root .app-dashboard-panel {
