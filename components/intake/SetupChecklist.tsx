@@ -31,21 +31,21 @@ export default function SetupChecklist({
   const pct = (completeCount / items.length) * 100
 
   return (
-    <section className="rounded-xl p-6" style={{ background: 'var(--midnight-slate)', border: '1px solid rgba(112,112,125,0.22)', boxShadow: 'var(--card-shadow)' }}>
-      <div className="mb-5 flex items-center justify-between gap-4">
+    <section className="app-intake-panel app-intake-setup">
+      <div className="app-intake-panel-header">
         <div>
-          <h2 style={{ fontSize: '16px', fontWeight: 650, color: 'var(--starlight)', letterSpacing: '-0.02em' }}>Set up your workspace</h2>
-          <p style={{ fontSize: '12px', color: 'var(--lead)', marginTop: '4px' }}>{completeCount} of {items.length} complete</p>
+          <h2>Set up your workspace</h2>
+          <p>{completeCount} of {items.length} complete</p>
         </div>
-        <div className="rounded-full overflow-hidden" style={{ width: '110px', height: '5px', background: 'rgba(112,112,125,0.2)' }}>
-          <div style={{ width: `${pct}%`, height: '100%', background: 'var(--mercury-blue)', borderRadius: '999px', transition: 'width 0.3s ease' }} />
+        <div className="app-intake-progress">
+          <div style={{ width: `${pct}%` }} />
         </div>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="app-intake-checklist-grid">
         {items.map(item => (
           <div
             key={item.label}
-            className="rounded-xl p-4"
+            className="app-intake-checklist-item"
             style={{
               background: item.complete ? 'rgba(34,197,94,0.06)' : 'var(--graphite)',
               border: item.complete ? '1px solid rgba(34,197,94,0.18)' : '1px solid rgba(112,112,125,0.15)',
@@ -55,7 +55,10 @@ export default function SetupChecklist({
               <span
                 className="mt-0.5 flex-shrink-0 flex items-center justify-center rounded-full"
                 style={{
-                  width: '18px', height: '18px', fontSize: '10px', fontWeight: 700,
+                  width: '18px',
+                  height: '18px',
+                  fontSize: '10px',
+                  fontWeight: 700,
                   background: item.complete ? 'rgba(34,197,94,0.9)' : 'rgba(112,112,125,0.2)',
                   color: item.complete ? '#fff' : 'var(--lead)',
                 }}
@@ -63,10 +66,10 @@ export default function SetupChecklist({
                 {item.complete ? '✓' : '·'}
               </span>
               <div className="min-w-0">
-                <p style={{ fontSize: '13px', fontWeight: 500, color: item.complete ? 'var(--silver)' : 'var(--starlight)' }}>{item.label}</p>
-                <p style={{ fontSize: '11px', color: 'var(--lead)', marginTop: '2px', lineHeight: 1.5 }}>{item.description}</p>
+                <p className="app-intake-checklist-title" style={{ color: item.complete ? 'var(--silver)' : 'var(--starlight)' }}>{item.label}</p>
+                <p className="app-intake-checklist-copy">{item.description}</p>
                 {!item.complete && (
-                  <Link href={item.href} style={{ display: 'inline-block', marginTop: '6px', fontSize: '11px', fontWeight: 600, color: 'var(--mercury-blue)' }}>
+                  <Link href={item.href} className="app-intake-checklist-link">
                     {item.action} →
                   </Link>
                 )}

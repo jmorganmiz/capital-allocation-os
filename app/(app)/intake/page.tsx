@@ -43,7 +43,7 @@ export default async function IntakePage() {
   const failedCount = (recentEvents ?? []).filter(event => event.status === 'failed').length
 
   return (
-    <div className="app-page">
+    <div className="app-page app-intake-page">
       <div className="app-page-header flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="app-eyebrow">Intake</p>
@@ -56,7 +56,7 @@ export default async function IntakePage() {
         </div>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start">
+      <div className="app-intake-command-grid">
         <SetupChecklist
           hasInbox={!!firm?.inbox_email}
           hasBuyBox={(buyBoxCount ?? 0) > 0}
@@ -67,38 +67,34 @@ export default async function IntakePage() {
         {firm?.inbox_email ? (
           <InboxAddressCard address={firm.inbox_email} />
         ) : (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-800">
+          <div className="app-intake-panel app-intake-provisioning">
             Your inbox address is still being provisioned. Refresh shortly or contact support if it does not appear.
           </div>
         )}
       </div>
 
-      <div className="mt-5 grid gap-4 sm:grid-cols-3">
+      <div className="app-intake-metrics">
         {[
           { value: recentDeals?.length ?? 0, label: 'Recent emailed deals', alert: false },
           { value: (recentEvents ?? []).filter(e => e.status === 'processed').length, label: 'Emails processed', alert: false },
           { value: failedCount, label: 'Needs attention', alert: failedCount > 0 },
         ].map(({ value, label, alert }) => (
-          <div key={label} className="rounded-xl p-5" style={{
-            background: alert ? 'rgba(248,113,113,0.06)' : 'var(--midnight-slate)',
-            border: alert ? '1px solid rgba(248,113,113,0.25)' : '1px solid rgba(112,112,125,0.18)',
-            boxShadow: 'var(--card-shadow)',
-          }}>
-            <p style={{ fontSize: '28px', fontWeight: 700, color: alert ? '#f87171' : 'var(--starlight)', lineHeight: 1 }}>{value}</p>
-            <p style={{ fontSize: '12px', color: 'var(--lead)', marginTop: '6px' }}>{label}</p>
+          <div key={label} className="app-intake-metric" data-alert={alert ? 'true' : 'false'}>
+            <p>{value}</p>
+            <span>{label}</span>
           </div>
         ))}
       </div>
 
-      <section className="mt-10 rounded-xl p-5" style={{ background: 'var(--midnight-slate)', border: '1px solid rgba(112,112,125,0.18)', boxShadow: 'var(--card-shadow)' }}>
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">Recent intake</h2>
-          <Link href="/pipeline" className="text-sm font-medium text-blue-600 hover:underline">View pipeline</Link>
+      <section className="app-intake-panel app-intake-recent">
+        <div className="app-intake-recent-header">
+          <h2>Recent intake</h2>
+          <Link href="/pipeline">View pipeline</Link>
         </div>
         {(recentDeals ?? []).length === 0 ? (
-          <div className="rounded-xl px-6 py-14 text-center" style={{ border: '1px dashed rgba(112,112,125,0.25)', background: 'rgba(12,12,20,0.28)' }}>
-            <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--silver)' }}>No emailed deals yet</p>
-            <p style={{ fontSize: '12px', color: 'var(--lead)', marginTop: '4px' }}>Forward a broker email with a PDF OM to your firm inbox to test the workflow.</p>
+          <div className="app-intake-empty">
+            <p>No emailed deals yet</p>
+            <span>Forward a broker email with a PDF OM to your firm inbox to test the workflow.</span>
           </div>
         ) : (
           <div className="overflow-x-auto rounded-lg" style={{ border: '1px solid rgba(112,112,125,0.18)' }}>
