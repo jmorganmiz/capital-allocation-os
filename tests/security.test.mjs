@@ -68,6 +68,7 @@ test('OM parsing uses a supported model and deployable PDF runtime', async () =>
   assert.doesNotMatch(parser, /claude-sonnet-4-20250514/)
   assert.match(parser, /import\('@napi-rs\/canvas'\)/)
   assert.match(nextConfig, /serverExternalPackages/)
+  assert.match(nextConfig, /pdf\.worker\.mjs/)
   assert.equal(packageJson.dependencies['@napi-rs/canvas'], '^0.1.80')
 })
 
