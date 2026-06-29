@@ -10,6 +10,8 @@ interface Props {
     latest_stage_event_at?: string | null
     hasNotes?: boolean
     score?: number | null
+    asking_price?: number | null
+    unit_count?: number | null
   }
   stage: DealStage
   onKill: (deal: Deal) => void
@@ -112,7 +114,7 @@ export default function DealCard({ deal, stage, onKill, onMove }: Props) {
       </div>
 
       {/* Location + type row */}
-      <div className="flex items-center gap-1.5 mb-2.5 flex-wrap">
+      <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
         {deal.market && (
           <span style={{ fontSize: '11px', color: 'var(--lead)' }}>{deal.market}</span>
         )}
@@ -130,6 +132,22 @@ export default function DealCard({ deal, stage, onKill, onMove }: Props) {
           </span>
         )}
       </div>
+
+      {/* Price + units */}
+      {(deal.asking_price || deal.unit_count) && (
+        <div className="mb-2.5 flex items-center gap-2">
+          {deal.asking_price && (
+            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--starlight)' }}>
+              {deal.asking_price >= 1_000_000
+                ? `$${(deal.asking_price / 1_000_000).toFixed(deal.asking_price % 1_000_000 === 0 ? 0 : 2)}M`
+                : `$${(deal.asking_price / 1_000).toFixed(0)}K`}
+            </span>
+          )}
+          {deal.unit_count && (
+            <span style={{ fontSize: '11px', color: 'var(--lead)' }}>· {deal.unit_count} units</span>
+          )}
+        </div>
+      )}
 
       {/* Bottom row */}
       <div className="flex items-center justify-between">

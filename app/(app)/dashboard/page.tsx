@@ -17,12 +17,17 @@ export default async function DashboardPage() {
   const [
     { data: stages },
     { data: activeDeals },
-    { data: killEvents },
+    { data: firmDeals },
   ] = await Promise.all([
     supabase.from('deal_stages').select('id, name, position').eq('firm_id', firmId).order('position'),
     supabase.from('deals').select('id, title, stage_id, intake_type, created_at, updated_at, deal_scores(score)').eq('firm_id', firmId).eq('is_archived', false),
-    supabase.from('deal_events').select('kill_reasons(name)').eq('event_type', 'killed').not('kill_reason_id', 'is', null),
+    supabase.from('deals').select('id').eq('firm_id', firmId),
   ])
+
+  const firmDealIds = (firmDeals ?? []).map(d => d.id)
+  const { data: killEvents } = firmDealIds.length > 0
+    ? await supabase.from('deal_events').select('kill_reasons(name)').eq('event_type', 'killed').not('kill_reason_id', 'is', null).in('deal_id', firmDealIds)
+    : { data: [] }
 
   const activeStages = (stages ?? []).filter(s => s.name !== 'Killed')
   const dealsByStage = activeStages.map(stage => ({
@@ -44,10 +49,10 @@ export default async function DashboardPage() {
   const th = { fontSize: '11px', fontWeight: 600, color: 'var(--lead)', letterSpacing: '0.07em', textTransform: 'uppercase' as const }
 
   return (
-    <div className="max-w-4xl mx-auto px-8 py-12">
-      <div className="mb-10">
-        <h1 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--starlight)' }}>Dashboard</h1>
-        <p style={{ fontSize: '13px', color: 'var(--lead)', marginTop: '3px' }}>{totalActive} active deals across {activeStages.length} stages</p>
+    <div className="mx-auto max-w-[1200px] px-12 py-10">
+      <div className="mb-7">
+        <h1 style={{ fontSize: '24px', fontWeight: 600, color: 'var(--starlight)', marginBottom: '4px' }}>Dashboard</h1>
+        <p style={{ fontSize: '14px', color: 'var(--lead)' }}>{totalActive} active deals across {activeStages.length} stages</p>
       </div>
 
       <AttentionQueue needsReview={needsReview} staleDeals={staleDeals} />

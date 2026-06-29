@@ -126,7 +126,7 @@ export default async function DealPage({ params }: Props) {
   const hasAnyNotes = (notes ?? []).some(n => n.content?.trim().length > 0)
 
   return (
-    <div className="max-w-4xl mx-auto px-8 py-12">
+    <div className="max-w-6xl mx-auto px-8 py-10">
       <DealHeader
         deal={deal}
         stages={stages ?? []}
@@ -137,93 +137,72 @@ export default async function DealPage({ params }: Props) {
 
       <DealTabs />
 
-      <div className="flex flex-col gap-10">
-        {/* Stage Checklist */}
-        {(checklistItems ?? []).length > 0 && currentStage && !deal.is_archived && (
-          <StageChecklist
-            dealId={deal.id}
-            stageName={currentStage.name}
-            items={checklistItems ?? []}
-            initialCompletedIds={(checklistProgress ?? []).map(p => p.checklist_item_id)}
-          />
-        )}
+      <div className="flex gap-8 mt-2 items-start">
+        {/* ── Main content column ── */}
+        <div className="flex-1 min-w-0 flex flex-col gap-10">
+          {(checklistItems ?? []).length > 0 && currentStage && !deal.is_archived && (
+            <StageChecklist
+              dealId={deal.id}
+              stageName={currentStage.name}
+              items={checklistItems ?? []}
+              initialCompletedIds={(checklistProgress ?? []).map(p => p.checklist_item_id)}
+            />
+          )}
 
-        {/* Deal Info */}
-        <DealInfo deal={deal} />
+          <DealInfo deal={deal} />
 
-        {/* Financials */}
-        <section id="section-financials">
-          <FinancialSnapshot
-            dealId={deal.id}
-            firmId={deal.firm_id}
-            snapshots={snapshots ?? []}
-          />
-        </section>
+          <section id="section-financials">
+            <FinancialSnapshot dealId={deal.id} firmId={deal.firm_id} snapshots={snapshots ?? []} />
+          </section>
 
-        {/* Scoring */}
-        <section id="section-scoring">
-          <ScoringSection
-            dealId={deal.id}
-            criteria={(scoringCriteriaResult.criteria ?? []) as any}
-            initialScores={(dealScoresResult.scores ?? []) as any}
-          />
-        </section>
+          <section id="section-scoring">
+            <ScoringSection
+              dealId={deal.id}
+              criteria={(scoringCriteriaResult.criteria ?? []) as any}
+              initialScores={(dealScoresResult.scores ?? []) as any}
+            />
+          </section>
 
-        {/* Notes */}
-        <section id="section-notes" className="space-y-6">
-          <NotesSection
-            dealId={deal.id}
-            section="overview"
-            title="Overview"
-            initialContent={getNote('overview')}
-            highlight={!hasAnyNotes}
-          />
-          <NotesSection
-            dealId={deal.id}
-            section="risks"
-            title="Risks"
-            initialContent={getNote('risks')}
-            placeholder="Document key risks and mitigation strategies…"
-          />
-          <NotesSection
-            dealId={deal.id}
-            section="notes"
-            title="Notes"
-            initialContent={getNote('notes')}
-            placeholder="General notes, meeting summaries, follow-ups…"
-          />
-        </section>
+          <section id="section-notes" className="space-y-6">
+            <NotesSection dealId={deal.id} section="overview" title="Overview" initialContent={getNote('overview')} highlight={!hasAnyNotes} />
+            <NotesSection dealId={deal.id} section="risks" title="Risks" initialContent={getNote('risks')} placeholder="Document key risks and mitigation strategies…" />
+            <NotesSection dealId={deal.id} section="notes" title="Notes" initialContent={getNote('notes')} placeholder="General notes, meeting summaries, follow-ups…" />
+          </section>
 
-        {/* Files */}
-        <section id="section-files">
-          <FilesSection
-            dealId={deal.id}
-            files={files ?? []}
-          />
-        </section>
+          <section id="section-files">
+            <FilesSection dealId={deal.id} files={files ?? []} />
+          </section>
 
-        {/* Contacts */}
-        <section id="section-contacts">
-          <ContactsSection
-            dealId={deal.id}
-            initialDealContacts={(dealContacts ?? []) as any}
-          />
-        </section>
+          <section id="section-contacts">
+            <ContactsSection dealId={deal.id} initialDealContacts={(dealContacts ?? []) as any} />
+          </section>
 
-        {/* Activity */}
-        <section id="section-activity">
-          <DecisionLog events={events ?? []} snapshots={snapshots ?? []} />
-        </section>
+          <section id="section-activity">
+            <DecisionLog events={events ?? []} snapshots={snapshots ?? []} />
+          </section>
+        </div>
 
-        {/* Similar Deals */}
-        <section id="section-similar">
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-5">Similar Deals</h2>
-          <SimilarDeals
-            deals={similarDeals}
-            currentDealType={deal.deal_type}
-            currentMarket={deal.market}
-          />
-        </section>
+        {/* ── Similar deals sidebar ── */}
+        <div className="hidden lg:block w-64 flex-shrink-0">
+          <div className="sticky top-8">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 style={{ fontSize: '11px', fontWeight: 600, color: 'var(--lead)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                Similar Deals
+              </h3>
+              {similarDeals.length > 0 && (
+                <span style={{ fontSize: '11px', color: 'var(--lead)', background: 'rgba(112,112,125,0.1)', border: '1px solid rgba(112,112,125,0.15)', borderRadius: '999px', padding: '1px 7px' }}>
+                  {similarDeals.length}
+                </span>
+              )}
+            </div>
+            <SimilarDeals
+              deals={similarDeals}
+              currentDealType={deal.deal_type}
+              currentMarket={deal.market}
+              sidebar
+            />
+          </div>
+        </div>
       </div>
     </div>
   )

@@ -19,7 +19,8 @@ export default async function PipelinePage() {
     supabase
       .from('deals')
       .select(`
-        *,
+        id, title, market, deal_type, stage_id, firm_id, is_archived,
+        asking_price, unit_count,
         owner:profiles!owner_user_id(full_name),
         latest_stage_event:deal_events(created_at),
         deal_notes(section, content),
