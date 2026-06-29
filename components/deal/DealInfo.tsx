@@ -194,7 +194,7 @@ export default function DealInfo({ deal }: Props) {
 
   return (
     <section>
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-4">
         <h2 className="text-base font-semibold text-gray-900">Deal Info</h2>
         {isPending && <span className="text-xs text-amber-500">Saving…</span>}
       </div>

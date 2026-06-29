@@ -88,13 +88,13 @@ export default function DealHeader({ deal, stages, killReasons, firmUsers }: Pro
 
   return (
     <div>
-      <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
+      <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
         <Link href="/pipeline" className="hover:text-gray-700">Pipeline</Link>
         <span>/</span>
         <span className="text-gray-800">{deal.title}</span>
       </div>
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-semibold text-gray-900">{deal.title}</h1>
 

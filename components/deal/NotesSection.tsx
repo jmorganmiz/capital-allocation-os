@@ -37,7 +37,7 @@ export default function NotesSection({ dealId, section, title, initialContent, p
 
   return (
     <section>
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-3">
         <h2 className="text-base font-semibold text-gray-900">
           {title}
           {isEmpty && (

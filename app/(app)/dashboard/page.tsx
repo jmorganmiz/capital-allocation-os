@@ -56,25 +56,25 @@ export default async function DashboardPage() {
   const totalKilled = killBreakdown.reduce((sum, [, n]) => sum + n, 0)
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-8">
-      <div className="mb-8">
+    <div className="max-w-4xl mx-auto px-8 py-12">
+      <div className="mb-10">
         <h1 className="text-xl font-semibold text-gray-900">Dashboard</h1>
-        <p className="text-sm text-gray-500 mt-0.5">{totalActive} active deals across {activeStages.length} stages</p>
+        <p className="text-sm text-gray-500 mt-1">{totalActive} active deals across {activeStages.length} stages</p>
       </div>
 
       <AttentionQueue needsReview={needsReview} staleDeals={staleDeals} />
 
       {/* Deals by Stage */}
-      <section className="mb-10">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Deals by Stage</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+      <section className="mb-12">
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-5">Deals by Stage</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           {dealsByStage.map(({ name, count }) => (
-            <div key={name} className="bg-white border border-gray-200 rounded-lg p-4">
+            <div key={name} className="bg-white border border-gray-200 rounded-lg p-5">
               <p className="text-2xl font-bold text-gray-900">{count}</p>
               <p className="text-sm text-gray-500 mt-1 truncate">{name}</p>
             </div>
           ))}
-          <div className="bg-gray-900 text-white rounded-lg p-4">
+          <div className="bg-gray-900 text-white rounded-lg p-5">
             <p className="text-2xl font-bold">{totalActive}</p>
             <p className="text-sm text-gray-400 mt-1">Total Active</p>
           </div>
@@ -83,13 +83,13 @@ export default async function DashboardPage() {
 
       {/* Kill Reason Breakdown */}
       <section>
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-5">
           Kill Reason Breakdown
           {totalKilled > 0 && <span className="ml-2 font-normal text-gray-400 normal-case">({totalKilled} total)</span>}
         </h2>
 
         {killBreakdown.length === 0 ? (
-          <div className="border border-dashed border-gray-200 rounded-lg p-10 text-center text-sm text-gray-400">
+          <div className="border border-dashed border-gray-200 rounded-lg p-12 text-center text-sm text-gray-400">
             No killed deals yet. Kill reasons will appear here once deals are killed.
           </div>
         ) : (
@@ -97,7 +97,7 @@ export default async function DashboardPage() {
             {killBreakdown.map(([name, count], i) => {
               const pct = Math.round((count / totalKilled) * 100)
               return (
-                <div key={name} className={`px-4 py-3 flex items-center gap-4 ${i > 0 ? 'border-t border-gray-100' : ''}`}>
+                <div key={name} className={`px-5 py-4 flex items-center gap-4 ${i > 0 ? 'border-t border-gray-100' : ''}`}>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="text-sm font-medium text-gray-800">{name}</span>

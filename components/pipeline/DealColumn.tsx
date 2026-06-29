@@ -18,7 +18,7 @@ export default function DealColumn({ stage, deals, onKill, onMove }: Props) {
 
   return (
     <div className="flex-shrink-0 w-[85vw] md:w-64 snap-start">
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-4">
         <h3 className={`text-xs font-semibold uppercase tracking-wider ${isTerminal ? 'text-green-600' : 'text-gray-500'}`}>
           {stage.name}
         </h3>

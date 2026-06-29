@@ -48,11 +48,11 @@ export default function DealCard({ deal, stage, onKill, onMove }: Props) {
       style={style}
       {...listeners}
       {...attributes}
-      className={`bg-gray-100 border border-gray-200 rounded-lg p-3 md:cursor-grab md:active:cursor-grabbing
+      className={`bg-gray-100 border border-gray-200 rounded-lg p-4 md:cursor-grab md:active:cursor-grabbing
                   transition-colors select-none
                   ${isDragging ? 'opacity-50' : 'hover:bg-gray-200'}`}
     >
-      <div className="flex items-start justify-between gap-2 mb-2">
+      <div className="flex items-start justify-between gap-2 mb-3">
         <Link
           href={`/deals/${deal.id}`}
           onClick={e => e.stopPropagation()}
@@ -71,7 +71,7 @@ export default function DealCard({ deal, stage, onKill, onMove }: Props) {
         </button>
       </div>
 
-      <div className="flex items-center justify-between mt-2">
+      <div className="flex items-center justify-between mt-3">
         <div className="flex items-center gap-1.5 flex-wrap">
           {deal.market && (
             <span className="text-xs text-gray-400">{deal.market}</span>

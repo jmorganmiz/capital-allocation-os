@@ -43,8 +43,8 @@ export default async function IntakePage() {
   const failedCount = (recentEvents ?? []).filter(event => event.status === 'failed').length
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div className="mx-auto max-w-5xl px-6 py-12 sm:px-8">
+      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold text-gray-900">Intake</h1>
           <p className="mt-0.5 text-sm text-gray-500">Bring new opportunities into {firm?.name ?? 'your firm'}.</p>
@@ -70,23 +70,23 @@ export default async function IntakePage() {
         </div>
       )}
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-3">
-        <div className="rounded-lg border border-gray-200 bg-white p-4">
+      <div className="mt-10 grid gap-4 sm:grid-cols-3">
+        <div className="rounded-lg border border-gray-200 bg-white p-5">
           <p className="text-2xl font-bold text-gray-900">{recentDeals?.length ?? 0}</p>
           <p className="mt-1 text-sm text-gray-500">Recent emailed deals</p>
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-4">
+        <div className="rounded-lg border border-gray-200 bg-white p-5">
           <p className="text-2xl font-bold text-gray-900">{(recentEvents ?? []).filter(event => event.status === 'processed').length}</p>
           <p className="mt-1 text-sm text-gray-500">Emails processed</p>
         </div>
-        <div className={`rounded-lg border p-4 ${failedCount ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-white'}`}>
+        <div className={`rounded-lg border p-5 ${failedCount ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-white'}`}>
           <p className={`text-2xl font-bold ${failedCount ? 'text-red-700' : 'text-gray-900'}`}>{failedCount}</p>
           <p className="mt-1 text-sm text-gray-500">Needs attention</p>
         </div>
       </div>
 
-      <section className="mt-8">
-        <div className="mb-3 flex items-center justify-between">
+      <section className="mt-12">
+        <div className="mb-4 flex items-center justify-between">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">Recent intake</h2>
           <Link href="/pipeline" className="text-sm font-medium text-blue-600 hover:underline">View pipeline</Link>
         </div>
@@ -99,7 +99,7 @@ export default async function IntakePage() {
           <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
             <table className="w-full min-w-[680px] text-sm">
               <thead className="border-b border-gray-200 bg-gray-50 text-left text-gray-600">
-                <tr><th className="px-4 py-3 font-medium">Deal</th><th className="px-4 py-3 font-medium">Stage</th><th className="px-4 py-3 font-medium">AI score</th><th className="px-4 py-3 font-medium">Received</th></tr>
+                <tr><th className="px-5 py-4 font-medium">Deal</th><th className="px-5 py-4 font-medium">Stage</th><th className="px-5 py-4 font-medium">AI score</th><th className="px-5 py-4 font-medium">Received</th></tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {(recentDeals ?? []).map((deal: any) => {
@@ -107,10 +107,10 @@ export default async function IntakePage() {
                   const score = calculateOverallScore(scores)
                   return (
                     <tr key={deal.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3"><Link href={`/deals/${deal.id}`} className="font-medium text-gray-900 hover:text-blue-700">{deal.title}</Link><p className="text-xs text-gray-400">{[deal.market, deal.deal_type].filter(Boolean).join(' · ') || 'Details pending review'}</p></td>
-                      <td className="px-4 py-3 text-gray-600">{deal.deal_stages?.name ?? 'Unstaged'}</td>
-                      <td className="px-4 py-3">{score === null ? <span className="text-amber-600">Pending</span> : <span className="font-semibold text-gray-900">{score}/100</span>}</td>
-                      <td className="px-4 py-3 text-gray-500">{formatDate(deal.created_at)}</td>
+                      <td className="px-5 py-4"><Link href={`/deals/${deal.id}`} className="font-medium text-gray-900 hover:text-blue-700">{deal.title}</Link><p className="text-xs text-gray-400">{[deal.market, deal.deal_type].filter(Boolean).join(' · ') || 'Details pending review'}</p></td>
+                      <td className="px-5 py-4 text-gray-600">{deal.deal_stages?.name ?? 'Unstaged'}</td>
+                      <td className="px-5 py-4">{score === null ? <span className="text-amber-600">Pending</span> : <span className="font-semibold text-gray-900">{score}/100</span>}</td>
+                      <td className="px-5 py-4 text-gray-500">{formatDate(deal.created_at)}</td>
                     </tr>
                   )
                 })}

@@ -76,8 +76,8 @@ export default function ContactsPage() {
   }, [contacts, search, typeFilter])
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-8">
-      <div className="mb-6 flex items-start justify-between">
+    <div className="max-w-5xl mx-auto px-8 py-12">
+      <div className="mb-8 flex items-start justify-between">
         <div>
           <h1 className="text-xl font-semibold text-gray-900">Contacts</h1>
           <p className="text-sm text-gray-500 mt-0.5">{contacts.length} contacts</p>
@@ -87,7 +87,7 @@ export default function ContactsPage() {
         </button>
       </div>
 
-      <div className="flex gap-3 mb-6 flex-wrap">
+      <div className="flex gap-3 mb-8 flex-wrap">
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
@@ -124,12 +124,12 @@ export default function ContactsPage() {
           <table className="w-full min-w-[760px] text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Name</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Type</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Company</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Email</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Phone</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Deals</th>
+                <th className="text-left px-5 py-4 font-medium text-gray-600">Name</th>
+                <th className="text-left px-5 py-4 font-medium text-gray-600">Type</th>
+                <th className="text-left px-5 py-4 font-medium text-gray-600">Company</th>
+                <th className="text-left px-5 py-4 font-medium text-gray-600">Email</th>
+                <th className="text-left px-5 py-4 font-medium text-gray-600">Phone</th>
+                <th className="text-left px-5 py-4 font-medium text-gray-600">Deals</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -139,8 +139,8 @@ export default function ContactsPage() {
                   onClick={() => handleRowClick(contact)}
                   className="hover:bg-gray-50 cursor-pointer"
                 >
-                  <td className="px-4 py-3 font-medium text-gray-900">{contact.name}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-4 font-medium text-gray-900">{contact.name}</td>
+                  <td className="px-5 py-4">
                     {contact.contact_type ? (
                       <span className={`text-xs px-2 py-0.5 rounded font-medium capitalize ${TYPE_COLORS[contact.contact_type] ?? ''}`}>
                         {contact.contact_type}
@@ -149,8 +149,8 @@ export default function ContactsPage() {
                       <span className="text-gray-400">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-gray-600">{contact.company ?? '—'}</td>
-                  <td className="px-4 py-3 text-gray-600">
+                  <td className="px-5 py-4 text-gray-600">{contact.company ?? '—'}</td>
+                  <td className="px-5 py-4 text-gray-600">
                     {contact.email ? (
                       <a
                         href={`mailto:${contact.email}`}
@@ -161,8 +161,8 @@ export default function ContactsPage() {
                       </a>
                     ) : '—'}
                   </td>
-                  <td className="px-4 py-3 text-gray-600">{contact.phone ?? '—'}</td>
-                  <td className="px-4 py-3 text-gray-600">{contact.deal_count}</td>
+                  <td className="px-5 py-4 text-gray-600">{contact.phone ?? '—'}</td>
+                  <td className="px-5 py-4 text-gray-600">{contact.deal_count}</td>
                 </tr>
               ))}
             </tbody>

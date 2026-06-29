@@ -49,13 +49,13 @@ export default async function GraveyardPage({ searchParams }: { searchParams: Se
     .not('kill_reason_id', 'is', null)
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-8">
-      <div className="mb-6">
+    <div className="max-w-5xl mx-auto px-8 py-12">
+      <div className="mb-8">
         <h1 className="text-xl font-semibold text-gray-900">Graveyard</h1>
-        <p className="text-sm text-gray-500 mt-0.5">{filtered.length} killed deals</p>
+        <p className="text-sm text-gray-500 mt-1">{filtered.length} killed deals</p>
       </div>
 
-      <div className="flex gap-3 mb-6">
+      <div className="flex gap-3 mb-7">
         <form className="flex gap-3 flex-wrap">
           <input
             name="q"
@@ -83,7 +83,7 @@ export default async function GraveyardPage({ searchParams }: { searchParams: Se
           if (name) counts[name] = (counts[name] ?? 0) + 1
         })
         return (
-          <div className="flex gap-3 flex-wrap mb-6">
+          <div className="flex gap-3 flex-wrap mb-8">
             {Object.entries(counts)
               .sort((a, b) => b[1] - a[1])
               .map(([name, count]) => (
@@ -105,16 +105,16 @@ export default async function GraveyardPage({ searchParams }: { searchParams: Se
           <table className="w-full min-w-[640px] text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Deal</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Market</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Kill Reason</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Killed</th>
+                <th className="text-left px-5 py-4 font-medium text-gray-600">Deal</th>
+                <th className="text-left px-5 py-4 font-medium text-gray-600">Market</th>
+                <th className="text-left px-5 py-4 font-medium text-gray-600">Kill Reason</th>
+                <th className="text-left px-5 py-4 font-medium text-gray-600">Killed</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filtered.map(deal => (
                 <tr key={deal.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-4">
                     <Link href={`/deals/${deal.id}`} className="text-blue-700 hover:underline font-medium">
                       {deal.title}
                     </Link>
@@ -122,13 +122,13 @@ export default async function GraveyardPage({ searchParams }: { searchParams: Se
                       <p className="text-xs text-gray-400 mt-0.5 italic">"{deal.killEvent.notes}"</p>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-gray-600">{deal.market ?? '—'}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-4 text-gray-600">{deal.market ?? '—'}</td>
+                  <td className="px-5 py-4">
                     <span className="text-xs bg-red-50 text-red-700 px-2 py-0.5 rounded">
                       {(deal.killEvent as any)?.kill_reasons?.name ?? '—'}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-gray-500">
+                  <td className="px-5 py-4 text-gray-500">
                     {deal.archived_at
                       ? new Date(deal.archived_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                       : '—'}

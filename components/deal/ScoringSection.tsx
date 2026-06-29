@@ -107,7 +107,7 @@ export default function ScoringSection({ dealId, criteria, initialScores }: Prop
 
   return (
     <section>
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-4">
         <h2 className="text-base font-semibold text-gray-900">Underwriting Score</h2>
         {overall !== null && (
           <span className={`text-xs font-medium px-2 py-0.5 rounded border ${scoreToBg(overall)}`}>
@@ -151,7 +151,7 @@ export default function ScoringSection({ dealId, criteria, initialScores }: Prop
             const notesOpen = expandedNotes.has(c.id)
 
             return (
-              <div key={c.id} className="px-4 py-3">
+              <div key={c.id} className="px-5 py-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">

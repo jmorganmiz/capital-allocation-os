@@ -38,7 +38,7 @@ function NavLinks({ onClick }: { onClick?: () => void }) {
           } : {
             color: '#c3c3cc',
           }}
-          className={`block px-3 py-2 rounded-md text-sm transition-colors
+          className={`block px-3 py-2.5 rounded-md text-sm transition-colors
             ${pathname.startsWith(href) ? '' : 'hover:bg-gray-100 hover:text-gray-900'}`}
         >
           {label}
@@ -87,7 +87,7 @@ export default function MobileSidebar({ firmName, userEmail }: Props) {
           <button
             onClick={() => setShowSearch(true)}
             style={{ color: '#70707d', fontSize: '13px' }}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-md transition-colors mb-1 hover:bg-gray-100"
+            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-md transition-colors mb-1 hover:bg-gray-100"
           >
             <SearchIcon />
             <span className="flex-1 text-left">Search</span>

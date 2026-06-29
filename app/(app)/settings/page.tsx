@@ -64,10 +64,10 @@ export default async function SettingsPage({ searchParams }: Props) {
   ])
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-8 space-y-10">
+    <div className="max-w-2xl mx-auto px-8 py-12 space-y-14">
       <div>
         <h1 className="text-xl font-semibold text-gray-900">Settings</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Manage your workspace configuration.</p>
+        <p className="text-sm text-gray-500 mt-1">Manage your workspace configuration.</p>
       </div>
 
       {success === 'true' && (

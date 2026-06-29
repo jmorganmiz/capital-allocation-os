@@ -81,7 +81,7 @@ export default async function DealPage({ params }: Props) {
   const hasAnyNotes = (notes ?? []).some(n => n.content?.trim().length > 0)
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-8">
+    <div className="max-w-4xl mx-auto px-8 py-12">
       <DealHeader
         deal={deal}
         stages={stages ?? []}
@@ -92,7 +92,7 @@ export default async function DealPage({ params }: Props) {
 
       <DealTabs />
 
-      <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-10">
         {/* Stage Checklist */}
         {(checklistItems ?? []).length > 0 && currentStage && !deal.is_archived && (
           <StageChecklist
