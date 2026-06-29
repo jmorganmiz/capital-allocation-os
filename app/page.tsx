@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { Nav } from '@/components/Nav'
 import { Hero } from '@/components/Hero'
 import { HowItWorks } from '@/components/HowItWorks'
+import { ProductDemo } from '@/components/ProductDemo'
 import { Features } from '@/components/Features'
 import { Pricing } from '@/components/Pricing'
 import { FooterCTA } from '@/components/FooterCTA'
@@ -33,6 +34,8 @@ export default function HomePage() {
       <Nav />
       <Hero />
       <HowItWorks />
+      <hr className="divider" />
+      <ProductDemo />
       <hr className="divider" />
       <Features />
       <hr className="divider" />
