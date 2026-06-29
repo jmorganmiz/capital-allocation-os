@@ -92,7 +92,14 @@ export default async function IntakePage() {
           <Link href="/pipeline" className="text-sm font-medium text-blue-600 hover:underline">View pipeline</Link>
         </div>
         {(recentDeals ?? []).length === 0 ? (
-          <div className="rounded-lg px-6 py-12 text-center" style={{ border: '1px dashed rgba(112,112,125,0.25)' }}>
+          <div className="rounded-lg px-6 py-14 text-center" style={{ border: '1px dashed rgba(112,112,125,0.25)' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '14px' }}>
+              <svg width="36" height="36" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"
+                style={{ background: '#272735', borderRadius: '10px', padding: '8px', boxSizing: 'content-box' }}>
+                <path d="M4 4h16a2 2 0 0 1 2 2v1.5L12 13 2 7.5V6a2 2 0 0 1 2-2z" stroke="#70707d" strokeWidth="1.5" strokeLinejoin="round" />
+                <path d="M2 7.5v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7.5L12 13 2 7.5z" stroke="#70707d" strokeWidth="1.5" strokeLinejoin="round" />
+              </svg>
+            </div>
             <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--silver)' }}>No emailed deals yet</p>
             <p style={{ fontSize: '12px', color: 'var(--lead)', marginTop: '4px' }}>Forward a broker email with a PDF OM to your firm inbox to test the workflow.</p>
           </div>

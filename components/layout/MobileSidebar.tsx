@@ -4,10 +4,13 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import SearchModal from '@/components/search/SearchModal'
+import { getAccessState } from '@/lib/workflow.mjs'
 
 interface Props {
   firmName: string
   userEmail: string
+  trialEndsAt?: string | null
+  subscriptionStatus?: string | null
 }
 
 const navLinks = [
@@ -19,31 +22,44 @@ const navLinks = [
   { href: '/settings',  label: 'Settings' },
 ]
 
-function NavLinks({ onClick }: { onClick?: () => void }) {
+function NavLinks({ onClick, trialDaysLeft }: { onClick?: () => void; trialDaysLeft?: number | null }) {
   const pathname = usePathname()
   return (
     <nav>
       {navLinks.map(({ href, label }) => {
         const isActive = pathname.startsWith(href)
+        const showTrialDot = label === 'Settings' && trialDaysLeft != null
         return (
           <Link
             key={href}
             href={href}
             onClick={onClick}
             style={{
-              display: 'block',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
               padding: '10px 20px',
               fontSize: '14px',
-              color: isActive ? '#ededf3' : '#c3c3cc',
+              color: isActive ? '#ffffff' : '#c3c3cc',
               fontWeight: isActive ? 600 : 400,
               borderLeft: `2px solid ${isActive ? '#5266eb' : 'transparent'}`,
-              background: isActive ? 'rgba(82,102,235,0.08)' : 'transparent',
+              background: isActive ? 'rgba(82,102,235,0.12)' : 'transparent',
               whiteSpace: 'nowrap',
               textDecoration: 'none',
               transition: 'background 0.15s, color 0.15s',
             }}
           >
-            {label}
+            <span>{label}</span>
+            {showTrialDot && (
+              <span
+                title={`${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'} remaining`}
+                style={{
+                  width: '6px', height: '6px', borderRadius: '50%',
+                  background: '#fbbf24', flexShrink: 0,
+                  boxShadow: '0 0 4px rgba(251,191,36,0.5)',
+                }}
+              />
+            )}
           </Link>
         )
       })}
@@ -59,9 +75,12 @@ function SearchIcon() {
   )
 }
 
-export default function MobileSidebar({ firmName, userEmail }: Props) {
+export default function MobileSidebar({ firmName, userEmail, trialEndsAt, subscriptionStatus }: Props) {
   const [open, setOpen] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
+
+  const { subscribed, trialActive, daysLeft } = getAccessState({ trialEndsAt: trialEndsAt ?? null, subscriptionStatus: subscriptionStatus ?? null })
+  const trialDaysLeft = (!subscribed && trialActive) ? daysLeft : null
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -122,7 +141,7 @@ export default function MobileSidebar({ firmName, userEmail }: Props) {
       </button>
 
       {/* Nav */}
-      <NavLinks onClick={onClose} />
+      <NavLinks onClick={onClose} trialDaysLeft={trialDaysLeft} />
 
       {/* Spacer */}
       <div style={{ flex: 1 }} />

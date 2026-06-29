@@ -83,10 +83,10 @@ export default function DealCard({ deal, stage, onKill, onMove }: Props) {
         <Link
           href={`/deals/${deal.id}`}
           onClick={e => e.stopPropagation()}
-          className="text-sm font-semibold leading-snug flex-1"
-          style={{ color: 'var(--starlight)', fontSize: '13px' }}
+          className="leading-snug flex-1"
+          style={{ color: '#ffffff', fontSize: '14px', fontWeight: 600 }}
           onMouseEnter={e => (e.currentTarget.style.color = 'var(--mercury-blue)')}
-          onMouseLeave={e => (e.currentTarget.style.color = 'var(--starlight)')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#ffffff')}
         >
           {deal.title}
         </Link>
@@ -116,7 +116,7 @@ export default function DealCard({ deal, stage, onKill, onMove }: Props) {
       {/* Location + type row */}
       <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
         {deal.market && (
-          <span style={{ fontSize: '11px', color: 'var(--lead)' }}>{deal.market}</span>
+          <span style={{ fontSize: '12px', color: 'var(--silver)' }}>{deal.market}</span>
         )}
         {deal.deal_type && (
           <span style={{
