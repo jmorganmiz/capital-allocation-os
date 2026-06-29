@@ -1,6 +1,143 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { LandingAssistant } from '@/components/marketing/LandingAssistant'
+
+const features = [
+  {
+    eyebrow: 'Intake',
+    title: 'Broker email becomes structured memory.',
+    body: 'Forward OMs into the firm inbox. Dealstash extracts the deal, files the source material, scores the opportunity, and queues it for review.',
+  },
+  {
+    eyebrow: 'Pipeline',
+    title: 'A clean operating rhythm for active deals.',
+    body: 'Move deals through your real stages, assign owners, track stale opportunities, and keep every decision attached to the underlying asset.',
+  },
+  {
+    eyebrow: 'Memory',
+    title: 'Similar deals become a decision advantage.',
+    body: 'Compare new opportunities against prior deals by market, broker, asset type, return profile, score, and why the team passed or pursued.',
+  },
+  {
+    eyebrow: 'Scoring',
+    title: 'Your buy box becomes executable.',
+    body: 'Set firm-specific criteria once. Every new deal is scored against that standard so the team can triage quickly without losing nuance.',
+  },
+]
+
+const faqs = [
+  {
+    question: 'How does the firm inbox work?',
+    answer:
+      'Each firm gets a dedicated intake address. Brokers send OMs there, and Dealstash parses attachments, creates the deal, stores the files, and scores the opportunity.',
+  },
+  {
+    question: 'Is this replacing our CRM?',
+    answer:
+      'No. It is closer to an acquisition operating system: pipeline, intake, scoring, decision history, files, and deal memory. Contacts are included, but the core object is the deal.',
+  },
+  {
+    question: 'What makes similar deals important?',
+    answer:
+      'CRE teams repeatedly see familiar markets, brokers, asset types, and risks. Similar-deal memory helps the team reuse judgment instead of relearning the same lesson six months later.',
+  },
+  {
+    question: 'Can we import our existing pipeline?',
+    answer:
+      'Yes. CSV import maps your current spreadsheet fields into Dealstash so your old pipeline and graveyard become part of the operating memory.',
+  },
+  {
+    question: 'Is deal data private?',
+    answer:
+      'Deal data is scoped to your authenticated firm workspace. The product is built around firm-level access, protected app routes, and row-level security in Supabase.',
+  },
+  {
+    question: 'What happens after the trial?',
+    answer:
+      'The product is designed around simple firm pricing. During the trial, teams can test intake, scoring, the pipeline, contacts, and decision memory without a credit card.',
+  },
+]
+
+function Logo() {
+  return (
+    <span className="flex items-center gap-3 text-[20px] font-normal tracking-[-0.4px] text-white">
+      dealstash
+      <span className="flex items-center gap-1">
+        <span className="h-4 w-[2px] bg-white" />
+        <span className="h-4 w-[2px] bg-white" />
+        <span className="h-4 w-[2px] bg-white" />
+      </span>
+    </span>
+  )
+}
+
+function ProductShot() {
+  const rows = [
+    ['Austin Industrial', '92', 'New', 'NorthBridge'],
+    ['Dallas MF Refi', '84', 'Review', 'Walker & Co.'],
+    ['Phoenix Retail', '61', 'Watch', 'Canyon CRE'],
+  ]
+
+  return (
+    <div className="relative overflow-hidden rounded-[10px] bg-[#202020] p-[19px] shadow-[rgba(0,0,0,0.35)_0px_10px_30px_0px,rgba(255,255,255,0.08)_0px_1px_0px_0px_inset]">
+      <div className="mb-5 flex items-center justify-between">
+        <div>
+          <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#999999]">Product shot</p>
+          <h3 className="mt-1 text-[22px] font-medium tracking-[-0.44px] text-white">Intake queue</h3>
+        </div>
+        <span className="rounded-full bg-white px-3 py-1 text-[10px] font-medium uppercase tracking-[0.08em] text-black">
+          3 new
+        </span>
+      </div>
+      <div className="grid gap-3">
+        {rows.map(([name, score, stage, broker]) => (
+          <div key={name} className="rounded-[10px] border border-[#333333] bg-black p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[15px] font-medium tracking-[-0.3px] text-white">{name}</p>
+                <p className="mt-1 text-[12px] font-light tracking-[-0.24px] text-[#999999]">{broker}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-[22px] font-medium leading-none tracking-[-0.44px] text-white">{score}</p>
+                <p className="mt-1 text-[10px] uppercase tracking-[0.08em] text-[#999999]">{stage}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 rounded-[10px] border border-[#333333] bg-[#111111] p-4">
+        <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#999999]">AI extraction</p>
+        <p className="mt-2 text-[14px] font-light leading-[1.5] tracking-[-0.28px] text-[#c0c0c0]">
+          Parsed rent roll, offering memo, broker source, market, asset type, pricing guidance, and first-pass score.
+        </p>
+      </div>
+    </div>
+  )
+}
+
+function SimilarDealsShot() {
+  return (
+    <div className="relative overflow-hidden rounded-[10px] bg-[#f5f5f0] p-[19px] text-black shadow-[rgba(0,0,0,0.35)_0px_10px_30px_0px]">
+      <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#333333]">Operating memory</p>
+      <h3 className="mt-3 max-w-lg text-[32px] font-medium leading-[1.1] tracking-[-1.6px]">
+        Before you decide, see what this deal reminds the firm of.
+      </h3>
+      <div className="mt-8 grid gap-3">
+        {[
+          ['Similar killed deal', 'Same broker, same market, weaker DSCR. Passed for tenant rollover.'],
+          ['Comparable winner', 'Same submarket and basis. Advanced after seller retrade.'],
+          ['Pattern detected', 'Three prior deals from this source missed expense assumptions.'],
+        ].map(([label, detail]) => (
+          <div key={label} className="rounded-[10px] border border-black/10 bg-white/55 p-4">
+            <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-black">{label}</p>
+            <p className="mt-2 text-[15px] font-light leading-[1.5] tracking-[-0.3px] text-[#333333]">{detail}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export default async function HomePage() {
   const supabase = await createClient()
@@ -8,257 +145,177 @@ export default async function HomePage() {
   if (user) redirect('/pipeline')
 
   return (
-    <div className="min-h-screen bg-white">
-
-      {/* Nav */}
-      <nav className="flex items-center justify-between px-4 md:px-8 py-5 border-b border-gray-100">
-        <span className="text-lg font-bold text-gray-900">Dealstash</span>
-        <div className="flex items-center gap-4">
-          <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900">Sign in</Link>
-          <Link href="/signup" className="text-sm bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-gray-800">
-            Get started free
+    <div className="min-h-screen bg-black font-sans text-white">
+      <nav className="sticky top-0 z-30 flex h-16 items-center justify-between bg-black/75 px-5 backdrop-blur">
+        <Link href="/" aria-label="Dealstash home">
+          <Logo />
+        </Link>
+        <div className="flex items-center gap-3">
+          <Link href="/login" className="hidden text-[15px] font-medium tracking-[-0.3px] text-[#c0c0c0] transition hover:text-white sm:inline">
+            Sign in
+          </Link>
+          <Link href="/signup" className="rounded-full border border-white/50 px-6 py-3 text-[15px] font-medium tracking-[-0.3px] text-white transition hover:border-white hover:bg-white hover:text-black">
+            Start free
           </Link>
         </div>
       </nav>
 
-      {/* ── SECTION 1: Hero ──────────────────────────────────────────────────── */}
-      <div className="max-w-4xl mx-auto px-4 md:px-8 pt-12 pb-10 md:pt-20 md:pb-16 text-center">
-        <div className="inline-block bg-blue-50 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full mb-6 uppercase tracking-wide">
-          AI-Powered · Built for Small CRE Investment Teams
-        </div>
-        <h1 className="text-3xl sm:text-5xl font-bold text-gray-900 leading-tight mb-5 md:mb-6">
-          A broker sends you an OM.<br />
-          It's scored and in your pipeline<br className="hidden sm:block" /> before you open your inbox.
-        </h1>
-        <p className="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto mb-8 md:mb-10 leading-relaxed">
-          Dealstash is the AI-powered deal operating system for small CRE investment firms. From the first broker email to your full decision history — in one place.
-        </p>
-        <div className="flex items-center justify-center gap-4 flex-wrap">
-          <Link href="/signup" className="bg-gray-900 text-white px-8 py-3 rounded-md text-sm font-semibold hover:bg-gray-800 transition-colors">
-            Start free for 30 days
-          </Link>
-          <Link href="/demo" className="border border-gray-300 text-gray-700 px-8 py-3 rounded-md text-sm font-semibold hover:border-gray-400 hover:text-gray-900 transition-colors">
-            Try demo →
-          </Link>
-        </div>
-        <p className="text-sm text-gray-400 mt-5">
-          Built by a CRE investor, for CRE investment teams. No credit card required.
-        </p>
-      </div>
-
-      {/* ── SECTION 2: Problem ───────────────────────────────────────────────── */}
-      <div className="bg-gray-900 text-white py-14 md:py-20 px-4 md:px-8">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-2xl md:text-3xl font-bold mb-6">
-            The spreadsheet isn't your OS. It's your liability.
-          </h2>
-          <p className="text-gray-400 leading-relaxed text-base md:text-lg">
-            When a deal gets killed, the reasoning disappears. When someone leaves the team, the institutional knowledge walks out with them. Six months later you can't remember why you passed, what you underwrote, or who owned it. Meanwhile your inbox has 47 unread OMs and no system to triage them. Dealstash fixes all of it.
-          </p>
-        </div>
-      </div>
-
-      {/* ── SECTION 3: Feature Grid ──────────────────────────────────────────── */}
-      <div className="max-w-5xl mx-auto px-4 md:px-8 py-14 md:py-20">
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 text-center mb-3">
-          Everything your team needs. Nothing you don't.
-        </h2>
-        <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[
-            {
-              title: 'AI OM Parsing',
-              desc: 'Drop in a broker PDF. AI reads it, extracts the deal details, scores it against your criteria, and creates it in your pipeline automatically. No manual data entry.',
-            },
-            {
-              title: 'AI Deal Scoring',
-              desc: 'Every deal gets scored the moment it enters your pipeline. Set your own criteria — location, returns, tenant quality, debt coverage — and get an instant go/no-go score.',
-            },
-            {
-              title: 'Kanban Pipeline',
-              desc: 'Drag deals through your stages. Every team member sees the same view in real time. No more "what stage is that Dallas deal in?"',
-            },
-            {
-              title: 'Structured Kill Reasons',
-              desc: 'When a deal dies, log exactly why. Over time this becomes your most valuable dataset — you\'ll never make the same mistake twice.',
-            },
-            {
-              title: 'Decision Log',
-              desc: 'Every stage move, kill, note, and file upload is timestamped and attributed automatically. Full audit trail, zero extra work.',
-            },
-            {
-              title: 'Financial Snapshots',
-              desc: 'Capture your underwriting assumptions at any point. New snapshot on every update — nothing gets overwritten, nothing gets lost.',
-            },
-            {
-              title: 'AI Deal Import',
-              desc: 'Already have deals in a spreadsheet? Upload your CSV and AI maps your columns to our schema automatically. Your full pipeline history, imported in minutes.',
-            },
-            {
-              title: 'Contact & Relationship Tracking',
-              desc: 'Know which brokers send your best deals. Link contacts to deals, track source quality, and build a relationship database your whole team can use.',
-            },
-            {
-              title: 'Firm Deal Inbox',
-              desc: 'Get a dedicated email address for your firm — brokers send OMs directly to it. AI parses and scores every deal automatically on arrival. Your pipeline builds itself.',
-              comingSoon: false,
-            },
-          ].map(({ title, desc, comingSoon }) => (
-            <div key={title} className="p-6 bg-gray-50 rounded-xl">
-              <div className="flex items-center gap-2 mb-2">
-                <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
-                {comingSoon && (
-                  <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-                    Coming Soon
-                  </span>
-                )}
-              </div>
-              <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
+      <main>
+        <section className="mx-auto flex min-h-[calc(100vh-64px)] max-w-[1280px] flex-col justify-center px-5 py-20 md:px-8">
+          <div className="mx-auto max-w-6xl text-center">
+            <p className="mb-6 text-[11px] font-medium uppercase tracking-[0.08em] text-[#999999]">
+              AI deal operating system for small CRE teams
+            </p>
+            <h1 className="text-[58px] font-medium leading-[0.98] tracking-[-2.9px] text-white sm:text-[82px] lg:text-[128px] lg:tracking-[-6.4px]">
+              The deal memory your firm never had.
+            </h1>
+            <p className="mx-auto mt-8 max-w-[620px] text-[18px] font-light leading-[1.4] tracking-[-0.36px] text-[#c0c0c0]">
+              Broker emails become scored deals. Underwriting notes become searchable precedent. Every pass, pursue, source, and file becomes operating memory.
+            </p>
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+              <Link href="/signup" className="rounded-full bg-white px-6 py-4 text-[15px] font-medium tracking-[-0.3px] text-black shadow-[rgba(0,0,0,0.15)_0px_4px_20px_0px] transition hover:bg-[#f5f5f0]">
+                Start free for 30 days →
+              </Link>
+              <Link href="/demo" className="rounded-full border border-white/50 px-6 py-4 text-[15px] font-medium tracking-[-0.3px] text-white transition hover:border-white">
+                Try the demo
+              </Link>
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
 
-      {/* ── SECTION 4: Comparison Table ──────────────────────────────────────── */}
-      <div className="border-t border-gray-100 py-14 md:py-20 px-4 md:px-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-10">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
-              Finally, enterprise-grade AI at small firm pricing.
+          <div className="mt-16 grid gap-4 lg:grid-cols-[1.35fr_0.65fr]">
+            <ProductShot />
+            <LandingAssistant />
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-[1280px] px-5 py-24 md:px-8">
+          <div className="mx-auto max-w-4xl text-center">
+            <h2 className="text-[42px] font-medium leading-[1.05] tracking-[-2.1px] text-white md:text-[58px] md:tracking-[-2.9px]">
+              A gallery for every decision your team makes.
             </h2>
-            <p className="text-gray-500">
-              You shouldn't need a $50,000 platform to run a professional deal operation.
-            </p>
           </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 pr-6 font-semibold text-gray-900 w-1/2">Feature</th>
-                  <th className="py-3 px-4 font-semibold text-gray-500 text-center">Spreadsheets</th>
-                  <th className="py-3 px-4 font-semibold text-gray-500 text-center">DealCloud</th>
-                  <th className="py-3 px-4 font-bold text-gray-900 text-center rounded-t-lg bg-blue-50">Dealstash</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  { feature: 'AI OM parsing & scoring',         spreadsheets: false, dealcloud: false, dealstash: true },
-                  { feature: 'Built for small teams',           spreadsheets: true,  dealcloud: false, dealstash: true },
-                  { feature: 'Under $200/month',                spreadsheets: true,  dealcloud: false, dealstash: true },
-                  { feature: 'Full decision history',           spreadsheets: false, dealcloud: true,  dealstash: true },
-                  { feature: 'Setup in minutes',                spreadsheets: true,  dealcloud: false, dealstash: true },
-                  { feature: 'No implementation fee',           spreadsheets: true,  dealcloud: false, dealstash: true },
-                  { feature: 'Firm deal inbox with AI intake',  spreadsheets: false, dealcloud: false, dealstash: true as boolean | 'soon' },
-                ].map(({ feature, spreadsheets, dealcloud, dealstash }, i) => (
-                  <tr key={feature} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
-                    <td className="py-3 pr-6 text-gray-700">{feature}</td>
-                    <td className="py-3 px-4 text-center">
-                      {spreadsheets
-                        ? <span className="text-green-500 font-bold">✓</span>
-                        : <span className="text-gray-300 font-bold">✗</span>}
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      {dealcloud
-                        ? <span className="text-green-500 font-bold">✓</span>
-                        : <span className="text-gray-300 font-bold">✗</span>}
-                    </td>
-                    <td className="py-3 px-4 text-center bg-blue-50">
-                      {dealstash === 'soon'
-                        ? <span className="text-blue-500 text-xs font-medium">✓ coming soon</span>
-                        : dealstash
-                          ? <span className="text-green-500 font-bold">✓</span>
-                          : <span className="text-gray-300 font-bold">✗</span>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      {/* ── SECTION 5: Founder Note ──────────────────────────────────────────── */}
-      <div className="border-t border-gray-100 py-14 md:py-20 px-4 md:px-8">
-        <div className="max-w-2xl mx-auto">
-          <div className="border-l-4 border-gray-200 pl-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Built from the inside.</h2>
-            <p className="text-gray-600 leading-relaxed mb-6">
-              I spent three summers interning at CRE firms — property management, commercial development, and net lease underwriting. Every single one had the same problem. Deals tracked in spreadsheets, OMs buried in email threads, and institutional memory that walked out the door whenever someone left. I built Dealstash because I kept watching good firms lose good deals to bad systems. This is the tool I wish those firms had.
-            </p>
-            <p className="text-sm font-semibold text-gray-900">— Jack Morgan, Founder</p>
-          </div>
-        </div>
-      </div>
-
-      {/* ── SECTION 6: Positioning Statement ────────────────────────────────── */}
-      <div className="bg-gray-900 text-white py-14 md:py-20 px-4 md:px-8">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-2xl md:text-3xl font-bold mb-6">
-            Built for the firm enterprise software ignores.
-          </h2>
-          <p className="text-gray-400 leading-relaxed text-base md:text-lg mb-10">
-            Enterprise CRE software is built for Blackstone. Dealstash is built for the 3–8 person investment team that closes real deals, moves fast, and doesn't have time to implement a $50,000 platform. Same AI capability. Built for your scale.
-          </p>
-          <Link href="/signup" className="inline-block bg-white text-gray-900 px-8 py-3 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors">
-            Get started free →
-          </Link>
-        </div>
-      </div>
-
-      {/* ── SECTION 7: Pricing ───────────────────────────────────────────────── */}
-      <div className="max-w-2xl mx-auto px-4 md:px-8 py-14 md:py-20 text-center">
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">Simple pricing. Serious software.</h2>
-        <p className="text-gray-500 mb-10">One plan. Everything included. No surprises.</p>
-        <div className="border border-gray-200 rounded-xl p-8 text-left">
-          <div className="flex items-start justify-between mb-6">
-            <div>
-              <p className="text-lg font-bold text-gray-900">Team</p>
-              <p className="text-sm text-gray-500 mt-1">For small investment teams</p>
-            </div>
-            <div className="text-right">
-              <p className="text-3xl font-bold text-gray-900">$149<span className="text-lg font-normal text-gray-500">/mo</span></p>
-              <p className="text-xs text-gray-400 mt-1">per firm</p>
-            </div>
-          </div>
-          <ul className="space-y-3 mb-8">
-            {[
-              'Unlimited deals',
-              'Unlimited team members',
-              'AI OM parsing & scoring',
-              'AI deal import with column mapping',
-              'Full decision log & audit trail',
-              'Financial snapshots',
-              'Graveyard & kill reason analytics',
-              'Contact & broker relationship tracking',
-              'Deal scoring & underwriting checklist',
-              'Weekly activity digest',
-            ].map(item => (
-              <li key={item} className="flex items-center gap-3 text-sm text-gray-700">
-                <span className="text-green-500 font-bold">✓</span>
-                {item}
-              </li>
+          <div className="mt-12 grid gap-4 md:grid-cols-2">
+            {features.map((feature) => (
+              <article
+                key={feature.title}
+                className="min-h-[330px] rounded-[10px] bg-[#202020] p-[19px] shadow-[rgba(0,0,0,0.35)_0px_10px_30px_0px,rgba(255,255,255,0.08)_0px_1px_0px_0px_inset]"
+              >
+                <div className="flex h-full flex-col justify-between">
+                  <span className="w-fit rounded-full bg-white/10 px-3 py-1 text-[10px] font-medium uppercase tracking-[0.08em] text-white">
+                    {feature.eyebrow}
+                  </span>
+                  <div>
+                    <h3 className="max-w-lg text-[32px] font-medium leading-[1.1] tracking-[-1.6px] text-white">
+                      {feature.title}
+                    </h3>
+                    <p className="mt-4 max-w-xl text-[15px] font-light leading-[1.5] tracking-[-0.3px] text-[#c0c0c0]">
+                      {feature.body}
+                    </p>
+                  </div>
+                </div>
+              </article>
             ))}
-            <li className="flex items-center gap-3 text-sm text-gray-500">
-              <span className="text-blue-400 font-bold">✓</span>
-              Firm deal inbox with AI intake
-            </li>
-          </ul>
-          <Link href="/signup" className="block w-full bg-gray-900 text-white text-center py-3 rounded-md text-sm font-semibold hover:bg-gray-800 transition-colors">
-            Start free for 30 days
-          </Link>
-          <p className="text-xs text-gray-400 text-center mt-3">No credit card required</p>
-        </div>
-      </div>
+          </div>
+        </section>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-100 px-4 md:px-8 py-6 text-center">
-        <p className="text-xs text-gray-400 mb-2">© 2026 Dealstash. Built for investment teams.</p>
-        <div className="flex items-center justify-center gap-4">
-          <Link href="/terms" className="text-xs text-gray-400 hover:text-gray-600">Terms of Service</Link>
-          <Link href="/privacy" className="text-xs text-gray-400 hover:text-gray-600">Privacy Policy</Link>
+        <section className="mx-auto grid max-w-[1280px] gap-4 px-5 py-24 md:px-8 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="flex flex-col justify-center">
+            <p className="mb-5 text-[11px] font-medium uppercase tracking-[0.08em] text-[#999999]">
+              Similar deals
+            </p>
+            <h2 className="text-[42px] font-medium leading-[1.05] tracking-[-2.1px] text-white md:text-[58px] md:tracking-[-2.9px]">
+              The next deal should know the last one.
+            </h2>
+            <p className="mt-6 max-w-[560px] text-[18px] font-light leading-[1.4] tracking-[-0.36px] text-[#c0c0c0]">
+              Dealstash turns your graveyard, notes, files, scores, broker history, and financial snapshots into a reference layer. New opportunities can be judged against what your firm has already seen.
+            </p>
+          </div>
+          <SimilarDealsShot />
+        </section>
+
+        <section className="mx-auto max-w-[1280px] px-5 py-24 md:px-8">
+          <div className="rounded-[10px] bg-[#202020] p-[19px] shadow-[rgba(0,0,0,0.35)_0px_10px_30px_0px,rgba(255,255,255,0.08)_0px_1px_0px_0px_inset]">
+            <div className="aspect-video rounded-[10px] border border-[#333333] bg-black p-6 md:p-10">
+              <div className="flex h-full flex-col items-center justify-center text-center">
+                <span className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-white text-[22px] text-black">
+                  ▶
+                </span>
+                <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#999999]">Demo video</p>
+                <h2 className="mt-4 max-w-3xl text-[42px] font-medium leading-[1.05] tracking-[-2.1px] text-white md:text-[58px] md:tracking-[-2.9px]">
+                  Watch an OM become a scored deal.
+                </h2>
+                <p className="mt-5 max-w-[560px] text-[15px] font-light leading-[1.5] tracking-[-0.3px] text-[#c0c0c0]">
+                  Placeholder for a Loom, Vimeo, or YouTube walkthrough. Until the final recording is ready, the live demo gives visitors the same product path.
+                </p>
+                <Link href="/demo" className="mt-8 rounded-full border border-white/50 px-6 py-4 text-[15px] font-medium tracking-[-0.3px] text-white transition hover:border-white">
+                  Open interactive demo
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-[1280px] px-5 py-24 md:px-8">
+          <div className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
+            <div>
+              <p className="mb-5 text-[11px] font-medium uppercase tracking-[0.08em] text-[#999999]">FAQ</p>
+              <h2 className="text-[42px] font-medium leading-[1.05] tracking-[-2.1px] text-white md:text-[58px] md:tracking-[-2.9px]">
+                Questions before the first forward.
+              </h2>
+            </div>
+            <div className="grid gap-3">
+              {faqs.map((faq) => (
+                <details key={faq.question} className="group rounded-[10px] border border-[#333333] bg-[#202020] p-5">
+                  <summary className="cursor-pointer list-none text-[18px] font-medium leading-[1.4] tracking-[-0.36px] text-white">
+                    <span className="flex items-center justify-between gap-4">
+                      {faq.question}
+                      <span className="text-[#999999] transition group-open:rotate-45">+</span>
+                    </span>
+                  </summary>
+                  <p className="mt-4 text-[15px] font-light leading-[1.5] tracking-[-0.3px] text-[#c0c0c0]">
+                    {faq.answer}
+                  </p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-[1280px] px-5 py-24 md:px-8">
+          <div className="rounded-[10px] bg-[#f5f5f0] px-6 py-16 text-center text-black md:px-12 md:py-24">
+            <p className="mb-5 text-[11px] font-medium uppercase tracking-[0.08em] text-[#333333]">
+              One plan, full workflow
+            </p>
+            <h2 className="mx-auto max-w-4xl text-[42px] font-medium leading-[1.05] tracking-[-2.1px] md:text-[58px] md:tracking-[-2.9px]">
+              Built for the firm enterprise software ignores.
+            </h2>
+            <p className="mx-auto mt-6 max-w-[620px] text-[18px] font-light leading-[1.4] tracking-[-0.36px] text-[#333333]">
+              $149 per month per firm. Unlimited deals, team members, AI intake, scoring, pipeline, contacts, graveyard, and decision history.
+            </p>
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+              <Link href="/signup" className="rounded-full bg-black px-6 py-4 text-[15px] font-medium tracking-[-0.3px] text-white shadow-[rgba(0,0,0,0.15)_0px_4px_20px_0px]">
+                Start free →
+              </Link>
+              <Link href="/demo" className="rounded-full border border-black/50 px-6 py-4 text-[15px] font-medium tracking-[-0.3px] text-black">
+                See demo
+              </Link>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="mx-auto flex max-w-[1280px] flex-col gap-4 px-5 py-10 text-center md:flex-row md:items-center md:justify-between md:px-8 md:text-left">
+        <Logo />
+        <div>
+          <p className="text-[12px] font-light leading-[1.5] tracking-[0.36px] text-[#999999]">
+            © 2026 Dealstash. Built for investment teams.
+          </p>
+          <div className="mt-2 flex items-center justify-center gap-4 md:justify-end">
+            <Link href="/terms" className="text-[12px] text-[#999999] hover:text-white">Terms</Link>
+            <Link href="/privacy" className="text-[12px] text-[#999999] hover:text-white">Privacy</Link>
+          </div>
         </div>
       </footer>
-
     </div>
   )
 }
