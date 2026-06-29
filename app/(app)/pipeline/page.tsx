@@ -58,9 +58,9 @@ export default async function PipelinePage() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-8 pt-8 pb-4">
-        <h1 className="text-xl font-semibold text-gray-900">Deal Pipeline</h1>
-        <p className="text-sm text-gray-500 mt-1">{deals.length} active deals</p>
+      <div className="px-12 pt-10 pb-4">
+        <h1 style={{ fontSize: '24px', fontWeight: 600, color: '#ededf3', marginBottom: '4px' }}>Deal Pipeline</h1>
+        <p style={{ fontSize: '14px', color: '#70707d' }}>{deals.length} active deals</p>
       </div>
       <div className="flex-1 overflow-hidden">
         <KanbanBoard

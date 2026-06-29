@@ -85,11 +85,11 @@ export default function ContactsPage() {
   }, [contacts, search, typeFilter])
 
   return (
-    <div className="max-w-5xl mx-auto px-8 py-12">
-      <div className="mb-8 flex items-start justify-between">
+    <div className="mx-auto max-w-[1200px] px-12 py-10">
+      <div className="mb-7 flex items-start justify-between">
         <div>
-          <h1 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--starlight)' }}>Contacts</h1>
-          <p style={{ fontSize: '13px', color: 'var(--lead)', marginTop: '3px' }}>{contacts.length} contacts</p>
+          <h1 style={{ fontSize: '24px', fontWeight: 600, color: '#ededf3', marginBottom: '4px' }}>Contacts</h1>
+          <p style={{ fontSize: '14px', color: '#70707d' }}>{contacts.length} contacts</p>
         </div>
         <button onClick={() => setShowCreate(true)} className="btn-primary">+ Add Contact</button>
       </div>

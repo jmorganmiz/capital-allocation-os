@@ -183,7 +183,7 @@ export default function KanbanBoard({
         onDragEnd={handleDragEnd}
         onDragCancel={() => setActiveId(null)}
       >
-        <div className="flex gap-4 px-4 md:px-8 pb-6 overflow-x-auto flex-1 items-start snap-x snap-mandatory md:snap-none">
+        <div className="flex gap-3 px-12 pb-6 overflow-x-auto flex-1 items-start">
           {activeStages.map(stage => (
             <DealColumn
               key={stage.id}

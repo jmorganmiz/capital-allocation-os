@@ -17,7 +17,7 @@ export default function DealColumn({ stage, deals, onKill, onMove }: Props) {
   const isTerminal = stage.name === 'Closed'
 
   return (
-    <div className="flex-shrink-0 w-[85vw] md:w-64 snap-start">
+    <div style={{ flexShrink: 0, minWidth: '260px', maxWidth: '280px', width: '260px' }}>
       {/* Column header */}
       <div className="flex items-center justify-between mb-3 px-1">
         <h3 style={{
