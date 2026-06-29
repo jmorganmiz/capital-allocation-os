@@ -31,14 +31,14 @@ function NavLinks({ onClick }: { onClick?: () => void }) {
             key={href}
             href={href}
             onClick={onClick}
-            className="flex items-center justify-between gap-2 px-3 py-2.5 text-sm transition-colors rounded-md"
+            className="flex items-center justify-between gap-2 px-3.5 py-2.5 text-sm transition-colors rounded-md"
             style={isActive ? {
               background: 'rgba(82,102,235,0.1)',
               color: 'var(--starlight)',
               fontWeight: 500,
               borderLeft: '2px solid var(--mercury-blue)',
-              paddingLeft: 'calc(0.75rem - 2px)',
-              borderRadius: '0 6px 6px 0',
+              paddingLeft: 'calc(0.875rem - 2px)',
+              borderRadius: '0 8px 8px 0',
             } : {
               color: 'var(--silver)',
             }}
@@ -108,7 +108,7 @@ export default function MobileSidebar({ firmName, userEmail }: Props) {
   return (
     <>
       {/* Desktop sidebar */}
-      <nav style={sidebarStyle} className="hidden md:flex w-52 flex-shrink-0 flex-col">
+      <nav style={sidebarStyle} className="hidden md:flex w-60 flex-shrink-0 flex-col">
         <div style={headerStyle}>
           <p style={{ fontSize: '10px', fontWeight: 600, color: 'var(--lead)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '3px' }}>
             Dealstash
@@ -116,11 +116,11 @@ export default function MobileSidebar({ firmName, userEmail }: Props) {
           <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--starlight)' }} className="truncate">{firmName}</p>
         </div>
 
-        <div className="flex-1 px-3 py-4 space-y-0.5">
+        <div className="flex-1 px-4 py-5 space-y-1">
           <button
             onClick={() => setShowSearch(true)}
             style={{ color: 'var(--lead)', fontSize: '13px' }}
-            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-md transition-colors mb-1"
+            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-md transition-colors mb-2"
             onMouseEnter={e => (e.currentTarget.style.background = 'rgba(39,39,53,0.65)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
           >

@@ -1042,6 +1042,10 @@ body {
   --app-shadow: 0 18px 50px rgba(0,0,0,0.26);
   background: var(--app-bg);
   color: var(--app-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: geometricPrecision;
+  font-synthesis-weight: none;
 }
 
 .app-root main {
@@ -1053,25 +1057,26 @@ body {
 
 .app-root .app-page {
   width: 100%;
-  max-width: 1520px;
+  max-width: 1240px;
   margin: 0 auto;
-  padding: 32px;
+  padding: 46px 40px 72px;
 }
 
 .app-root .app-page-wide {
   width: 100%;
-  padding: 32px;
+  max-width: none;
+  padding: 40px 40px 72px;
 }
 
 .app-root .app-page-narrow {
   width: 100%;
-  max-width: 1040px;
+  max-width: 920px;
   margin: 0 auto;
-  padding: 32px;
+  padding: 46px 40px 72px;
 }
 
 .app-root .app-page-header {
-  margin-bottom: 28px;
+  margin-bottom: 34px;
 }
 
 .app-root .app-eyebrow {
@@ -1084,18 +1089,25 @@ body {
 
 .app-root .app-title {
   color: var(--app-text);
-  font-size: clamp(24px, 2vw, 30px);
-  font-weight: 650;
-  letter-spacing: -0.035em;
+  font-size: clamp(30px, 2.4vw, 38px);
+  font-weight: 600;
+  letter-spacing: -0.04em;
   line-height: 1.1;
-  margin-top: 4px;
+  margin-top: 7px;
 }
 
 .app-root .app-subtitle {
   color: var(--app-faint);
-  font-size: 14px;
-  line-height: 1.5;
-  margin-top: 6px;
+  font-size: 15px;
+  line-height: 1.55;
+  margin-top: 8px;
+}
+
+.app-root .app-page > section,
+.app-root .app-page > .app-card,
+.app-root .app-page > .rounded-lg,
+.app-root .app-page > .rounded-xl {
+  max-width: 100%;
 }
 
 .app-root .app-workspace-grid {
@@ -1170,7 +1182,11 @@ body {
   .app-root .app-page,
   .app-root .app-page-wide,
   .app-root .app-page-narrow {
-    padding: 22px 16px;
+    padding: 28px 18px 48px;
+  }
+
+  .app-root .app-title {
+    font-size: 28px;
   }
 }
 
