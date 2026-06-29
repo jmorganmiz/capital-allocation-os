@@ -326,17 +326,19 @@ body {
   letter-spacing: 0.02em;
 }
 
-/* ── FLOATING UI CARDS ── */
-.floating-cards {
-  position: absolute;
-  inset: 0;
-  z-index: 5;
-  pointer-events: none;
+/* ── CARDS SHOWCASE ── */
+.cards-showcase {
+  background: #0d0d14;
+  border-top: 1px solid rgba(112,112,125,0.1);
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  padding: 32px 48px;
+  align-items: flex-start;
 }
 
-/* Pipeline card — left side over monitor */
 .fc {
-  position: absolute;
+  position: relative;
   background: rgba(30, 30, 42, 0.82);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -352,10 +354,10 @@ body {
 
 @keyframes floatUp { to { opacity:1; transform:translateY(0); } }
 
-.fc-pipeline { top: auto; bottom: 120px; left: 4%; width: 210px; animation-delay: 0.6s; }
-.fc-score    { top: auto; bottom: 180px; left: 50%; transform: translateX(-50%); width: 170px; animation-delay: 0.9s; text-align:center; }
-.fc-ai       { top: auto; bottom: 120px; right: 4%; width: 230px; animation-delay: 1.2s; }
-.fc-similar  { top: auto; bottom: 20px; left: 50%; transform: translateX(-50%); width: 260px; animation-delay: 1.5s; }
+.fc-pipeline { width: 210px; animation-delay: 0.6s; }
+.fc-score    { width: 170px; animation-delay: 0.9s; text-align:center; }
+.fc-ai       { width: 230px; animation-delay: 1.2s; }
+.fc-similar  { width: 260px; animation-delay: 1.5s; }
 
 .fc-label {
   font-size: 10px;
@@ -881,7 +883,8 @@ body {
   .nav-links::-webkit-scrollbar { display: none; }
   .nav-links a { font-size: 12px; white-space: nowrap; }
   .nav-btn { flex: 0 0 auto; font-size: 12px; padding: 8px 14px; white-space: nowrap; }
-  .floating-cards { display: none; }
+  .cards-showcase { flex-wrap: wrap; padding: 24px 20px; gap: 14px; }
+  .fc-pipeline, .fc-score, .fc-ai, .fc-similar { width: calc(50% - 7px); }
   .hero { min-height: 760px; }
   .hero-content { margin-top: 0; }
   .hero-ctas { flex-direction: column; }

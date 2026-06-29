@@ -2,11 +2,28 @@ import Link from 'next/link'
 
 export function Hero() {
   return (
-    <section className="hero" aria-labelledby="hero-title">
-      <div className="hero-bg" aria-hidden="true" />
-      <div className="hero-overlay" aria-hidden="true" />
+    <>
+      <section className="hero" aria-labelledby="hero-title">
+        <div className="hero-bg" aria-hidden="true" />
+        <div className="hero-overlay" aria-hidden="true" />
 
-      <div className="floating-cards" aria-hidden="true">
+        <div className="hero-content">
+          <div className="hero-eyebrow">Built for CRE acquisition teams</div>
+          <h1 id="hero-title">Your firm&apos;s deal memory,<br /><strong>finally organized.</strong></h1>
+          <p className="hero-sub">Broker sends an OM — it&apos;s parsed, scored, and in your pipeline automatically. Every deal your firm has ever touched, searchable in seconds.</p>
+          <div className="hero-ctas">
+            <Link className="btn-primary" href="/signup">Start free — no credit card</Link>
+            <a className="btn-ghost" href="#demo">Explore interactive demo</a>
+          </div>
+          <p className="hero-proof">$149 / mo · Unlimited users · Cancel anytime</p>
+        </div>
+
+        <div className="scroll-hint" aria-hidden="true">
+          <div className="scroll-line" />
+        </div>
+      </section>
+
+      <section className="cards-showcase" aria-label="Product UI preview">
         <div className="fc fc-pipeline">
           <div className="fc-label">Live pipeline</div>
           <div className="deal-row">
@@ -61,22 +78,7 @@ export function Hero() {
             ))}
           </div>
         </div>
-      </div>
-
-      <div className="hero-content">
-        <div className="hero-eyebrow">Built for CRE acquisition teams</div>
-        <h1 id="hero-title">Your firm&apos;s deal memory,<br /><strong>finally organized.</strong></h1>
-        <p className="hero-sub">Broker sends an OM — it&apos;s parsed, scored, and in your pipeline automatically. Every deal your firm has ever touched, searchable in seconds.</p>
-        <div className="hero-ctas">
-          <Link className="btn-primary" href="/signup">Start free — no credit card</Link>
-          <a className="btn-ghost" href="#demo">Explore interactive demo</a>
-        </div>
-        <p className="hero-proof">$149 / mo · Unlimited users · Cancel anytime</p>
-      </div>
-
-      <div className="scroll-hint" aria-hidden="true">
-        <div className="scroll-line" />
-      </div>
-    </section>
+      </section>
+    </>
   )
 }
