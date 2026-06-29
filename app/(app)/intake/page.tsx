@@ -51,7 +51,7 @@ export default async function IntakePage() {
         </div>
         <div className="flex gap-2">
           <Link href="/import/deals" className="btn-secondary">Import CSV</Link>
-          <Link href="/pipeline" className="btn-primary">Upload an OM</Link>
+          <Link href="/pipeline?upload=1" className="btn-primary">Upload an OM</Link>
         </div>
       </div>
 
@@ -70,19 +70,20 @@ export default async function IntakePage() {
         </div>
       )}
 
-      <div className="mt-10 grid gap-4 sm:grid-cols-3">
-        <div className="rounded-lg border border-gray-200 bg-white p-5">
-          <p className="text-2xl font-bold text-gray-900">{recentDeals?.length ?? 0}</p>
-          <p className="mt-1 text-sm text-gray-500">Recent emailed deals</p>
-        </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-5">
-          <p className="text-2xl font-bold text-gray-900">{(recentEvents ?? []).filter(event => event.status === 'processed').length}</p>
-          <p className="mt-1 text-sm text-gray-500">Emails processed</p>
-        </div>
-        <div className={`rounded-lg border p-5 ${failedCount ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-white'}`}>
-          <p className={`text-2xl font-bold ${failedCount ? 'text-red-700' : 'text-gray-900'}`}>{failedCount}</p>
-          <p className="mt-1 text-sm text-gray-500">Needs attention</p>
-        </div>
+      <div className="mt-8 grid gap-4 sm:grid-cols-3">
+        {[
+          { value: recentDeals?.length ?? 0, label: 'Recent emailed deals', alert: false },
+          { value: (recentEvents ?? []).filter(e => e.status === 'processed').length, label: 'Emails processed', alert: false },
+          { value: failedCount, label: 'Needs attention', alert: failedCount > 0 },
+        ].map(({ value, label, alert }) => (
+          <div key={label} className="rounded-lg p-5" style={{
+            background: alert ? 'rgba(248,113,113,0.06)' : 'var(--midnight-slate)',
+            border: alert ? '1px solid rgba(248,113,113,0.25)' : '1px solid rgba(112,112,125,0.18)',
+          }}>
+            <p style={{ fontSize: '28px', fontWeight: 700, color: alert ? '#f87171' : 'var(--starlight)', lineHeight: 1 }}>{value}</p>
+            <p style={{ fontSize: '12px', color: 'var(--lead)', marginTop: '6px' }}>{label}</p>
+          </div>
+        ))}
       </div>
 
       <section className="mt-12">
@@ -91,26 +92,38 @@ export default async function IntakePage() {
           <Link href="/pipeline" className="text-sm font-medium text-blue-600 hover:underline">View pipeline</Link>
         </div>
         {(recentDeals ?? []).length === 0 ? (
-          <div className="rounded-lg border border-dashed border-gray-200 px-6 py-12 text-center">
-            <p className="text-sm font-medium text-gray-700">No emailed deals yet</p>
-            <p className="mt-1 text-sm text-gray-400">Forward a broker email with a PDF OM to your firm inbox to test the workflow.</p>
+          <div className="rounded-lg px-6 py-12 text-center" style={{ border: '1px dashed rgba(112,112,125,0.25)' }}>
+            <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--silver)' }}>No emailed deals yet</p>
+            <p style={{ fontSize: '12px', color: 'var(--lead)', marginTop: '4px' }}>Forward a broker email with a PDF OM to your firm inbox to test the workflow.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+          <div className="overflow-x-auto rounded-lg" style={{ border: '1px solid rgba(112,112,125,0.18)' }}>
             <table className="w-full min-w-[680px] text-sm">
-              <thead className="border-b border-gray-200 bg-gray-50 text-left text-gray-600">
-                <tr><th className="px-5 py-4 font-medium">Deal</th><th className="px-5 py-4 font-medium">Stage</th><th className="px-5 py-4 font-medium">AI score</th><th className="px-5 py-4 font-medium">Received</th></tr>
+              <thead style={{ borderBottom: '1px solid rgba(112,112,125,0.15)', background: 'var(--graphite)' }}>
+                <tr>
+                  {['Deal', 'Stage', 'AI Score', 'Received'].map(h => (
+                    <th key={h} className="px-5 py-3 text-left font-medium" style={{ fontSize: '11px', color: 'var(--lead)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{h}</th>
+                  ))}
+                </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
-                {(recentDeals ?? []).map((deal: any) => {
+              <tbody>
+                {(recentDeals ?? []).map((deal: any, i: number) => {
                   const scores = (deal.deal_scores ?? []).map((row: any) => Number(row.score)).filter(Boolean)
                   const score = calculateOverallScore(scores)
                   return (
-                    <tr key={deal.id} className="hover:bg-gray-50">
-                      <td className="px-5 py-4"><Link href={`/deals/${deal.id}`} className="font-medium text-gray-900 hover:text-blue-700">{deal.title}</Link><p className="text-xs text-gray-400">{[deal.market, deal.deal_type].filter(Boolean).join(' · ') || 'Details pending review'}</p></td>
-                      <td className="px-5 py-4 text-gray-600">{deal.deal_stages?.name ?? 'Unstaged'}</td>
-                      <td className="px-5 py-4">{score === null ? <span className="text-amber-600">Pending</span> : <span className="font-semibold text-gray-900">{score}/100</span>}</td>
-                      <td className="px-5 py-4 text-gray-500">{formatDate(deal.created_at)}</td>
+                    <tr key={deal.id} style={{ borderTop: i > 0 ? '1px solid rgba(112,112,125,0.1)' : 'none', background: 'var(--midnight-slate)' }}>
+                      <td className="px-5 py-4">
+                        <Link href={`/deals/${deal.id}`} style={{ fontSize: '13px', fontWeight: 500, color: 'var(--starlight)' }} className="hover:opacity-70 transition-opacity">{deal.title}</Link>
+                        <p style={{ fontSize: '11px', color: 'var(--lead)', marginTop: '2px' }}>{[deal.market, deal.deal_type].filter(Boolean).join(' · ') || 'Details pending review'}</p>
+                      </td>
+                      <td className="px-5 py-4" style={{ fontSize: '13px', color: 'var(--silver)' }}>{deal.deal_stages?.name ?? 'Unstaged'}</td>
+                      <td className="px-5 py-4">
+                        {score === null
+                          ? <span style={{ fontSize: '12px', color: '#fbbf24' }}>Pending</span>
+                          : <span style={{ fontSize: '13px', fontWeight: 600, color: score >= 70 ? '#4ade80' : score >= 40 ? '#fbbf24' : '#f87171' }}>{score}/100</span>
+                        }
+                      </td>
+                      <td className="px-5 py-4" style={{ fontSize: '12px', color: 'var(--lead)' }}>{formatDate(deal.created_at)}</td>
                     </tr>
                   )
                 })}

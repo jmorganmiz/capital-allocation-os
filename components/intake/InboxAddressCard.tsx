@@ -12,17 +12,30 @@ export default function InboxAddressCard({ address }: { address: string }) {
   }
 
   return (
-    <div id="firm-inbox" className="rounded-xl border border-blue-200 bg-blue-50 p-5">
-      <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Your firm deal inbox</p>
-      <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center">
-        <code className="min-w-0 flex-1 overflow-x-auto rounded-md border border-blue-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900">
+    <div id="firm-inbox" className="rounded-xl p-5 mb-8" style={{
+      background: 'var(--midnight-slate)',
+      border: '1px solid rgba(82,102,235,0.3)',
+      borderLeft: '3px solid var(--mercury-blue)',
+    }}>
+      <p style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--mercury-blue)', marginBottom: '10px' }}>
+        Your Firm Deal Inbox
+      </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <code className="min-w-0 flex-1 overflow-x-auto rounded-md px-3 py-2" style={{
+          background: 'var(--graphite)',
+          border: '1px solid rgba(112,112,125,0.18)',
+          fontSize: '13px',
+          fontWeight: 600,
+          color: 'var(--starlight)',
+          fontFamily: 'ui-monospace, monospace',
+        }}>
           {address}
         </code>
         <button type="button" onClick={copyAddress} className="btn-primary whitespace-nowrap">
-          {copied ? 'Copied' : 'Copy address'}
+          {copied ? 'Copied ✓' : 'Copy address'}
         </button>
       </div>
-      <p className="mt-3 text-sm leading-relaxed text-blue-900/70">
+      <p style={{ marginTop: '10px', fontSize: '12px', lineHeight: 1.6, color: 'var(--lead)' }}>
         Forward broker emails with PDF offering memorandums here. Dealstash extracts the details, scores the deal, stores the OM, and adds it to your first pipeline stage.
       </p>
     </div>
