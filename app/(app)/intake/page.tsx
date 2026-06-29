@@ -43,7 +43,7 @@ export default async function IntakePage() {
   const failedCount = (recentEvents ?? []).filter(event => event.status === 'failed').length
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-12 sm:px-8">
+    <div className="mx-auto max-w-5xl px-8 py-12">
       <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold text-gray-900">Intake</h1>

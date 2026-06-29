@@ -118,7 +118,8 @@ export default function DealCard({ deal, stage, onKill, onMove }: Props) {
             </span>
           )}
           {deal.owner && (
-            <div className="w-5 h-5 rounded-full bg-gray-800 text-white text-xs flex items-center justify-center font-medium"
+            <div className="w-5 h-5 rounded-full text-white text-xs flex items-center justify-center font-medium"
+                 style={{ background: 'var(--mercury-blue)' }}
                  title={deal.owner.full_name ?? ''}>
               {initials(deal.owner.full_name)}
             </div>

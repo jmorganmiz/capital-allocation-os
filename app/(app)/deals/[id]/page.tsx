@@ -103,8 +103,29 @@ export default async function DealPage({ params }: Props) {
           />
         )}
 
+        {/* Deal Info */}
+        <DealInfo deal={deal} />
+
+        {/* Financials */}
+        <section id="section-financials">
+          <FinancialSnapshot
+            dealId={deal.id}
+            firmId={deal.firm_id}
+            snapshots={snapshots ?? []}
+          />
+        </section>
+
+        {/* Scoring */}
+        <section id="section-scoring">
+          <ScoringSection
+            dealId={deal.id}
+            criteria={(scoringCriteriaResult.criteria ?? []) as any}
+            initialScores={(dealScoresResult.scores ?? []) as any}
+          />
+        </section>
+
         {/* Notes */}
-        <section id="section-notes" className="order-4 space-y-6">
+        <section id="section-notes" className="space-y-6">
           <NotesSection
             dealId={deal.id}
             section="overview"
@@ -128,29 +149,8 @@ export default async function DealPage({ params }: Props) {
           />
         </section>
 
-        {/* Deal Info */}
-        <div className="order-2"><DealInfo deal={deal} /></div>
-
-        {/* Financials */}
-        <section id="section-financials" className="order-3">
-          <FinancialSnapshot
-            dealId={deal.id}
-            firmId={deal.firm_id}
-            snapshots={snapshots ?? []}
-          />
-        </section>
-
-        {/* Scoring */}
-        <section id="section-scoring" className="order-3">
-          <ScoringSection
-            dealId={deal.id}
-            criteria={(scoringCriteriaResult.criteria ?? []) as any}
-            initialScores={(dealScoresResult.scores ?? []) as any}
-          />
-        </section>
-
         {/* Files */}
-        <section id="section-files" className="order-5">
+        <section id="section-files">
           <FilesSection
             dealId={deal.id}
             files={files ?? []}
@@ -158,7 +158,7 @@ export default async function DealPage({ params }: Props) {
         </section>
 
         {/* Contacts */}
-        <section id="section-contacts" className="order-6">
+        <section id="section-contacts">
           <ContactsSection
             dealId={deal.id}
             initialDealContacts={(dealContacts ?? []) as any}
@@ -166,7 +166,7 @@ export default async function DealPage({ params }: Props) {
         </section>
 
         {/* Activity */}
-        <section id="section-activity" className="order-7">
+        <section id="section-activity">
           <DecisionLog events={events ?? []} snapshots={snapshots ?? []} />
         </section>
       </div>
