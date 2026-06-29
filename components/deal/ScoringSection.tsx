@@ -124,7 +124,7 @@ export default function ScoringSection({ dealId, criteria, initialScores }: Prop
             <p className="text-xs text-gray-500 mt-0.5">out of 100</p>
           </div>
           <div className="flex-1">
-            <div className="h-2 bg-white/60 rounded-full overflow-hidden border border-gray-200">
+            <div className="h-2 bg-gray-100 rounded-full overflow-hidden border border-gray-200">
               <div
                 className={`h-full rounded-full transition-all ${
                   overall < 40 ? 'bg-red-500' : overall < 70 ? 'bg-amber-400' : 'bg-green-500'

@@ -61,8 +61,8 @@ export default function NotesSection({ dealId, section, title, initialContent, p
                    focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y
                    placeholder:text-gray-400 font-mono leading-relaxed
                    ${isEmpty
-                     ? 'border-2 border-dashed border-blue-300 bg-blue-50/30'
-                     : 'border border-gray-200'
+                     ? 'border-2 border-dashed border-blue-300 bg-blue-50'
+                     : 'border border-gray-200 bg-gray-100'
                    }`}
       />
     </section>
