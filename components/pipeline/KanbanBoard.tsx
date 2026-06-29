@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useMemo } from 'react'
+import { useState, useTransition, useMemo, useEffect, useRef } from 'react'
 import {
   DndContext,
   DragEndEvent,
@@ -44,6 +44,16 @@ export default function KanbanBoard({
   dealProgress,
 }: Props) {
   const [deals, setDeals] = useState(initialDeals)
+  const isMounted = useRef(false)
+
+  // Sync server-provided deals into local state on every navigation (soft nav
+  // can deliver new initialDeals props without unmounting this component).
+  useEffect(() => {
+    if (!isMounted.current) { isMounted.current = true; return }
+    setDeals(initialDeals)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialDeals])
+
   const [activeId, setActiveId] = useState<string | null>(null)
   const [killTarget, setKillTarget] = useState<Deal | null>(null)
   const [moveTarget, setMoveTarget] = useState<Deal | null>(null)

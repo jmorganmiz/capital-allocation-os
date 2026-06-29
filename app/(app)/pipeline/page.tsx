@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import KanbanBoard from '@/components/pipeline/KanbanBoard'
 import { calculateOverallScore } from '@/lib/workflow.mjs'
 
+export const dynamic = 'force-dynamic'
+
 export default async function PipelinePage() {
   const supabase = await createClient()
 
