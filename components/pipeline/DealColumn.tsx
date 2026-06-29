@@ -15,9 +15,16 @@ export default function DealColumn({ stage, deals, onKill, onMove }: Props) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.id })
 
   const isTerminal = stage.name === 'Closed'
+  const emptyCopy = stage.name === 'New'
+    ? 'New deals land here'
+    : stage.name === 'Screening'
+    ? 'Ready for first pass'
+    : stage.name === 'Closed'
+    ? 'Won deals appear here'
+    : 'Drag deals here'
 
   return (
-    <div className="flex-shrink-0 w-[85vw] md:w-72 snap-start">
+    <div className="flex-shrink-0 w-[85vw] md:w-80 snap-start">
       {/* Column header */}
       <div className="flex items-center justify-between mb-3 px-1">
         <h3 style={{
@@ -45,7 +52,7 @@ export default function DealColumn({ stage, deals, onKill, onMove }: Props) {
       {/* Drop zone */}
       <div
         ref={setNodeRef}
-        className="min-h-24 rounded-lg transition-colors space-y-2 p-2"
+        className="min-h-[360px] rounded-xl transition-colors space-y-2 p-2.5"
         style={{
           background: isOver ? 'rgba(82,102,235,0.08)' : 'rgba(30,30,42,0.64)',
           border: isOver
@@ -55,8 +62,8 @@ export default function DealColumn({ stage, deals, onKill, onMove }: Props) {
         }}
       >
         {deals.length === 0 ? (
-          <div style={{ fontSize: '12px', color: 'var(--lead)', textAlign: 'center', padding: '24px 0' }}>
-            <span className="hidden md:block">Drop deals here</span>
+          <div className="flex min-h-[330px] items-center justify-center rounded-lg" style={{ border: '1px dashed rgba(112,112,125,0.16)', background: 'rgba(12,12,20,0.18)', fontSize: '12px', color: 'var(--lead)', textAlign: 'center', padding: '24px' }}>
+            <span className="hidden md:block">{emptyCopy}</span>
             <span className="md:hidden">No deals</span>
           </div>
         ) : (

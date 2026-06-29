@@ -31,21 +31,21 @@ export default function SetupChecklist({
   const pct = (completeCount / items.length) * 100
 
   return (
-    <section className="mb-8 rounded-xl p-5" style={{ background: 'var(--midnight-slate)', border: '1px solid rgba(112,112,125,0.28)', boxShadow: 'var(--card-shadow)' }}>
-      <div className="mb-4 flex items-center justify-between">
+    <section className="rounded-xl p-6" style={{ background: 'var(--midnight-slate)', border: '1px solid rgba(112,112,125,0.22)', boxShadow: 'var(--card-shadow)' }}>
+      <div className="mb-5 flex items-center justify-between gap-4">
         <div>
-          <h2 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--starlight)' }}>Set up your workspace</h2>
-          <p style={{ fontSize: '11px', color: 'var(--lead)', marginTop: '2px' }}>{completeCount} of {items.length} complete</p>
+          <h2 style={{ fontSize: '16px', fontWeight: 650, color: 'var(--starlight)', letterSpacing: '-0.02em' }}>Set up your workspace</h2>
+          <p style={{ fontSize: '12px', color: 'var(--lead)', marginTop: '4px' }}>{completeCount} of {items.length} complete</p>
         </div>
-        <div className="rounded-full overflow-hidden" style={{ width: '80px', height: '4px', background: 'rgba(112,112,125,0.2)' }}>
+        <div className="rounded-full overflow-hidden" style={{ width: '110px', height: '5px', background: 'rgba(112,112,125,0.2)' }}>
           <div style={{ width: `${pct}%`, height: '100%', background: 'var(--mercury-blue)', borderRadius: '999px', transition: 'width 0.3s ease' }} />
         </div>
       </div>
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2">
         {items.map(item => (
           <div
             key={item.label}
-            className="rounded-lg p-3"
+            className="rounded-xl p-4"
             style={{
               background: item.complete ? 'rgba(34,197,94,0.06)' : 'var(--graphite)',
               border: item.complete ? '1px solid rgba(34,197,94,0.18)' : '1px solid rgba(112,112,125,0.15)',
@@ -62,7 +62,7 @@ export default function SetupChecklist({
               >
                 {item.complete ? '✓' : '·'}
               </span>
-              <div>
+              <div className="min-w-0">
                 <p style={{ fontSize: '13px', fontWeight: 500, color: item.complete ? 'var(--silver)' : 'var(--starlight)' }}>{item.label}</p>
                 <p style={{ fontSize: '11px', color: 'var(--lead)', marginTop: '2px', lineHeight: 1.5 }}>{item.description}</p>
                 {!item.complete && (
