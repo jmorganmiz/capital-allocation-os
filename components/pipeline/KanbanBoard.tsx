@@ -29,7 +29,7 @@ interface PendingMove {
 
 interface Props {
   initialStages: DealStage[]
-  initialDeals: (Deal & { owner?: { full_name: string | null } | null, latest_stage_event_at?: string | null })[]
+  initialDeals: (Deal & { owner?: { full_name: string | null } | null, latest_stage_event_at?: string | null, hasNotes?: boolean, score?: number | null, asking_price?: number | null, unit_count?: number | null })[]
   killReasons: KillReason[]
   currentUserId: string
   checklistItems: Pick<StageChecklistItem, 'id' | 'stage_id' | 'name' | 'position'>[]
