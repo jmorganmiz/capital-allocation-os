@@ -19,7 +19,7 @@ export default function ChecklistWarningModal({
 }: Props) {
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl">
+      <div className="app-modal rounded-lg p-6 w-full max-w-md shadow-xl">
         <div className="flex items-start gap-3 mb-4">
           <div className="mt-0.5 flex-shrink-0 w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center">
             <svg className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

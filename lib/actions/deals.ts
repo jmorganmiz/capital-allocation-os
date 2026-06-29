@@ -4,6 +4,19 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { autoScoreDeal } from '@/lib/actions/scoring'
 
+function parseSourceContact(sourceName: string) {
+  const raw = sourceName.trim()
+  if (!raw) return null
+
+  const slashParts = raw.split('/').map(part => part.trim()).filter(Boolean)
+  if (slashParts.length >= 2) return { company: slashParts[0], name: slashParts.slice(1).join(' / ') }
+
+  const dashParts = raw.split(/[–—-]/).map(part => part.trim()).filter(Boolean)
+  if (dashParts.length >= 2) return { name: dashParts[0], company: dashParts.slice(1).join(' - ') }
+
+  return { name: raw, company: null }
+}
+
 export async function createDeal(formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -48,6 +61,48 @@ export async function createDeal(formData: FormData) {
 
   if (error) return { error: error.message }
 
+  const sourceType = (formData.get('source_type') as string) || ''
+  const sourceName = (formData.get('source_name') as string) || ''
+  const parsedSource = sourceType.toLowerCase() === 'broker' ? parseSourceContact(sourceName) : null
+
+  if (parsedSource) {
+    const { data: existingContact } = await supabase
+      .from('contacts')
+      .select('id')
+      .eq('firm_id', profile.firm_id)
+      .eq('name', parsedSource.name)
+      .maybeSingle()
+
+    let contactId = existingContact?.id ?? null
+
+    if (!contactId) {
+      const { data: newContact, error: contactError } = await supabase
+        .from('contacts')
+        .insert({
+          firm_id: profile.firm_id,
+          name: parsedSource.name,
+          company: parsedSource.company,
+          contact_type: 'broker',
+          created_by: user.id,
+        })
+        .select('id')
+        .single()
+
+      if (!contactError) contactId = newContact?.id ?? null
+      else console.error('[createDeal] broker contact insert failed:', contactError.message)
+    }
+
+    if (contactId) {
+      const { error: linkError } = await supabase.from('deal_contacts').insert({
+        deal_id: deal.id,
+        contact_id: contactId,
+        firm_id: profile.firm_id,
+        is_source: true,
+      })
+      if (linkError) console.error('[createDeal] broker contact link failed:', linkError.message)
+    }
+  }
+
   await supabase.from('deal_events').insert({
     firm_id:       profile.firm_id,
     deal_id:       deal.id,
@@ -61,7 +116,59 @@ export async function createDeal(formData: FormData) {
   console.log('[createDeal] autoScoreDeal result:', JSON.stringify(scoreResult))
 
   revalidatePath('/pipeline')
+  revalidatePath('/contacts')
   return { deal, scoreResult }
+}
+
+export async function reactivateDeal(dealId: string): Promise<void> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+
+  const { data: profile } = await supabase
+    .from('profiles').select('firm_id').single()
+  if (!profile) return
+
+  const [{ data: deal }, { data: firstActiveStage }] = await Promise.all([
+    supabase
+      .from('deals')
+      .select('id, stage_id')
+      .eq('id', dealId)
+      .eq('firm_id', profile.firm_id)
+      .maybeSingle(),
+    supabase
+      .from('deal_stages')
+      .select('id')
+      .eq('firm_id', profile.firm_id)
+      .neq('name', 'Killed')
+      .order('position', { ascending: true })
+      .limit(1)
+      .maybeSingle(),
+  ])
+
+  if (!deal || !firstActiveStage) return
+
+  const { error } = await supabase
+    .from('deals')
+    .update({ is_archived: false, archived_at: null, stage_id: firstActiveStage.id })
+    .eq('id', dealId)
+    .eq('firm_id', profile.firm_id)
+
+  if (error) return
+
+  await supabase.from('deal_events').insert({
+    firm_id: profile.firm_id,
+    deal_id: dealId,
+    event_type: 'stage_changed',
+    from_stage_id: deal.stage_id,
+    to_stage_id: firstActiveStage.id,
+    notes: 'Reactivated from Graveyard',
+    actor_user_id: user.id,
+  })
+
+  revalidatePath('/pipeline')
+  revalidatePath('/graveyard')
+  revalidatePath(`/deals/${dealId}`)
 }
 
 export async function updateDealStage(

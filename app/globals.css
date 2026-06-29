@@ -1015,6 +1015,41 @@ body {
 .cookie-banner p { color: var(--silver); flex: 1; font-size: 12px; line-height: 1.5; }
 .cookie-banner a { color: var(--ghost-blue); }
 .cookie-banner button { background: var(--mercury-blue); border: none; border-radius: 999px; color: var(--white); cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 700; padding: 9px 14px; }
+.cookie-actions { display: flex; gap: 8px; }
+.cookie-banner .cookie-decline { background: transparent; border: 1px solid rgba(112,112,125,0.35); color: var(--silver); }
+
+/* App modal dark surface normalization */
+.app-modal {
+  background: var(--midnight-slate) !important;
+  border: 1px solid rgba(112,112,125,0.2);
+  color: var(--starlight);
+  box-shadow: var(--card-shadow);
+}
+.app-modal h1,
+.app-modal h2,
+.app-modal h3,
+.app-modal .text-gray-900,
+.app-modal .text-gray-800,
+.app-modal .text-gray-700 { color: var(--starlight) !important; }
+.app-modal label,
+.app-modal .text-gray-600,
+.app-modal .text-gray-500 { color: var(--silver) !important; }
+.app-modal .text-gray-400 { color: var(--lead) !important; }
+.app-modal .input-base,
+.app-modal input,
+.app-modal select,
+.app-modal textarea {
+  background: #171721 !important;
+  border-color: rgba(112,112,125,0.28) !important;
+  color: var(--starlight) !important;
+}
+.app-modal input::placeholder,
+.app-modal textarea::placeholder { color: var(--lead) !important; }
+.app-modal .border-gray-100,
+.app-modal .divide-gray-100 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(112,112,125,0.14) !important; }
+.app-modal .bg-gray-50,
+.app-modal .hover\:bg-gray-50:hover,
+.app-modal .hover\:bg-blue-50:hover { background: rgba(39,39,53,0.7) !important; }
 
 @media (max-width: 900px) {
   .landing-page > nav { gap: 14px; height: auto; min-height: 64px; padding: 10px 16px; }
@@ -1051,6 +1086,7 @@ body {
   .hero h1 { font-size: 42px; }
   .hero-sub { font-size: 16px; }
   .cookie-banner { align-items: stretch; flex-direction: column; }
+  .cookie-actions { display: grid; grid-template-columns: 1fr 1fr; }
 }
 .reveal {
   opacity: 0;

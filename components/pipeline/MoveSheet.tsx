@@ -13,7 +13,7 @@ export default function MoveSheet({ deal, stages, onMove, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={onClose}>
       <div
-        className="bg-white rounded-t-2xl shadow-2xl w-full max-w-lg mx-auto"
+        className="app-modal rounded-t-2xl shadow-2xl w-full max-w-lg mx-auto"
         onClick={e => e.stopPropagation()}
       >
         {/* Handle */}

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import { reactivateDeal } from '@/lib/actions/deals'
 
 interface SearchParams {
   q?: string
@@ -103,6 +104,7 @@ export default async function GraveyardPage({ searchParams }: { searchParams: Se
                 <th style={th}>Market</th>
                 <th style={th}>Kill Reason</th>
                 <th style={th}>Killed</th>
+                <th style={th}>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -133,6 +135,13 @@ export default async function GraveyardPage({ searchParams }: { searchParams: Se
                     {deal.archived_at
                       ? new Date(deal.archived_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                       : '—'}
+                  </td>
+                  <td style={{ padding: '14px 20px' }}>
+                    <form action={reactivateDeal.bind(null, deal.id)}>
+                      <button type="submit" className="btn-secondary" style={{ fontSize: '12px', padding: '7px 12px' }}>
+                        Reactivate
+                      </button>
+                    </form>
                   </td>
                 </tr>
               ))}

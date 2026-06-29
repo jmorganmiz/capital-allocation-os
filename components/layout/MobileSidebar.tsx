@@ -25,12 +25,13 @@ function NavLinks({ onClick }: { onClick?: () => void }) {
     <>
       {navLinks.map(({ href, label }) => {
         const isActive = pathname.startsWith(href)
+        const isSettings = href === '/settings'
         return (
           <Link
             key={href}
             href={href}
             onClick={onClick}
-            className="block px-3 py-2.5 text-sm transition-colors rounded-md"
+            className="flex items-center justify-between gap-2 px-3 py-2.5 text-sm transition-colors rounded-md"
             style={isActive ? {
               background: 'rgba(82,102,235,0.1)',
               color: 'var(--starlight)',
@@ -42,7 +43,14 @@ function NavLinks({ onClick }: { onClick?: () => void }) {
               color: 'var(--silver)',
             }}
           >
-            {label}
+            <span>{label}</span>
+            {isSettings && (
+              <span
+                aria-label="Workspace setup items live in Settings"
+                title="Settings includes workspace setup: buy box, stages, kill reasons, scoring, billing, and team."
+                style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#fbbf24', flexShrink: 0 }}
+              />
+            )}
           </Link>
         )
       })}
@@ -112,7 +120,9 @@ export default function MobileSidebar({ firmName, userEmail }: Props) {
           <button
             onClick={() => setShowSearch(true)}
             style={{ color: 'var(--lead)', fontSize: '13px' }}
-            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-md transition-colors mb-1 hover:bg-gray-100"
+            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-md transition-colors mb-1"
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(39,39,53,0.65)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
           >
             <SearchIcon />
             <span className="flex-1 text-left">Search</span>
@@ -125,7 +135,7 @@ export default function MobileSidebar({ firmName, userEmail }: Props) {
           <p style={{ fontSize: '12px', color: 'var(--lead)' }} className="truncate">{userEmail}</p>
           <form action="/auth/signout" method="post">
             <button type="submit" style={{ fontSize: '12px', color: 'var(--lead)', marginTop: '4px' }}
-                    className="hover:text-gray-500 transition-colors">
+                    className="transition-colors">
               Sign out
             </button>
           </form>
@@ -140,7 +150,7 @@ export default function MobileSidebar({ firmName, userEmail }: Props) {
           <button
             onClick={() => setShowSearch(true)}
             style={{ color: 'var(--lead)' }}
-            className="p-2 rounded-md hover:bg-gray-100"
+            className="p-2 rounded-md"
             aria-label="Search"
           >
             <SearchIcon />
@@ -148,7 +158,7 @@ export default function MobileSidebar({ firmName, userEmail }: Props) {
           <button
             onClick={() => setOpen(true)}
             style={{ color: 'var(--lead)' }}
-            className="p-2 rounded-md hover:bg-gray-100"
+            className="p-2 rounded-md"
             aria-label="Open menu"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -173,7 +183,7 @@ export default function MobileSidebar({ firmName, userEmail }: Props) {
               <button
                 onClick={() => setOpen(false)}
                 style={{ color: 'var(--lead)' }}
-                className="p-1.5 rounded-md hover:bg-gray-100"
+                className="p-1.5 rounded-md"
                 aria-label="Close menu"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -190,7 +200,7 @@ export default function MobileSidebar({ firmName, userEmail }: Props) {
               <p style={{ fontSize: '12px', color: 'var(--lead)' }} className="truncate">{userEmail}</p>
               <form action="/auth/signout" method="post">
                 <button type="submit" style={{ fontSize: '12px', color: 'var(--lead)', marginTop: '4px' }}
-                        className="hover:text-gray-500 transition-colors">
+                        className="transition-colors">
                   Sign out
                 </button>
               </form>

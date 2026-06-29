@@ -61,7 +61,7 @@ export default function SearchModal({ onClose }: Props) {
   return (
     <div className="fixed inset-0 bg-black/40 flex items-start justify-center z-50 pt-[15vh]" onClick={onClose}>
       <div
-        className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4"
+        className="app-modal rounded-lg shadow-xl w-full max-w-lg mx-4"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
