@@ -61,9 +61,14 @@ export default async function PipelinePage() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-8 pt-8 pb-4">
-        <h1 className="text-xl font-semibold text-gray-900">Deal Pipeline</h1>
-        <p className="text-sm text-gray-500 mt-1">{deals.length} active deals</p>
+      <div className="px-8 pt-8 pb-5">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--mercury-blue)' }}>Pipeline</p>
+            <h1 className="mt-1 text-2xl font-semibold text-gray-900">Deal Pipeline</h1>
+            <p className="text-sm text-gray-500 mt-1">{deals.length} active deal{deals.length === 1 ? '' : 's'} across your firm workflow</p>
+          </div>
+        </div>
       </div>
       <div className="flex-1 overflow-hidden">
         <KanbanBoard

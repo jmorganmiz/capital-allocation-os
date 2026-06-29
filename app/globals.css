@@ -1019,6 +1019,200 @@ body {
 .cookie-banner .cookie-decline { background: transparent; border: 1px solid rgba(112,112,125,0.35); color: var(--silver); }
 
 /* App modal dark surface normalization */
+
+/* ── AUTHENTICATED APP DESIGN SYSTEM ── */
+.app-root {
+  --app-bg: #0c0c14;
+  --app-panel: #171721;
+  --app-card: #1e1e2a;
+  --app-card-hover: #242434;
+  --app-elevated: #272735;
+  --app-border: rgba(112,112,125,0.2);
+  --app-border-soft: rgba(112,112,125,0.12);
+  --app-text: #ededf3;
+  --app-muted: #c3c3cc;
+  --app-faint: #70707d;
+  --app-blue: #5266eb;
+  --app-shadow: 0 18px 50px rgba(0,0,0,0.26);
+  background: var(--app-bg);
+  color: var(--app-text);
+}
+
+.app-root main {
+  background:
+    radial-gradient(circle at top left, rgba(82,102,235,0.08), transparent 34rem),
+    var(--app-bg);
+}
+
+.app-root .text-gray-950,
+.app-root .text-gray-900,
+.app-root .text-gray-800,
+.app-root .text-gray-700 { color: var(--app-text) !important; }
+.app-root .text-gray-600,
+.app-root .text-gray-500 { color: var(--app-muted) !important; }
+.app-root .text-gray-400,
+.app-root .text-gray-300 { color: var(--app-faint) !important; }
+
+.app-root .bg-white,
+.app-root .bg-gray-50,
+.app-root .bg-gray-100 {
+  background-color: var(--app-card) !important;
+}
+
+.app-root .border-gray-100,
+.app-root .border-gray-200,
+.app-root .border-gray-300,
+.app-root .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+.app-root .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--app-border-soft) !important;
+}
+
+.app-root .shadow-xl,
+.app-root .shadow-2xl,
+.app-root .shadow-sm {
+  box-shadow: var(--app-shadow) !important;
+}
+
+.app-root .input-base,
+.app-root input:not([type='checkbox']):not([type='radio']),
+.app-root select,
+.app-root textarea {
+  background: var(--app-panel) !important;
+  border: 1px solid var(--app-border) !important;
+  color: var(--app-text) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+
+.app-root .input-base::placeholder,
+.app-root input::placeholder,
+.app-root textarea::placeholder { color: var(--app-faint) !important; }
+
+.app-root input:focus,
+.app-root select:focus,
+.app-root textarea:focus,
+.app-root .input-base:focus {
+  border-color: rgba(82,102,235,0.65) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(82,102,235,0.14) !important;
+}
+
+.app-root .btn-primary {
+  background: var(--app-blue) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(82,102,235,0.55) !important;
+  border-radius: 999px !important;
+  font-weight: 600 !important;
+}
+
+.app-root .btn-primary:hover { opacity: 0.9; }
+
+.app-root .btn-secondary {
+  background: rgba(82,102,235,0.1) !important;
+  color: var(--ghost-blue) !important;
+  border: 1px solid rgba(82,102,235,0.28) !important;
+  border-radius: 999px !important;
+  font-weight: 600 !important;
+}
+
+.app-root .btn-secondary:hover { background: rgba(82,102,235,0.16) !important; }
+
+.app-root .btn-ghost {
+  color: var(--app-muted) !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  border-radius: 999px !important;
+}
+
+.app-root .btn-ghost:hover {
+  color: var(--app-text) !important;
+  background: rgba(39,39,53,0.7) !important;
+  border-color: var(--app-border-soft) !important;
+}
+
+.app-root .btn-danger,
+.app-root .btn-danger-outline {
+  border-radius: 999px !important;
+}
+
+.app-root table {
+  color: var(--app-muted);
+}
+
+.app-root thead,
+.app-root tbody,
+.app-root tr,
+.app-root td,
+.app-root th {
+  border-color: var(--app-border-soft) !important;
+}
+
+.app-root tbody tr:hover {
+  background: rgba(39,39,53,0.65) !important;
+}
+
+.app-root h1,
+.app-root h2,
+.app-root h3 {
+  letter-spacing: -0.015em;
+}
+
+.app-root main > div > div:first-child h1,
+.app-root main > div > div:first-child .text-xl,
+.app-root main > div > div:first-child .text-2xl {
+  color: var(--app-text) !important;
+}
+
+.app-root main > div > div:first-child p,
+.app-root main > div > div:first-child .text-sm {
+  color: var(--app-faint) !important;
+}
+
+.app-root .rounded-lg,
+.app-root .rounded-xl,
+.app-root .rounded-2xl {
+  border-radius: 12px;
+}
+
+.app-root .hover\:bg-gray-50:hover,
+.app-root .hover\:bg-gray-100:hover,
+.app-root .hover\:bg-blue-50:hover,
+.app-root .active\:bg-blue-100:active {
+  background: var(--app-card-hover) !important;
+}
+
+.app-root .bg-blue-50,
+.app-root .bg-blue-100 {
+  background: rgba(82,102,235,0.14) !important;
+}
+
+.app-root .text-blue-600,
+.app-root .text-blue-500 { color: var(--ghost-blue) !important; }
+
+.app-root .bg-red-50 { background: rgba(239,68,68,0.12) !important; }
+.app-root .text-red-700,
+.app-root .text-red-600,
+.app-root .text-red-500 { color: #f87171 !important; }
+.app-root .border-red-200 { border-color: rgba(239,68,68,0.24) !important; }
+
+.app-root .bg-amber-50,
+.app-root .bg-amber-100 { background: rgba(245,158,11,0.12) !important; }
+.app-root .text-amber-800,
+.app-root .text-amber-600 { color: #fbbf24 !important; }
+.app-root .border-amber-200 { border-color: rgba(245,158,11,0.24) !important; }
+
+.app-root .animate-pulse.bg-gray-100,
+.app-root .animate-pulse.bg-gray-200 {
+  background: linear-gradient(90deg, var(--app-card), var(--app-elevated), var(--app-card)) !important;
+}
+
+.app-root .app-section,
+.app-root .app-card {
+  background: var(--app-card);
+  border: 1px solid var(--app-border);
+  border-radius: 12px;
+  box-shadow: var(--app-shadow);
+}
 .app-modal {
   background: var(--midnight-slate) !important;
   border: 1px solid rgba(112,112,125,0.2);

@@ -70,15 +70,15 @@ export default function DealTabs() {
   }
 
   return (
-    <div className="sticky top-0 z-20 bg-white border-b border-gray-100 -mx-8 px-8 mb-10">
+    <div className="sticky top-0 z-20 -mx-8 px-8 pt-3 pb-3 mb-8" style={{ background: 'rgba(12,12,20,0.86)', backdropFilter: 'blur(14px)', borderBottom: '1px solid rgba(112,112,125,0.14)' }}>
       <div className="flex gap-2 overflow-x-auto scrollbar-none">
         {TABS.map(tab => (
           <button
             key={tab.id}
             onClick={() => scrollTo(tab.id)}
-            className={`px-3.5 py-3.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors rounded-t-md
+            className={`px-3.5 py-2.5 text-sm font-medium whitespace-nowrap border transition-colors rounded-full
               ${active === tab.id
-                ? 'border-gray-900 text-gray-900'
+                ? 'border-blue-500/40 text-gray-900 bg-blue-50'
                 : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-200'
               }`}
           >

@@ -352,7 +352,7 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-lg shadow-xl">
+      <div className="app-modal bg-white rounded-lg p-6 w-full max-w-lg shadow-xl">
         <h2 className="text-lg font-semibold text-gray-900 mb-1">Upload Offering Memorandum</h2>
         <p className="text-sm text-gray-500 mb-5">Upload a PDF to create a new deal or attach to an existing one.</p>
 

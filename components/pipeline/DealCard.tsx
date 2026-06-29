@@ -68,16 +68,16 @@ export default function DealCard({ deal, stage, onKill, onMove }: Props) {
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      className={`group rounded-lg p-3 select-none md:cursor-grab md:active:cursor-grabbing ${isDragging ? 'opacity-50' : ''}`}
+      className={`group rounded-lg p-3.5 select-none cursor-pointer md:cursor-grab md:active:cursor-grabbing ${isDragging ? 'opacity-50' : ''}`}
       style={{
         ...style,
-        background: 'var(--graphite)',
-        border: '1px solid rgba(112,112,125,0.2)',
-        boxShadow: 'var(--card-shadow)',
+        background: 'linear-gradient(180deg, rgba(39,39,53,0.98), rgba(30,30,42,0.98))',
+        border: '1px solid rgba(112,112,125,0.18)',
+        boxShadow: '0 10px 30px rgba(0,0,0,0.18)',
         transition: 'border-color 0.15s, background 0.15s',
       }}
-      onMouseEnter={e => { if (!isDragging) e.currentTarget.style.borderColor = 'rgba(82,102,235,0.35)' }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(112,112,125,0.2)' }}
+      onMouseEnter={e => { if (!isDragging) e.currentTarget.style.borderColor = 'rgba(82,102,235,0.38)' }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(112,112,125,0.18)' }}
       onClick={() => router.push(`/deals/${deal.id}`)}
     >
       {/* Title + score badge row */}

@@ -23,7 +23,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const userEmail = user.email ?? ''
 
   return (
-    <div className="flex h-screen" style={{ background: '#0c0c14' }}>
+    <div className="app-root flex h-screen" style={{ background: '#0c0c14' }}>
       <MobileSidebar firmName={firmName} userEmail={userEmail} />
       <main className="flex-1 overflow-auto md:pt-0 pt-14">
         <AccessGate trialEndsAt={trialEndsAt} subscriptionStatus={subscriptionStatus}>

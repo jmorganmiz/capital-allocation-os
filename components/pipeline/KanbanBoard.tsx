@@ -158,7 +158,7 @@ export default function KanbanBoard({
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex flex-col gap-3 px-4 pb-3 md:flex-row md:items-center md:justify-between md:px-8">
+      <div className="flex flex-col gap-3 px-4 pb-4 md:flex-row md:items-center md:justify-between md:px-8">
         <div className="flex flex-wrap gap-2">
           <input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search pipeline..." className="input-base w-full sm:w-48" />
           <select value={ownerFilter} onChange={event => setOwnerFilter(event.target.value)} className="input-base w-36">
@@ -186,7 +186,7 @@ export default function KanbanBoard({
         onDragEnd={handleDragEnd}
         onDragCancel={() => setActiveId(null)}
       >
-        <div className="flex gap-4 px-4 md:px-8 pb-6 overflow-x-auto flex-1 items-start snap-x snap-mandatory md:snap-none">
+        <div className="flex gap-4 px-4 md:px-8 pb-8 overflow-x-auto flex-1 items-start snap-x snap-mandatory md:snap-none">
           {activeStages.map(stage => (
             <DealColumn
               key={stage.id}

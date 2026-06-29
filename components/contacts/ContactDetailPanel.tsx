@@ -76,7 +76,7 @@ export default function ContactDetailPanel({
   return (
     <>
       <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50">
-        <div className="bg-white rounded-t-xl sm:rounded-xl w-full sm:max-w-lg shadow-xl max-h-[90vh] flex flex-col">
+        <div className="app-modal bg-white rounded-t-xl sm:rounded-xl w-full sm:max-w-lg shadow-xl max-h-[90vh] flex flex-col">
           {/* Header */}
           <div className="flex items-start justify-between px-6 pt-6 pb-4 border-b border-gray-100">
             <div>
