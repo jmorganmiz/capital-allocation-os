@@ -66,12 +66,12 @@ export default async function SettingsPage({ searchParams }: Props) {
   return (
     <div className="max-w-2xl mx-auto px-8 py-12 space-y-14">
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">Settings</h1>
-        <p className="text-sm text-gray-500 mt-1">Manage your workspace configuration.</p>
+        <h1 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--starlight)' }}>Settings</h1>
+        <p style={{ fontSize: '13px', color: 'var(--lead)', marginTop: '3px' }}>Manage your workspace configuration.</p>
       </div>
 
       {success === 'true' && (
-        <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm text-green-700 font-medium">
+        <div className="rounded-lg px-4 py-3" style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', fontSize: '13px', color: '#4ade80', fontWeight: 500 }}>
           You're subscribed! Welcome to Dealstash Team.
         </div>
       )}

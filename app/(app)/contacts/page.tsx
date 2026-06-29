@@ -16,10 +16,10 @@ interface Contact {
   deal_count: number
 }
 
-const TYPE_COLORS: Record<string, string> = {
-  broker: 'bg-blue-50 text-blue-700',
-  seller: 'bg-green-50 text-green-700',
-  lender: 'bg-purple-50 text-purple-700',
+const TYPE_STYLE: Record<string, { bg: string; border: string; color: string }> = {
+  broker: { bg: 'rgba(82,102,235,0.1)', border: '1px solid rgba(82,102,235,0.22)', color: 'var(--ghost-blue)' },
+  seller: { bg: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', color: '#4ade80' },
+  lender: { bg: 'rgba(147,51,234,0.08)', border: '1px solid rgba(147,51,234,0.2)', color: '#c084fc' },
 }
 
 const TYPES: { value: ContactType | ''; label: string }[] = [
@@ -28,6 +28,15 @@ const TYPES: { value: ContactType | ''; label: string }[] = [
   { value: 'seller', label: 'Seller' },
   { value: 'lender', label: 'Lender' },
 ]
+
+const th = {
+  fontSize: '11px' as const,
+  fontWeight: 600,
+  color: 'var(--lead)',
+  letterSpacing: '0.07em',
+  textTransform: 'uppercase' as const,
+  padding: '10px 20px',
+}
 
 export default function ContactsPage() {
   const [contacts, setContacts] = useState<Contact[]>([])
@@ -79,15 +88,13 @@ export default function ContactsPage() {
     <div className="max-w-5xl mx-auto px-8 py-12">
       <div className="mb-8 flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Contacts</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{contacts.length} contacts</p>
+          <h1 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--starlight)' }}>Contacts</h1>
+          <p style={{ fontSize: '13px', color: 'var(--lead)', marginTop: '3px' }}>{contacts.length} contacts</p>
         </div>
-        <button onClick={() => setShowCreate(true)} className="btn-primary">
-          + Add Contact
-        </button>
+        <button onClick={() => setShowCreate(true)} className="btn-primary">+ Add Contact</button>
       </div>
 
-      <div className="flex gap-3 mb-8 flex-wrap">
+      <div className="flex gap-3 mb-6 flex-wrap">
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
@@ -104,79 +111,70 @@ export default function ContactsPage() {
           ))}
         </select>
         {(search || typeFilter) && (
-          <button
-            onClick={() => { setSearch(''); setTypeFilter('') }}
-            className="btn-ghost"
-          >
-            Clear
-          </button>
+          <button onClick={() => { setSearch(''); setTypeFilter('') }} className="btn-ghost">Clear</button>
         )}
       </div>
 
       {loading ? (
-        <div className="text-center text-gray-400 py-16 text-sm">Loading…</div>
+        <div className="text-center py-16" style={{ fontSize: '13px', color: 'var(--lead)' }}>Loading…</div>
       ) : filtered.length === 0 ? (
-        <div className="text-center text-gray-400 py-16 text-sm">
-          {contacts.length === 0 ? 'No contacts yet. Add your first contact.' : 'No contacts match your filters.'}
+        <div className="rounded-lg py-16 text-center" style={{ border: '1px dashed rgba(112,112,125,0.25)' }}>
+          <p style={{ fontSize: '13px', color: 'var(--lead)' }}>
+            {contacts.length === 0 ? 'No contacts yet. Add your first contact.' : 'No contacts match your filters.'}
+          </p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-gray-200">
+        <div className="rounded-lg overflow-hidden" style={{ border: '1px solid rgba(112,112,125,0.2)', boxShadow: 'var(--card-shadow)' }}>
           <table className="w-full min-w-[760px] text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead style={{ background: 'var(--graphite)', borderBottom: '1px solid rgba(112,112,125,0.15)' }}>
               <tr>
-                <th className="text-left px-5 py-4 font-medium text-gray-600">Name</th>
-                <th className="text-left px-5 py-4 font-medium text-gray-600">Type</th>
-                <th className="text-left px-5 py-4 font-medium text-gray-600">Company</th>
-                <th className="text-left px-5 py-4 font-medium text-gray-600">Email</th>
-                <th className="text-left px-5 py-4 font-medium text-gray-600">Phone</th>
-                <th className="text-left px-5 py-4 font-medium text-gray-600">Deals</th>
+                <th style={{ ...th, textAlign: 'left' }}>Name</th>
+                <th style={{ ...th, textAlign: 'left' }}>Type</th>
+                <th style={{ ...th, textAlign: 'left' }}>Company</th>
+                <th style={{ ...th, textAlign: 'left' }}>Email</th>
+                <th style={{ ...th, textAlign: 'left' }}>Phone</th>
+                <th style={{ ...th, textAlign: 'left' }}>Deals</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
-              {filtered.map(contact => (
-                <tr
-                  key={contact.id}
-                  onClick={() => handleRowClick(contact)}
-                  className="hover:bg-gray-50 cursor-pointer"
-                >
-                  <td className="px-5 py-4 font-medium text-gray-900">{contact.name}</td>
-                  <td className="px-5 py-4">
-                    {contact.contact_type ? (
-                      <span className={`text-xs px-2 py-0.5 rounded font-medium capitalize ${TYPE_COLORS[contact.contact_type] ?? ''}`}>
-                        {contact.contact_type}
-                      </span>
-                    ) : (
-                      <span className="text-gray-400">—</span>
-                    )}
-                  </td>
-                  <td className="px-5 py-4 text-gray-600">{contact.company ?? '—'}</td>
-                  <td className="px-5 py-4 text-gray-600">
-                    {contact.email ? (
-                      <a
-                        href={`mailto:${contact.email}`}
-                        onClick={e => e.stopPropagation()}
-                        className="text-blue-600 hover:underline"
-                      >
-                        {contact.email}
-                      </a>
-                    ) : '—'}
-                  </td>
-                  <td className="px-5 py-4 text-gray-600">{contact.phone ?? '—'}</td>
-                  <td className="px-5 py-4 text-gray-600">{contact.deal_count}</td>
-                </tr>
-              ))}
+            <tbody>
+              {filtered.map((contact, i) => {
+                const ts = contact.contact_type ? TYPE_STYLE[contact.contact_type] : null
+                return (
+                  <tr
+                    key={contact.id}
+                    onClick={() => handleRowClick(contact)}
+                    className="cursor-pointer transition-colors"
+                    style={{ borderTop: i > 0 ? '1px solid rgba(112,112,125,0.1)' : 'none', background: 'var(--midnight-slate)' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--graphite)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'var(--midnight-slate)')}
+                  >
+                    <td style={{ padding: '14px 20px', fontSize: '13px', fontWeight: 500, color: 'var(--starlight)' }}>{contact.name}</td>
+                    <td style={{ padding: '14px 20px' }}>
+                      {ts ? (
+                        <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.04em', background: ts.bg, border: ts.border, color: ts.color, borderRadius: '999px', padding: '3px 8px', textTransform: 'capitalize' }}>
+                          {contact.contact_type}
+                        </span>
+                      ) : <span style={{ color: 'var(--lead)', fontSize: '13px' }}>—</span>}
+                    </td>
+                    <td style={{ padding: '14px 20px', fontSize: '13px', color: 'var(--silver)' }}>{contact.company ?? '—'}</td>
+                    <td style={{ padding: '14px 20px', fontSize: '13px' }}>
+                      {contact.email ? (
+                        <a href={`mailto:${contact.email}`} onClick={e => e.stopPropagation()} style={{ color: 'var(--mercury-blue)' }}>{contact.email}</a>
+                      ) : <span style={{ color: 'var(--lead)' }}>—</span>}
+                    </td>
+                    <td style={{ padding: '14px 20px', fontSize: '13px', color: 'var(--silver)' }}>{contact.phone ?? '—'}</td>
+                    <td style={{ padding: '14px 20px', fontSize: '13px', color: 'var(--lead)' }}>{contact.deal_count}</td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
       )}
 
       {showCreate && (
-        <CreateContactModal
-          onClose={() => setShowCreate(false)}
-          onSaved={handleCreated}
-        />
+        <CreateContactModal onClose={() => setShowCreate(false)} onSaved={handleCreated} />
       )}
-
       {selectedContact && (
         <ContactDetailPanel
           contact={selectedContact}
