@@ -70,7 +70,7 @@ export default function DealTabs() {
   }
 
   return (
-    <div className="sticky top-0 z-20 bg-white border-b border-gray-100 -mx-8 px-8 mb-10">
+    <div className="sticky top-0 z-20 border-b border-gray-100 -mx-12 px-12 mb-6" style={{ background: 'var(--deep-space)' }}>
       <div className="flex gap-0 overflow-x-auto scrollbar-none">
         {TABS.map(tab => (
           <button

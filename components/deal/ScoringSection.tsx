@@ -93,7 +93,7 @@ export default function ScoringSection({ dealId, criteria, initialScores }: Prop
   return (
     <section>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Scoring</h2>
+        <h2 style={{ fontSize: '11px', fontWeight: 700, color: 'var(--lead)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Scoring</h2>
         {overall !== null && (
           <div className="flex items-center gap-3">
             <span style={{ fontSize: '11px', color: 'var(--lead)' }}>{scoredCount}/{activeCriteria.length} scored</span>

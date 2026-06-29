@@ -88,17 +88,17 @@ export default function DealHeader({ deal, stages, killReasons, firmUsers }: Pro
 
   return (
     <div>
-      <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-        <Link href="/pipeline" className="hover:text-gray-700">Pipeline</Link>
+      <div className="flex items-center gap-2 mb-4" style={{ fontSize: '13px', color: 'var(--silver)' }}>
+        <Link href="/pipeline" style={{ color: 'var(--silver)' }} className="hover:opacity-80 transition-opacity">Pipeline</Link>
         <span>/</span>
-        <span className="text-gray-800">{deal.title}</span>
+        <span style={{ color: 'var(--starlight)' }}>{deal.title}</span>
       </div>
 
       <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
-          <h1 className="text-2xl font-semibold text-gray-900">{deal.title}</h1>
+          <h1 style={{ fontSize: '24px', fontWeight: 600, color: 'var(--starlight)', letterSpacing: '-0.01em', lineHeight: 1.2, marginBottom: '8px' }}>{deal.title}</h1>
 
-          <div className="flex items-center gap-3 mt-2 text-sm text-gray-500 flex-wrap">
+          <div className="flex items-center gap-3 flex-wrap" style={{ fontSize: '13px', color: 'var(--silver)' }}>
             {/* Address — inline editable */}
             {editingAddress ? (
               <input
@@ -150,7 +150,7 @@ export default function DealHeader({ deal, stages, killReasons, firmUsers }: Pro
 
         <div className="flex items-center gap-3 flex-wrap justify-end">
           <div className="flex items-center gap-2">
-            <label className="text-xs text-gray-500">Owner</label>
+            <label style={{ fontSize: '11px', color: 'var(--lead)' }}>Owner</label>
             <select
               value={ownerId}
               onChange={e => handleOwnerChange(e.target.value)}

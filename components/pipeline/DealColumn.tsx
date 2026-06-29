@@ -47,10 +47,10 @@ export default function DealColumn({ stage, deals, onKill, onMove }: Props) {
         ref={setNodeRef}
         className="min-h-24 rounded-lg transition-colors space-y-2 p-1.5"
         style={{
-          background: isOver ? 'rgba(82,102,235,0.06)' : 'rgba(112,112,125,0.04)',
+          background: isOver ? 'rgba(82,102,235,0.08)' : 'rgba(30,30,42,0.55)',
           border: isOver
             ? '1px solid rgba(82,102,235,0.3)'
-            : '1px solid rgba(112,112,125,0.1)',
+            : '1px solid rgba(112,112,125,0.15)',
         }}
       >
         {deals.length === 0 ? (

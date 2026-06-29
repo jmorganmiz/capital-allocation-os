@@ -56,27 +56,18 @@ export default function DealCard({ deal, stage, onKill, onMove }: Props) {
   const timeColor = staleColor(deal.latest_stage_event_at)
   const score = deal.score ?? null
 
-  const scoreStyle = score === null ? null : score >= 70
-    ? { bg: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)', color: '#4ade80' }
-    : score >= 45
-    ? { bg: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)', color: '#fbbf24' }
-    : { bg: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)', color: '#f87171' }
+  const scoreClass = score === null ? null
+    : score >= 70 ? 'score-pill score-good'
+    : score >= 45 ? 'score-pill score-mid'
+    : 'score-pill score-low'
 
   return (
     <div
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      className={`group rounded-lg p-3 select-none md:cursor-grab md:active:cursor-grabbing ${isDragging ? 'opacity-50' : ''}`}
-      style={{
-        ...style,
-        background: 'var(--graphite)',
-        border: '1px solid rgba(112,112,125,0.2)',
-        boxShadow: 'var(--card-shadow)',
-        transition: 'border-color 0.15s, background 0.15s',
-      }}
-      onMouseEnter={e => { if (!isDragging) e.currentTarget.style.borderColor = 'rgba(82,102,235,0.35)' }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(112,112,125,0.2)' }}
+      className={`kanban-card group select-none md:cursor-grab md:active:cursor-grabbing${isDragging ? ' opacity-50' : ''}`}
+      style={{ ...style, marginBottom: 0 }}
     >
       {/* Title + score badge row */}
       <div className="flex items-start justify-between gap-2 mb-1.5">
@@ -91,16 +82,7 @@ export default function DealCard({ deal, stage, onKill, onMove }: Props) {
           {deal.title}
         </Link>
         <div className="flex items-center gap-1.5 flex-shrink-0">
-          {scoreStyle && (
-            <span style={{
-              fontSize: '11px', fontWeight: 700,
-              background: scoreStyle.bg, border: scoreStyle.border,
-              color: scoreStyle.color,
-              borderRadius: '999px', padding: '2px 7px',
-            }}>
-              {score}
-            </span>
-          )}
+          {scoreClass && <span className={scoreClass}>{score}</span>}
           <button
             onPointerDown={e => e.stopPropagation()}
             onClick={e => { e.preventDefault(); e.stopPropagation(); onKill(deal) }}
@@ -118,19 +100,7 @@ export default function DealCard({ deal, stage, onKill, onMove }: Props) {
         {deal.market && (
           <span style={{ fontSize: '12px', color: 'var(--silver)' }}>{deal.market}</span>
         )}
-        {deal.deal_type && (
-          <span style={{
-            fontSize: '10px', fontWeight: 600,
-            color: 'var(--ghost-blue)',
-            background: 'rgba(82,102,235,0.12)',
-            border: '1px solid rgba(82,102,235,0.22)',
-            borderRadius: '999px',
-            padding: '2px 7px',
-            letterSpacing: '0.03em',
-          }}>
-            {deal.deal_type}
-          </span>
-        )}
+        {deal.deal_type && <span className="asset-tag">{deal.deal_type}</span>}
       </div>
 
       {/* Price + units */}
