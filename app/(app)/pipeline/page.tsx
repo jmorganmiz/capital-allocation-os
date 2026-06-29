@@ -65,7 +65,7 @@ export default async function PipelinePage() {
       <div className="flex-1 overflow-hidden">
         <KanbanBoard
           initialStages={stages ?? []}
-          initialDeals={deals ?? []}
+          initialDeals={(deals ?? []) as any}
           killReasons={killReasons ?? []}
           currentUserId={user?.id ?? ''}
           checklistItems={checklistItems ?? []}
