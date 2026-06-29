@@ -64,7 +64,7 @@ export default async function SettingsPage({ searchParams }: Props) {
   ])
 
   return (
-    <div className="mx-auto max-w-[1200px] px-12 py-10 space-y-14">
+    <div className="mx-auto max-w-[1100px] px-12 py-10 space-y-14">
       <div>
         <h1 style={{ fontSize: '24px', fontWeight: 600, color: '#ededf3', marginBottom: '4px' }}>Settings</h1>
         <p style={{ fontSize: '14px', color: '#70707d' }}>Manage your workspace configuration.</p>

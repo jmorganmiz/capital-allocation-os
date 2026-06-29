@@ -49,7 +49,7 @@ export default async function GraveyardPage({ searchParams }: { searchParams: Se
   })
 
   return (
-    <div className="mx-auto max-w-[1200px] px-12 py-10">
+    <div className="mx-auto max-w-[1100px] px-12 py-10">
       <div className="mb-7">
         <h1 style={{ fontSize: '24px', fontWeight: 600, color: '#ededf3', marginBottom: '4px' }}>Graveyard</h1>
         <p style={{ fontSize: '14px', color: '#70707d' }}>{filtered.length} killed deals</p>

@@ -85,7 +85,7 @@ export default function ContactsPage() {
   }, [contacts, search, typeFilter])
 
   return (
-    <div className="mx-auto max-w-[1200px] px-12 py-10">
+    <div className="mx-auto max-w-[1100px] px-12 py-10">
       <div className="mb-7 flex items-start justify-between">
         <div>
           <h1 style={{ fontSize: '24px', fontWeight: 600, color: '#ededf3', marginBottom: '4px' }}>Contacts</h1>

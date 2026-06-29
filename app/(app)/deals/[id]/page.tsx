@@ -126,7 +126,7 @@ export default async function DealPage({ params }: Props) {
   const hasAnyNotes = (notes ?? []).some(n => n.content?.trim().length > 0)
 
   return (
-    <div className="mx-auto max-w-[1200px] px-12 py-10">
+    <div className="mx-auto max-w-[1100px] px-12 py-10">
       <DealHeader
         deal={deal}
         stages={stages ?? []}

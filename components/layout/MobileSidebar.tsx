@@ -55,8 +55,8 @@ function NavLinks({ onClick, trialDaysLeft }: { onClick?: () => void; trialDaysL
                 title={`${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'} remaining`}
                 style={{
                   width: '6px', height: '6px', borderRadius: '50%',
-                  background: '#fbbf24', flexShrink: 0,
-                  boxShadow: '0 0 4px rgba(251,191,36,0.5)',
+                  background: '#fbbf24', display: 'inline-block',
+                  marginLeft: '8px', verticalAlign: 'middle', flexShrink: 0,
                 }}
               />
             )}
@@ -95,19 +95,22 @@ export default function MobileSidebar({ firmName, userEmail, trialEndsAt, subscr
 
   const sidebarContent = (isDrawer = false, onClose?: () => void) => (
     <>
-      {/* Firm name */}
+      {/* Branding */}
       <div style={{
-        padding: '0 20px 24px',
+        padding: '24px 20px 16px',
         borderBottom: '1px solid rgba(112,112,125,0.12)',
         marginBottom: '12px',
         flexShrink: 0,
         display: 'flex',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         justifyContent: 'space-between',
       }}>
-        <p style={{ fontSize: '15px', fontWeight: 600, color: '#ededf3', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {firmName}
-        </p>
+        <div>
+          <p style={{ fontSize: '18px', fontWeight: 600, color: '#ededf3', lineHeight: 1 }}>
+            deal<span style={{ color: '#5266eb' }}>stash</span>
+          </p>
+          <p style={{ fontSize: '12px', color: '#70707d', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '140px' }}>{firmName}</p>
+        </div>
         {isDrawer && (
           <button onClick={onClose} style={{ color: '#70707d', background: 'none', border: 'none', cursor: 'pointer', padding: '2px', flexShrink: 0 }} aria-label="Close menu">
             <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">

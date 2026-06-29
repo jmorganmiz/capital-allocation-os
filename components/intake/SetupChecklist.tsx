@@ -31,42 +31,42 @@ export default function SetupChecklist({
   const pct = (completeCount / items.length) * 100
 
   return (
-    <section className="mb-8 rounded-xl p-5" style={{ background: 'var(--midnight-slate)', border: '1px solid rgba(112,112,125,0.28)', boxShadow: 'var(--card-shadow)' }}>
-      <div className="mb-4 flex items-center justify-between">
+    <section style={{ background: '#1e1e2a', border: '1px solid rgba(112,112,125,0.18)', borderRadius: '8px', padding: '24px', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
         <div>
-          <h2 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--starlight)' }}>Set up your workspace</h2>
-          <p style={{ fontSize: '11px', color: 'var(--lead)', marginTop: '2px' }}>{completeCount} of {items.length} complete</p>
+          <h2 style={{ fontSize: '13px', fontWeight: 600, color: '#ededf3' }}>Set up your workspace</h2>
+          <p style={{ fontSize: '11px', color: '#70707d', marginTop: '2px' }}>{completeCount} of {items.length} complete</p>
         </div>
-        <div className="rounded-full overflow-hidden" style={{ width: '80px', height: '4px', background: 'rgba(112,112,125,0.2)' }}>
-          <div style={{ width: `${pct}%`, height: '100%', background: 'var(--mercury-blue)', borderRadius: '999px', transition: 'width 0.3s ease' }} />
+        <div style={{ width: '80px', height: '4px', background: 'rgba(112,112,125,0.2)', borderRadius: '999px', overflow: 'hidden' }}>
+          <div style={{ width: `${pct}%`, height: '100%', background: '#5266eb', borderRadius: '999px', transition: 'width 0.3s ease' }} />
         </div>
       </div>
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
         {items.map(item => (
           <div
             key={item.label}
-            className="rounded-lg p-3"
             style={{
-              background: item.complete ? 'rgba(34,197,94,0.06)' : 'var(--graphite)',
-              border: item.complete ? '1px solid rgba(34,197,94,0.18)' : '1px solid rgba(112,112,125,0.15)',
+              borderRadius: '6px',
+              padding: '12px 16px',
+              background: item.complete ? 'rgba(34,197,94,0.06)' : '#272735',
+              border: item.complete ? '1px solid rgba(34,197,94,0.15)' : '1px solid rgba(112,112,125,0.15)',
             }}
           >
-            <div className="flex items-start gap-3">
-              <span
-                className="mt-0.5 flex-shrink-0 flex items-center justify-center rounded-full"
-                style={{
-                  width: '18px', height: '18px', fontSize: '10px', fontWeight: 700,
-                  background: item.complete ? 'rgba(34,197,94,0.9)' : 'rgba(112,112,125,0.2)',
-                  color: item.complete ? '#fff' : 'var(--lead)',
-                }}
-              >
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+              <span style={{
+                width: '18px', height: '18px', fontSize: '10px', fontWeight: 700,
+                background: item.complete ? 'rgba(34,197,94,0.9)' : 'rgba(112,112,125,0.2)',
+                color: item.complete ? '#fff' : '#70707d',
+                borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0, marginTop: '1px',
+              }}>
                 {item.complete ? '✓' : '·'}
               </span>
               <div>
-                <p style={{ fontSize: '13px', fontWeight: 500, color: item.complete ? 'var(--silver)' : 'var(--starlight)' }}>{item.label}</p>
-                <p style={{ fontSize: '11px', color: 'var(--lead)', marginTop: '2px', lineHeight: 1.5 }}>{item.description}</p>
+                <p style={{ fontSize: '13px', fontWeight: 500, color: item.complete ? '#c3c3cc' : '#ededf3' }}>{item.label}</p>
+                <p style={{ fontSize: '11px', color: '#70707d', marginTop: '2px', lineHeight: 1.5 }}>{item.description}</p>
                 {!item.complete && (
-                  <Link href={item.href} style={{ display: 'inline-block', marginTop: '6px', fontSize: '11px', fontWeight: 600, color: 'var(--mercury-blue)' }}>
+                  <Link href={item.href} style={{ display: 'inline-block', marginTop: '6px', fontSize: '11px', fontWeight: 600, color: '#5266eb' }}>
                     {item.action} →
                   </Link>
                 )}
