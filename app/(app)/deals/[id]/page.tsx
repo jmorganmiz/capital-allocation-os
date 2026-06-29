@@ -126,7 +126,7 @@ export default async function DealPage({ params }: Props) {
   const hasAnyNotes = (notes ?? []).some(n => n.content?.trim().length > 0)
 
   return (
-    <div className="max-w-6xl mx-auto px-8 py-10">
+    <div className="app-page">
       <DealHeader
         deal={deal}
         stages={stages ?? []}
@@ -137,7 +137,7 @@ export default async function DealPage({ params }: Props) {
 
       <DealTabs />
 
-      <div className="flex gap-8 mt-2 items-start">
+      <div className="app-workspace-grid mt-2">
         {/* ── Main content column ── */}
         <div className="flex-1 min-w-0 flex flex-col gap-10">
           {(checklistItems ?? []).length > 0 && currentStage && !deal.is_archived && (
@@ -183,7 +183,7 @@ export default async function DealPage({ params }: Props) {
         </div>
 
         {/* ── Similar deals sidebar ── */}
-        <div className="hidden lg:block w-64 flex-shrink-0">
+        <div className="hidden lg:block">
           <div className="sticky top-8">
             <div className="mb-3 flex items-center justify-between">
               <h3 style={{ fontSize: '11px', fontWeight: 600, color: 'var(--lead)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>

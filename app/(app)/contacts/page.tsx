@@ -85,11 +85,12 @@ export default function ContactsPage() {
   }, [contacts, search, typeFilter])
 
   return (
-    <div className="max-w-5xl mx-auto px-8 py-12">
-      <div className="mb-8 flex items-start justify-between">
+    <div className="app-page">
+      <div className="app-page-header flex items-start justify-between gap-4">
         <div>
-          <h1 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--starlight)' }}>Contacts</h1>
-          <p style={{ fontSize: '13px', color: 'var(--lead)', marginTop: '3px' }}>{contacts.length} contacts</p>
+          <p className="app-eyebrow">Network</p>
+          <h1 className="app-title">Contacts</h1>
+          <p className="app-subtitle">{contacts.length} contacts tied to brokers, sellers, lenders, and deals.</p>
         </div>
         <button onClick={() => setShowCreate(true)} className="btn-primary">+ Add Contact</button>
       </div>

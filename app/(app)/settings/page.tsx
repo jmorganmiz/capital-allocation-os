@@ -64,10 +64,11 @@ export default async function SettingsPage({ searchParams }: Props) {
   ])
 
   return (
-    <div className="max-w-2xl mx-auto px-8 py-12 space-y-14">
-      <div>
-        <h1 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--starlight)' }}>Settings</h1>
-        <p style={{ fontSize: '13px', color: 'var(--lead)', marginTop: '3px' }}>Manage your workspace configuration.</p>
+    <div className="app-page">
+      <div className="app-page-header">
+        <p className="app-eyebrow">Workspace</p>
+        <h1 className="app-title">Settings</h1>
+        <p className="app-subtitle">Manage your firm configuration, team, pipeline rules, and billing.</p>
       </div>
 
       {success === 'true' && (
@@ -76,20 +77,45 @@ export default async function SettingsPage({ searchParams }: Props) {
         </div>
       )}
 
-      <BillingSettings
-        isSubscribed={isSubscribed}
-        cancelAtPeriodEnd={cancelAtPeriodEnd}
-        currentPeriodEnd={currentPeriodEnd}
-      />
-      <TeamSettings
-        members={members ?? []}
-        invites={invites ?? []}
-        firmName={firmName}
-      />
-      <BuyBoxSettings buyBoxes={buyBoxResult.buyBoxes ?? []} />
-      <StagesSettings stages={stages ?? []} checklistItems={checklistItems ?? []} />
-      <KillReasonsSettings killReasons={killReasons ?? []} />
-      <ScoringCriteriaSettings criteria={(scoringResult.criteria ?? []) as any} />
+      <div className="app-settings-grid">
+        <nav className="app-settings-nav" aria-label="Settings sections">
+          <a href="#billing">Billing</a>
+          <a href="#team">Team</a>
+          <a href="#buy-box">Buy Box</a>
+          <a href="#pipeline-rules">Pipeline</a>
+          <a href="#kill-reasons">Kill Reasons</a>
+          <a href="#scoring">Scoring</a>
+        </nav>
+
+        <div className="app-settings-stack">
+          <section id="billing" className="app-section-anchor">
+            <BillingSettings
+              isSubscribed={isSubscribed}
+              cancelAtPeriodEnd={cancelAtPeriodEnd}
+              currentPeriodEnd={currentPeriodEnd}
+            />
+          </section>
+          <section id="team" className="app-section-anchor">
+            <TeamSettings
+              members={members ?? []}
+              invites={invites ?? []}
+              firmName={firmName}
+            />
+          </section>
+          <section id="buy-box" className="app-section-anchor">
+            <BuyBoxSettings buyBoxes={buyBoxResult.buyBoxes ?? []} />
+          </section>
+          <section id="pipeline-rules" className="app-section-anchor">
+            <StagesSettings stages={stages ?? []} checklistItems={checklistItems ?? []} />
+          </section>
+          <section id="kill-reasons" className="app-section-anchor">
+            <KillReasonsSettings killReasons={killReasons ?? []} />
+          </section>
+          <section id="scoring" className="app-section-anchor">
+            <ScoringCriteriaSettings criteria={(scoringResult.criteria ?? []) as any} />
+          </section>
+        </div>
+      </div>
     </div>
   )
 }

@@ -50,10 +50,11 @@ export default async function GraveyardPage({ searchParams }: { searchParams: Se
   })
 
   return (
-    <div className="max-w-5xl mx-auto px-8 py-12">
-      <div className="mb-8">
-        <h1 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--starlight)' }}>Graveyard</h1>
-        <p style={{ fontSize: '13px', color: 'var(--lead)', marginTop: '3px' }}>{filtered.length} killed deals</p>
+    <div className="app-page">
+      <div className="app-page-header">
+        <p className="app-eyebrow">Deal memory</p>
+        <h1 className="app-title">Graveyard</h1>
+        <p className="app-subtitle">{filtered.length} killed deals preserved for future recall.</p>
       </div>
 
       {/* Kill reason summary pills */}

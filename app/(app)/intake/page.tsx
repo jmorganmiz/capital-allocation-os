@@ -43,11 +43,12 @@ export default async function IntakePage() {
   const failedCount = (recentEvents ?? []).filter(event => event.status === 'failed').length
 
   return (
-    <div className="mx-auto max-w-5xl px-8 py-12">
-      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div className="app-page">
+      <div className="app-page-header flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Intake</h1>
-          <p className="mt-0.5 text-sm text-gray-500">Bring new opportunities into {firm?.name ?? 'your firm'}.</p>
+          <p className="app-eyebrow">Intake</p>
+          <h1 className="app-title">Opportunity intake</h1>
+          <p className="app-subtitle">Bring new opportunities into {firm?.name ?? 'your firm'}.</p>
         </div>
         <div className="flex gap-2">
           <Link href="/import/deals" className="btn-secondary">Import CSV</Link>
