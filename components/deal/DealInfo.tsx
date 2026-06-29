@@ -22,10 +22,10 @@ function parsePrice(raw: string): number | null {
 }
 
 const cellStyle = {
-  background: 'var(--graphite)',
+  background: 'rgba(39,39,53,0.82)',
   border: '1px solid rgba(112,112,125,0.18)',
-  borderRadius: '6px',
-  padding: '12px 14px',
+  borderRadius: '12px',
+  padding: '18px 18px',
 }
 
 const labelStyle: React.CSSProperties = {
@@ -34,12 +34,12 @@ const labelStyle: React.CSSProperties = {
   color: 'var(--lead)',
   letterSpacing: '0.08em',
   textTransform: 'uppercase',
-  marginBottom: '6px',
+  marginBottom: '10px',
 }
 
 const valueStyle: React.CSSProperties = {
-  fontSize: '14px',
-  fontWeight: 500,
+  fontSize: '17px',
+  fontWeight: 650,
   color: 'var(--starlight)',
 }
 
@@ -191,7 +191,7 @@ export default function DealInfo({ deal }: Props) {
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Deal Info</h2>
         {isPending && <span style={{ fontSize: '11px', color: 'var(--amber)' }}>Saving…</span>}
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         <EditablePrice
           label="Asking Price"
           value={fields.asking_price}

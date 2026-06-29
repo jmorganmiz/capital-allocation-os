@@ -94,8 +94,8 @@ export default function DealHeader({ deal, stages, killReasons, firmUsers }: Pro
     : null
 
   return (
-    <div>
-      <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+    <div className="app-detail-header">
+      <div className="flex items-center gap-2 text-sm text-gray-500 mb-5">
         <Link href="/pipeline" className="hover:text-gray-700">Pipeline</Link>
         <span>/</span>
         <span className="text-gray-800">{deal.title}</span>
@@ -103,9 +103,9 @@ export default function DealHeader({ deal, stages, killReasons, firmUsers }: Pro
 
       <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
-          <h1 className="text-2xl font-semibold text-gray-900">{deal.title}</h1>
+          <h1 className="app-detail-title">{deal.title}</h1>
 
-          <div className="flex items-center gap-3 mt-2 text-sm text-gray-500 flex-wrap">
+          <div className="app-detail-meta flex items-center gap-3 mt-3 text-sm text-gray-500 flex-wrap">
             {/* Address — inline editable */}
             {editingAddress ? (
               <input
