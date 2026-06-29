@@ -31,7 +31,7 @@ export default function SetupChecklist({
   const pct = (completeCount / items.length) * 100
 
   return (
-    <section className="mb-8 rounded-xl p-5" style={{ background: 'var(--midnight-slate)', border: '1px solid rgba(112,112,125,0.18)' }}>
+    <section className="mb-8 rounded-xl p-5" style={{ background: 'var(--midnight-slate)', border: '1px solid rgba(112,112,125,0.28)', boxShadow: 'var(--card-shadow)' }}>
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h2 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--starlight)' }}>Set up your workspace</h2>

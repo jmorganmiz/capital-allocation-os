@@ -101,6 +101,7 @@
   --green: #22c55e;
   --amber: #f59e0b;
   --red: #ef4444;
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.03) inset;
 }
 
 html { scroll-behavior: smooth; }
@@ -1123,8 +1124,8 @@ body {
 .border-amber-200 { border-color: rgba(245,158,11,0.2); }
 
 /* ── Borders ── */
-.border-gray-200  { border-color: rgba(112,112,125,0.18); }
-.border-gray-100  { border-color: rgba(112,112,125,0.12); }
+.border-gray-200  { border-color: rgba(112,112,125,0.28); }
+.border-gray-100  { border-color: rgba(112,112,125,0.15); }
 .border-gray-900  { border-color: #5266eb; }  /* DealTabs active underline → Mercury Blue */
 .border-blue-300  { border-color: rgba(82,102,235,0.4); }
 
@@ -1155,16 +1156,21 @@ body {
 .ring-blue-200  { --tw-ring-color: rgba(82,102,235,0.3); }
 .focus\:ring-blue-500:focus { --tw-ring-color: rgba(82,102,235,0.4); }
 
-/* ── Elevation: kill all box shadows ── */
-.shadow-sm,
-.shadow-md,
-.shadow-lg,
-.shadow-xl,
-.shadow-2xl { box-shadow: none; }
+/* ── Elevation: subtle card shadows for dark surfaces ── */
+.shadow-sm  { box-shadow: 0 1px 3px rgba(0,0,0,0.45); }
+.shadow-md  { box-shadow: 0 2px 6px rgba(0,0,0,0.5); }
+.shadow-lg  { box-shadow: 0 4px 12px rgba(0,0,0,0.55); }
 
 /* ── Select / option elements ── */
 select.border-gray-200 { background-color: #272735; color: #ededf3; }
 select option { background-color: #272735; color: #ededf3; }
+
+/* ── Card elevation for the app shell ── */
+/* bg-white = midnight-slate cards; bg-gray-100 = graphite cards */
+.bg-white,
+.bg-gray-100 {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.03) inset;
+}
 
 /* ── Active nav item left accent ── */
 .ds-nav-active {

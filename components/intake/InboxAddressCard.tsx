@@ -16,6 +16,7 @@ export default function InboxAddressCard({ address }: { address: string }) {
       background: 'var(--midnight-slate)',
       border: '1px solid rgba(82,102,235,0.3)',
       borderLeft: '3px solid var(--mercury-blue)',
+      boxShadow: 'var(--card-shadow)',
     }}>
       <p style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--mercury-blue)', marginBottom: '10px' }}>
         Your Firm Deal Inbox
