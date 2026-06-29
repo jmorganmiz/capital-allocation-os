@@ -9,6 +9,7 @@ export function Nav() {
         <li><a href="#demo">Product demo</a></li>
         <li><a href="#features">Features</a></li>
         <li><a href="#pricing">Pricing</a></li>
+        <li><a href="#faq">FAQ</a></li>
         <li><Link href="/login">Sign in</Link></li>
       </ul>
       <Link className="nav-btn" href="/signup" aria-label="Start a free Dealstash trial">Start free →</Link>

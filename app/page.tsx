@@ -9,6 +9,7 @@ import { ProductDemo } from '@/components/ProductDemo'
 import { Features } from '@/components/Features'
 import { Pricing } from '@/components/Pricing'
 import { TrustBar } from '@/components/TrustBar'
+import { FAQ } from '@/components/FAQ'
 import { FooterCTA } from '@/components/FooterCTA'
 import { SiteFooter } from '@/components/SiteFooter'
 import { CookieBanner } from '@/components/CookieBanner'
@@ -47,6 +48,8 @@ export default function HomePage() {
       <TrustBar />
       <hr className="divider" />
       <Pricing />
+      <hr className="divider" />
+      <FAQ />
       <hr className="divider" />
       <FooterCTA />
       <SiteFooter />
