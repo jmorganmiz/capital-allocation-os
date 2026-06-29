@@ -3,11 +3,15 @@
 import { useEffect } from 'react'
 import { Nav } from '@/components/Nav'
 import { Hero } from '@/components/Hero'
+import { SocialProof } from '@/components/SocialProof'
 import { HowItWorks } from '@/components/HowItWorks'
 import { ProductDemo } from '@/components/ProductDemo'
 import { Features } from '@/components/Features'
 import { Pricing } from '@/components/Pricing'
+import { TrustBar } from '@/components/TrustBar'
 import { FooterCTA } from '@/components/FooterCTA'
+import { SiteFooter } from '@/components/SiteFooter'
+import { CookieBanner } from '@/components/CookieBanner'
 
 export default function HomePage() {
   useEffect(() => {
@@ -33,15 +37,20 @@ export default function HomePage() {
     <div className="landing-page">
       <Nav />
       <Hero />
+      <SocialProof />
       <HowItWorks />
       <hr className="divider" />
       <ProductDemo />
       <hr className="divider" />
       <Features />
       <hr className="divider" />
+      <TrustBar />
+      <hr className="divider" />
       <Pricing />
       <hr className="divider" />
       <FooterCTA />
+      <SiteFooter />
+      <CookieBanner />
     </div>
   )
 }

@@ -2,15 +2,16 @@ import Link from 'next/link'
 
 export function Nav() {
   return (
-    <nav>
-      <div className="logo">deal<span>stash</span></div>
+    <nav aria-label="Primary navigation">
+      <Link className="logo" href="/">deal<span>stash</span></Link>
       <ul className="nav-links">
-        <li><a href="#how">How it works</a></li>
+        <li><a href="#how">Workflow</a></li>
+        <li><a href="#demo">Product demo</a></li>
         <li><a href="#features">Features</a></li>
         <li><a href="#pricing">Pricing</a></li>
-        <li><a href="/demo">Demo</a></li>
+        <li><Link href="/login">Sign in</Link></li>
       </ul>
-      <Link className="nav-btn" href="/signup">Start free →</Link>
+      <Link className="nav-btn" href="/signup" aria-label="Start a free Dealstash trial">Start free →</Link>
     </nav>
   )
 }
