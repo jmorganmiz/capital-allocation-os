@@ -18,22 +18,43 @@ export default function DealColumn({ stage, deals, onKill, onMove }: Props) {
 
   return (
     <div className="flex-shrink-0 w-[85vw] md:w-64 snap-start">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className={`text-xs font-semibold uppercase tracking-wider ${isTerminal ? 'text-green-600' : 'text-gray-500'}`}>
+      {/* Column header */}
+      <div className="flex items-center justify-between mb-3 px-1">
+        <h3 style={{
+          fontSize: '11px',
+          fontWeight: 700,
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+          color: isTerminal ? '#4ade80' : 'var(--lead)',
+        }}>
           {stage.name}
         </h3>
-        <span className="text-xs text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">
+        <span style={{
+          fontSize: '11px',
+          fontWeight: 600,
+          color: 'var(--lead)',
+          background: 'rgba(112,112,125,0.1)',
+          border: '1px solid rgba(112,112,125,0.15)',
+          borderRadius: '999px',
+          padding: '1px 7px',
+        }}>
           {deals.length}
         </span>
       </div>
 
+      {/* Drop zone */}
       <div
         ref={setNodeRef}
-        className={`min-h-24 rounded-lg transition-colors space-y-2 p-1 border border-gray-200
-          ${isOver ? 'bg-blue-50 ring-2 ring-blue-200' : 'bg-white'}`}
+        className="min-h-24 rounded-lg transition-colors space-y-2 p-1.5"
+        style={{
+          background: isOver ? 'rgba(82,102,235,0.06)' : 'rgba(112,112,125,0.04)',
+          border: isOver
+            ? '1px solid rgba(82,102,235,0.3)'
+            : '1px solid rgba(112,112,125,0.1)',
+        }}
       >
         {deals.length === 0 ? (
-          <div className="text-xs text-gray-300 text-center py-6">
+          <div style={{ fontSize: '12px', color: 'var(--lead)', textAlign: 'center', padding: '24px 0' }}>
             <span className="hidden md:block">Drop deals here</span>
             <span className="md:hidden">No deals</span>
           </div>
