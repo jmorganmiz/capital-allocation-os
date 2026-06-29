@@ -1156,8 +1156,34 @@ body {
   min-width: 0;
 }
 
+.app-root .app-settings-stack > section {
+  background: var(--app-card);
+  border: 1px solid var(--app-border);
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: var(--app-shadow);
+}
+
+.app-root .app-settings-stack > section > h2:first-child {
+  font-size: 16px;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+
+.app-root .app-settings-stack > section > p:first-of-type {
+  margin-bottom: 18px;
+}
+
 .app-root .app-section-anchor {
   scroll-margin-top: 24px;
+}
+
+.app-root .app-row-link:hover {
+  background: var(--graphite) !important;
+}
+
+.app-root .app-border-link:hover {
+  border-color: rgba(82,102,235,0.35) !important;
 }
 
 @media (max-width: 1100px) {

@@ -53,10 +53,8 @@ export default function SimilarDeals({ deals, currentDealType, currentMarket, si
             <Link
               key={deal.id}
               href={`/deals/${deal.id}`}
-              className="block rounded-lg p-3 transition-colors"
+              className="app-border-link block rounded-lg p-3 transition-colors"
               style={{ background: 'var(--graphite)', border: '1px solid rgba(112,112,125,0.18)' }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(82,102,235,0.35)')}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(112,112,125,0.18)')}
             >
               <div className="flex items-start justify-between gap-2 mb-1">
                 <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--starlight)', lineHeight: 1.3 }}>

@@ -49,13 +49,11 @@ export default function AttentionQueue({
             <Link
               key={deal.id}
               href={`/deals/${deal.id}`}
-              className="flex items-center justify-between px-5 py-3.5 transition-colors"
+              className="app-row-link flex items-center justify-between px-5 py-3.5 transition-colors"
               style={{
                 borderTop: i > 0 ? '1px solid rgba(112,112,125,0.1)' : 'none',
                 background: 'var(--midnight-slate)',
               }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'var(--graphite)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'var(--midnight-slate)')}
             >
               <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--starlight)' }}>{deal.title}</span>
               <span style={{
