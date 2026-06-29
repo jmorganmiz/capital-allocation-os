@@ -9,6 +9,7 @@ const TABS = [
   { label: 'Files',      id: 'section-files'       },
   { label: 'Contacts',   id: 'section-contacts'    },
   { label: 'Activity',   id: 'section-activity'    },
+  { label: 'Similar',    id: 'section-similar'     },
 ]
 
 // Walk up the DOM to find the nearest scrollable ancestor

@@ -11,6 +11,7 @@ import DealInfo from '@/components/deal/DealInfo'
 import ContactsSection from '@/components/deal/ContactsSection'
 import ScoringSection from '@/components/deal/ScoringSection'
 import { getScoringCriteria, getDealScores } from '@/lib/actions/scoring'
+import SimilarDeals from '@/components/deal/SimilarDeals'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -68,6 +69,50 @@ export default async function DealPage({ params }: Props) {
   ])
 
   if (!deal) notFound()
+
+  // Similar deals: same firm, same deal_type or same market, excluding self
+  let similarQuery = supabase
+    .from('deals')
+    .select('id, title, market, deal_type, asking_price, is_archived, stage_id, deal_scores(score), deal_stages(name)')
+    .eq('firm_id', deal.firm_id)
+    .neq('id', id)
+    .limit(20)
+
+  const orParts: string[] = []
+  if (deal.deal_type) orParts.push(`deal_type.eq.${deal.deal_type}`)
+  if (deal.market) orParts.push(`market.eq.${deal.market}`)
+  if (orParts.length > 0) similarQuery = similarQuery.or(orParts.join(','))
+
+  const { data: rawSimilar } = orParts.length > 0 ? await similarQuery : { data: [] }
+
+  const similarDeals = ((rawSimilar ?? []) as any[])
+    .map(d => {
+      const scores = (d.deal_scores ?? []).map((s: any) => Number(s.score)).filter(Boolean)
+      const avg = scores.length ? scores.reduce((a: number, b: number) => a + b, 0) / scores.length : null
+      const score = avg !== null ? Math.round(((avg - 1) / 4) * 100) : null
+      const typeMatch = deal.deal_type && d.deal_type === deal.deal_type
+      const marketMatch = deal.market && d.market === deal.market
+      const priceMatch = deal.asking_price && d.asking_price
+        ? Math.abs(d.asking_price - deal.asking_price) / deal.asking_price < 0.5
+        : false
+      return {
+        id: d.id,
+        title: d.title,
+        market: d.market,
+        deal_type: d.deal_type,
+        asking_price: d.asking_price,
+        is_archived: d.is_archived,
+        stage_name: d.deal_stages?.name ?? null,
+        score,
+        match_type: typeMatch && marketMatch ? 'both' : typeMatch ? 'type' : 'market',
+        asking_price_match: priceMatch,
+      }
+    })
+    .sort((a, b) => {
+      const rank = (x: typeof a) => (x.match_type === 'both' ? 2 : 1) + (x.asking_price_match ? 1 : 0)
+      return rank(b) - rank(a)
+    })
+    .slice(0, 6)
 
   // Get firm users for owner dropdown
   const { data: firmUsers } = await supabase
@@ -168,6 +213,16 @@ export default async function DealPage({ params }: Props) {
         {/* Activity */}
         <section id="section-activity">
           <DecisionLog events={events ?? []} snapshots={snapshots ?? []} />
+        </section>
+
+        {/* Similar Deals */}
+        <section id="section-similar">
+          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-5">Similar Deals</h2>
+          <SimilarDeals
+            deals={similarDeals}
+            currentDealType={deal.deal_type}
+            currentMarket={deal.market}
+          />
         </section>
       </div>
     </div>
