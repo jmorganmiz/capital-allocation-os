@@ -12,33 +12,62 @@ export default function AttentionQueue({
   needsReview: DealItem[]
   staleDeals: DealItem[]
 }) {
-  const reviewIds = new Set(needsReview.map(deal => deal.id))
-  const items = [...needsReview, ...staleDeals.filter(deal => !reviewIds.has(deal.id))].slice(0, 6)
+  const reviewIds = new Set(needsReview.map(d => d.id))
+  const items = [...needsReview, ...staleDeals.filter(d => !reviewIds.has(d.id))].slice(0, 6)
 
   return (
-    <section className="mb-12">
-      <div className="mb-5 flex items-center justify-between">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">Needs attention</h2>
-        <Link href="/intake" className="text-sm font-medium text-blue-600 hover:underline">Open intake</Link>
+    <section className="mb-10">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 style={{ fontSize: '11px', fontWeight: 600, color: 'var(--lead)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Needs attention</h2>
+        <Link href="/intake" style={{ fontSize: '12px', fontWeight: 500, color: 'var(--mercury-blue)' }}>Open intake</Link>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded-lg border border-blue-200 bg-blue-50 p-5">
-          <p className="text-2xl font-bold text-blue-900">{needsReview.length}</p>
-          <p className="mt-1 text-sm font-medium text-blue-800">New deals to review</p>
-          <p className="mt-1 text-xs text-blue-700/70">New-stage deals from email or without a completed score.</p>
+
+      <div className="grid gap-3 sm:grid-cols-2 mb-3">
+        <div className="rounded-lg p-5" style={{
+          background: needsReview.length > 0 ? 'rgba(82,102,235,0.08)' : 'var(--midnight-slate)',
+          border: needsReview.length > 0 ? '1px solid rgba(82,102,235,0.25)' : '1px solid rgba(112,112,125,0.2)',
+          boxShadow: 'var(--card-shadow)',
+        }}>
+          <p style={{ fontSize: '28px', fontWeight: 700, color: needsReview.length > 0 ? 'var(--mercury-blue)' : 'var(--lead)', lineHeight: 1 }}>{needsReview.length}</p>
+          <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--starlight)', marginTop: '6px' }}>New deals to review</p>
+          <p style={{ fontSize: '11px', color: 'var(--lead)', marginTop: '3px' }}>New-stage deals without a completed score.</p>
         </div>
-        <div className={`rounded-lg border p-5 ${staleDeals.length ? 'border-amber-200 bg-amber-50' : 'border-gray-200 bg-white'}`}>
-          <p className={`text-2xl font-bold ${staleDeals.length ? 'text-amber-800' : 'text-gray-900'}`}>{staleDeals.length}</p>
-          <p className="mt-1 text-sm font-medium text-gray-800">Stale deals</p>
-          <p className="mt-1 text-xs text-gray-500">Active deals without an update in seven days.</p>
+        <div className="rounded-lg p-5" style={{
+          background: staleDeals.length > 0 ? 'rgba(245,158,11,0.06)' : 'var(--midnight-slate)',
+          border: staleDeals.length > 0 ? '1px solid rgba(245,158,11,0.2)' : '1px solid rgba(112,112,125,0.2)',
+          boxShadow: 'var(--card-shadow)',
+        }}>
+          <p style={{ fontSize: '28px', fontWeight: 700, color: staleDeals.length > 0 ? '#fbbf24' : 'var(--lead)', lineHeight: 1 }}>{staleDeals.length}</p>
+          <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--starlight)', marginTop: '6px' }}>Stale deals</p>
+          <p style={{ fontSize: '11px', color: 'var(--lead)', marginTop: '3px' }}>Active deals without an update in 7 days.</p>
         </div>
       </div>
+
       {items.length > 0 && (
-        <div className="mt-4 divide-y divide-gray-100 rounded-lg border border-gray-200 bg-white">
-          {items.map(deal => (
-            <Link key={deal.id} href={`/deals/${deal.id}`} className="flex items-center justify-between px-5 py-4 hover:bg-gray-50">
-              <span className="text-sm font-medium text-gray-900">{deal.title}</span>
-              <span className="text-xs text-gray-400">{reviewIds.has(deal.id) ? 'Review' : 'Stale'}</span>
+        <div className="rounded-lg overflow-hidden" style={{ border: '1px solid rgba(112,112,125,0.18)', boxShadow: 'var(--card-shadow)' }}>
+          {items.map((deal, i) => (
+            <Link
+              key={deal.id}
+              href={`/deals/${deal.id}`}
+              className="flex items-center justify-between px-5 py-3.5 transition-colors"
+              style={{
+                borderTop: i > 0 ? '1px solid rgba(112,112,125,0.1)' : 'none',
+                background: 'var(--midnight-slate)',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--graphite)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'var(--midnight-slate)')}
+            >
+              <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--starlight)' }}>{deal.title}</span>
+              <span style={{
+                fontSize: '10px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase',
+                color: reviewIds.has(deal.id) ? 'var(--mercury-blue)' : '#fbbf24',
+                background: reviewIds.has(deal.id) ? 'rgba(82,102,235,0.1)' : 'rgba(245,158,11,0.1)',
+                border: reviewIds.has(deal.id) ? '1px solid rgba(82,102,235,0.2)' : '1px solid rgba(245,158,11,0.2)',
+                borderRadius: '999px',
+                padding: '2px 8px',
+              }}>
+                {reviewIds.has(deal.id) ? 'Review' : 'Stale'}
+              </span>
             </Link>
           ))}
         </div>

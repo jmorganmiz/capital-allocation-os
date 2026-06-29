@@ -19,24 +19,11 @@ export default async function DashboardPage() {
     { data: activeDeals },
     { data: killEvents },
   ] = await Promise.all([
-    supabase
-      .from('deal_stages')
-      .select('id, name, position')
-      .eq('firm_id', firmId)
-      .order('position'),
-    supabase
-      .from('deals')
-      .select('id, title, stage_id, intake_type, created_at, updated_at, deal_scores(score)')
-      .eq('firm_id', firmId)
-      .eq('is_archived', false),
-    supabase
-      .from('deal_events')
-      .select('kill_reasons(name)')
-      .eq('event_type', 'killed')
-      .not('kill_reason_id', 'is', null),
+    supabase.from('deal_stages').select('id, name, position').eq('firm_id', firmId).order('position'),
+    supabase.from('deals').select('id, title, stage_id, intake_type, created_at, updated_at, deal_scores(score)').eq('firm_id', firmId).eq('is_archived', false),
+    supabase.from('deal_events').select('kill_reasons(name)').eq('event_type', 'killed').not('kill_reason_id', 'is', null),
   ])
 
-  // Deals by stage (exclude Killed stage)
   const activeStages = (stages ?? []).filter(s => s.name !== 'Killed')
   const dealsByStage = activeStages.map(stage => ({
     name: stage.name,
@@ -46,7 +33,6 @@ export default async function DashboardPage() {
   const firstStageId = activeStages[0]?.id
   const { needsReview, staleDeals } = classifyAttention(activeDeals ?? [], firstStageId)
 
-  // Kill reason breakdown
   const killCounts: Record<string, number> = {}
   ;(killEvents ?? []).forEach((e: any) => {
     const name = e.kill_reasons?.name
@@ -55,62 +41,72 @@ export default async function DashboardPage() {
   const killBreakdown = Object.entries(killCounts).sort((a, b) => b[1] - a[1])
   const totalKilled = killBreakdown.reduce((sum, [, n]) => sum + n, 0)
 
+  const th = { fontSize: '11px', fontWeight: 600, color: 'var(--lead)', letterSpacing: '0.07em', textTransform: 'uppercase' as const }
+
   return (
     <div className="max-w-4xl mx-auto px-8 py-12">
       <div className="mb-10">
-        <h1 className="text-xl font-semibold text-gray-900">Dashboard</h1>
-        <p className="text-sm text-gray-500 mt-1">{totalActive} active deals across {activeStages.length} stages</p>
+        <h1 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--starlight)' }}>Dashboard</h1>
+        <p style={{ fontSize: '13px', color: 'var(--lead)', marginTop: '3px' }}>{totalActive} active deals across {activeStages.length} stages</p>
       </div>
 
       <AttentionQueue needsReview={needsReview} staleDeals={staleDeals} />
 
       {/* Deals by Stage */}
-      <section className="mb-12">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-5">Deals by Stage</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+      <section className="mb-10">
+        <h2 style={{ ...th, display: 'block', marginBottom: '16px' }}>Deals by Stage</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
           {dealsByStage.map(({ name, count }) => (
-            <div key={name} className="bg-white border border-gray-200 rounded-lg p-5">
-              <p className="text-2xl font-bold text-gray-900">{count}</p>
-              <p className="text-sm text-gray-500 mt-1 truncate">{name}</p>
+            <div key={name} className="rounded-lg p-4" style={{
+              background: 'var(--midnight-slate)',
+              border: '1px solid rgba(112,112,125,0.2)',
+              boxShadow: 'var(--card-shadow)',
+            }}>
+              <p style={{ fontSize: '26px', fontWeight: 700, color: 'var(--starlight)', lineHeight: 1 }}>{count}</p>
+              <p style={{ fontSize: '12px', color: 'var(--lead)', marginTop: '6px' }} className="truncate">{name}</p>
             </div>
           ))}
-          <div className="bg-gray-900 text-white rounded-lg p-5">
-            <p className="text-2xl font-bold">{totalActive}</p>
-            <p className="text-sm text-gray-400 mt-1">Total Active</p>
+          <div className="rounded-lg p-4" style={{
+            background: 'rgba(82,102,235,0.12)',
+            border: '1px solid rgba(82,102,235,0.25)',
+            boxShadow: 'var(--card-shadow)',
+          }}>
+            <p style={{ fontSize: '26px', fontWeight: 700, color: 'var(--mercury-blue)', lineHeight: 1 }}>{totalActive}</p>
+            <p style={{ fontSize: '12px', color: 'var(--lead)', marginTop: '6px' }}>Total Active</p>
           </div>
         </div>
       </section>
 
       {/* Kill Reason Breakdown */}
       <section>
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-5">
+        <h2 style={{ ...th, display: 'block', marginBottom: '16px' }}>
           Kill Reason Breakdown
-          {totalKilled > 0 && <span className="ml-2 font-normal text-gray-400 normal-case">({totalKilled} total)</span>}
+          {totalKilled > 0 && <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, color: 'var(--lead)', marginLeft: '8px', fontSize: '12px' }}>({totalKilled} total)</span>}
         </h2>
 
         {killBreakdown.length === 0 ? (
-          <div className="border border-dashed border-gray-200 rounded-lg p-12 text-center text-sm text-gray-400">
-            No killed deals yet. Kill reasons will appear here once deals are killed.
+          <div className="rounded-lg p-12 text-center" style={{ border: '1px dashed rgba(112,112,125,0.25)' }}>
+            <p style={{ fontSize: '13px', color: 'var(--lead)' }}>No killed deals yet. Kill reasons will appear here once deals are killed.</p>
           </div>
         ) : (
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
+          <div className="rounded-lg overflow-hidden" style={{ border: '1px solid rgba(112,112,125,0.2)', boxShadow: 'var(--card-shadow)' }}>
             {killBreakdown.map(([name, count], i) => {
               const pct = Math.round((count / totalKilled) * 100)
               return (
-                <div key={name} className={`px-5 py-4 flex items-center gap-4 ${i > 0 ? 'border-t border-gray-100' : ''}`}>
+                <div key={name} className="px-5 py-4 flex items-center gap-4" style={{
+                  borderTop: i > 0 ? '1px solid rgba(112,112,125,0.1)' : 'none',
+                  background: 'var(--midnight-slate)',
+                }}>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-sm font-medium text-gray-800">{name}</span>
-                      <span className="text-sm text-gray-500 ml-4 flex-shrink-0">{count} deal{count !== 1 ? 's' : ''}</span>
+                    <div className="flex items-center justify-between mb-2">
+                      <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--starlight)' }}>{name}</span>
+                      <span style={{ fontSize: '12px', color: 'var(--lead)', marginLeft: '16px', flexShrink: 0 }}>{count} deal{count !== 1 ? 's' : ''}</span>
                     </div>
-                    <div className="w-full bg-gray-100 rounded-full h-1.5">
-                      <div
-                        className="bg-red-400 h-1.5 rounded-full transition-all"
-                        style={{ width: `${pct}%` }}
-                      />
+                    <div className="w-full rounded-full overflow-hidden" style={{ height: '3px', background: 'rgba(112,112,125,0.2)' }}>
+                      <div style={{ width: `${pct}%`, height: '100%', background: 'var(--mercury-blue)', borderRadius: '999px', transition: 'width 0.3s ease' }} />
                     </div>
                   </div>
-                  <span className="text-xs text-gray-400 w-10 text-right flex-shrink-0">{pct}%</span>
+                  <span style={{ fontSize: '11px', color: 'var(--lead)', width: '36px', textAlign: 'right', flexShrink: 0 }}>{pct}%</span>
                 </div>
               )
             })}

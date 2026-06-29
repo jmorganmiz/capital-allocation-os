@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import KanbanBoard from '@/components/pipeline/KanbanBoard'
+import { calculateOverallScore } from '@/lib/workflow.mjs'
 
 export default async function PipelinePage() {
   const supabase = await createClient()
@@ -21,7 +22,8 @@ export default async function PipelinePage() {
         *,
         owner:profiles!owner_user_id(full_name),
         latest_stage_event:deal_events(created_at),
-        deal_notes(section, content)
+        deal_notes(section, content),
+        deal_scores(score)
       `)
       .eq('is_archived', false)
       .order('created_at', { ascending: false }),
@@ -39,13 +41,17 @@ export default async function PipelinePage() {
       : deal.created_at
 
     const hasNotes = (deal.deal_notes ?? []).some((n: any) => n.content?.trim().length > 0)
+    const scores = (deal.deal_scores ?? []).map((r: any) => Number(r.score)).filter(Boolean)
+    const score = calculateOverallScore(scores)
 
     return {
       ...deal,
       latest_stage_event_at: latest,
       latest_stage_event: undefined,
       deal_notes: undefined,
+      deal_scores: undefined,
       hasNotes,
+      score,
     }
   })
 
