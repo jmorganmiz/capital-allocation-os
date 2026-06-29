@@ -53,7 +53,7 @@ export function LandingAssistant() {
           </h3>
         </div>
         <span className="rounded-full border border-white/15 px-3 py-1 text-[10px] font-medium uppercase tracking-[0.08em] text-white">
-          Live preview
+          Agent preview
         </span>
       </div>
 

@@ -245,7 +245,7 @@ export default async function HomePage() {
                   Watch an OM become a scored deal.
                 </h2>
                 <p className="mt-5 max-w-[560px] text-[15px] font-light leading-[1.5] tracking-[-0.3px] text-[#c0c0c0]">
-                  Placeholder for a Loom, Vimeo, or YouTube walkthrough. Until the final recording is ready, the live demo gives visitors the same product path.
+                  Walk through the flow from broker email to AI intake, score, similar-deal memory, pipeline movement, and decision history.
                 </p>
                 <Link href="/demo" className="mt-8 rounded-full border border-white/50 px-6 py-4 text-[15px] font-medium tracking-[-0.3px] text-white transition hover:border-white">
                   Open interactive demo
