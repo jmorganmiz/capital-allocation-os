@@ -49,7 +49,7 @@ export default async function DashboardPage() {
   const th = { fontSize: '11px', fontWeight: 600, color: 'var(--lead)', letterSpacing: '0.07em', textTransform: 'uppercase' as const }
 
   return (
-    <div className="mx-auto max-w-[1100px] px-12 py-10">
+    <div className="mx-auto max-w-[1200px] px-12 py-10">
       <div className="mb-7">
         <h1 style={{ fontSize: '24px', fontWeight: 600, color: 'var(--starlight)', marginBottom: '4px' }}>Dashboard</h1>
         <p style={{ fontSize: '14px', color: 'var(--lead)' }}>{totalActive} active deals across {activeStages.length} stages</p>

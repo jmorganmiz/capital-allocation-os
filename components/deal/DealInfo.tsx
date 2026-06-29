@@ -188,7 +188,7 @@ export default function DealInfo({ deal }: Props) {
   return (
     <section>
       <div className="flex items-center justify-between mb-4">
-        <h2 style={{ fontSize: '11px', fontWeight: 700, color: 'var(--lead)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Deal Info</h2>
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Deal Info</h2>
         {isPending && <span style={{ fontSize: '11px', color: 'var(--amber)' }}>Saving…</span>}
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

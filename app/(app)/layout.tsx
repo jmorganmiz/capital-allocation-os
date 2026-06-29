@@ -23,17 +23,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const userEmail = user.email ?? ''
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: '#171721' }}>
-      {/* Sidebar + content row */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        <MobileSidebar firmName={firmName} userEmail={userEmail} trialEndsAt={trialEndsAt} subscriptionStatus={subscriptionStatus} />
-        <main style={{ flex: 1, overflowY: 'auto', minWidth: 0 }} className="pt-14 md:pt-0">
-          <AccessGate trialEndsAt={trialEndsAt} subscriptionStatus={subscriptionStatus}>
-            {children}
-          </AccessGate>
-        </main>
-      </div>
-
+    <div className="flex h-screen" style={{ background: '#0c0c14' }}>
+      <MobileSidebar firmName={firmName} userEmail={userEmail} />
+      <main className="flex-1 overflow-auto md:pt-0 pt-14">
+        <AccessGate trialEndsAt={trialEndsAt} subscriptionStatus={subscriptionStatus}>
+          {children}
+        </AccessGate>
+      </main>
       <Toaster />
     </div>
   )

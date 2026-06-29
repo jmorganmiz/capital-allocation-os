@@ -12,27 +12,33 @@ export default function InboxAddressCard({ address }: { address: string }) {
   }
 
   return (
-    <div id="firm-inbox" style={{ background: '#272735', border: '1px solid rgba(82,102,235,0.3)', borderRadius: '8px', padding: '20px 24px', marginBottom: '24px' }}>
-      <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#5266eb', marginBottom: '8px' }}>
+    <div id="firm-inbox" className="rounded-xl p-5 mb-8" style={{
+      background: 'var(--midnight-slate)',
+      border: '1px solid rgba(82,102,235,0.3)',
+      borderLeft: '3px solid var(--mercury-blue)',
+      boxShadow: 'var(--card-shadow)',
+    }}>
+      <p style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--mercury-blue)', marginBottom: '10px' }}>
         Your Firm Deal Inbox
       </p>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontSize: '16px', fontWeight: 600, color: '#ededf3', fontFamily: 'ui-monospace, monospace', marginBottom: '8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {address}
-          </p>
-          <p style={{ fontSize: '13px', color: '#70707d', lineHeight: 1.6 }}>
-            Forward broker emails with PDF offering memorandums here. Dealstash extracts the details, scores the deal, stores the OM, and adds it to your first pipeline stage.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={copyAddress}
-          style={{ background: '#5266eb', color: '#ffffff', border: 'none', borderRadius: '32px', padding: '8px 18px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
-        >
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <code className="min-w-0 flex-1 overflow-x-auto rounded-md px-3 py-2" style={{
+          background: 'var(--graphite)',
+          border: '1px solid rgba(112,112,125,0.18)',
+          fontSize: '13px',
+          fontWeight: 600,
+          color: 'var(--starlight)',
+          fontFamily: 'ui-monospace, monospace',
+        }}>
+          {address}
+        </code>
+        <button type="button" onClick={copyAddress} className="btn-primary whitespace-nowrap">
           {copied ? 'Copied ✓' : 'Copy address'}
         </button>
       </div>
+      <p style={{ marginTop: '10px', fontSize: '12px', lineHeight: 1.6, color: 'var(--lead)' }}>
+        Forward broker emails with PDF offering memorandums here. Dealstash extracts the details, scores the deal, stores the OM, and adds it to your first pipeline stage.
+      </p>
     </div>
   )
 }

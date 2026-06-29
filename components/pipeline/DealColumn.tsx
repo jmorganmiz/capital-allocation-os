@@ -17,7 +17,7 @@ export default function DealColumn({ stage, deals, onKill, onMove }: Props) {
   const isTerminal = stage.name === 'Closed'
 
   return (
-    <div style={{ flexShrink: 0, minWidth: '260px', maxWidth: '280px', width: '260px' }}>
+    <div className="flex-shrink-0 w-[85vw] md:w-64 snap-start">
       {/* Column header */}
       <div className="flex items-center justify-between mb-3 px-1">
         <h3 style={{
@@ -47,10 +47,10 @@ export default function DealColumn({ stage, deals, onKill, onMove }: Props) {
         ref={setNodeRef}
         className="min-h-24 rounded-lg transition-colors space-y-2 p-1.5"
         style={{
-          background: isOver ? 'rgba(82,102,235,0.08)' : 'rgba(30,30,42,0.55)',
+          background: isOver ? 'rgba(82,102,235,0.06)' : 'rgba(112,112,125,0.04)',
           border: isOver
             ? '1px solid rgba(82,102,235,0.3)'
-            : '1px solid rgba(112,112,125,0.15)',
+            : '1px solid rgba(112,112,125,0.1)',
         }}
       >
         {deals.length === 0 ? (

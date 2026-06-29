@@ -29,7 +29,7 @@ interface PendingMove {
 
 interface Props {
   initialStages: DealStage[]
-  initialDeals: (Deal & { owner?: { full_name: string | null } | null, latest_stage_event_at?: string | null, hasNotes?: boolean, score?: number | null, asking_price?: number | null, unit_count?: number | null })[]
+  initialDeals: (Deal & { owner?: { full_name: string | null } | null, latest_stage_event_at?: string | null })[]
   killReasons: KillReason[]
   currentUserId: string
   checklistItems: Pick<StageChecklistItem, 'id' | 'stage_id' | 'name' | 'position'>[]
@@ -183,7 +183,7 @@ export default function KanbanBoard({
         onDragEnd={handleDragEnd}
         onDragCancel={() => setActiveId(null)}
       >
-        <div className="flex gap-3 px-12 pb-6 overflow-x-auto flex-1 items-start">
+        <div className="flex gap-4 px-4 md:px-8 pb-6 overflow-x-auto flex-1 items-start snap-x snap-mandatory md:snap-none">
           {activeStages.map(stage => (
             <DealColumn
               key={stage.id}

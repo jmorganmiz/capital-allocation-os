@@ -8,11 +8,6 @@ export async function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      global: {
-        // Bypass Next.js data cache for all Supabase queries — prevents stale
-        // user-specific data being served from the fetch cache across navigations.
-        fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }),
-      },
       cookies: {
         get(name: string) { return cookieStore.get(name)?.value },
         set(name: string, value: string, options: CookieOptions) {
