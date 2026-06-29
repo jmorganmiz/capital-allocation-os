@@ -1477,7 +1477,7 @@ body {
 }
 
 .app-root .app-pipeline-header {
-  max-width: 1180px;
+  max-width: 1480px;
   margin: 0 auto 24px;
   width: 100%;
 }
@@ -1496,7 +1496,7 @@ body {
   justify-content: space-between;
   gap: 18px;
   width: 100%;
-  max-width: 1180px;
+  max-width: 1480px;
   margin: 0 auto 18px;
   padding: 14px;
   border: 1px solid var(--app-border-soft);
@@ -1539,6 +1539,10 @@ body {
   align-items: start;
 }
 
+.app-root .app-pipeline-board.is-empty {
+  padding-bottom: 18px;
+}
+
 .app-root .app-pipeline-column {
   min-width: 280px;
 }
@@ -1578,6 +1582,10 @@ body {
   transition: background 0.16s ease, border-color 0.16s ease;
 }
 
+.app-root .app-pipeline-board.is-empty .app-pipeline-column-body {
+  min-height: clamp(260px, 38vh, 420px);
+}
+
 .app-root .app-pipeline-column-body > * + * {
   margin-top: 10px;
 }
@@ -1596,9 +1604,55 @@ body {
   text-align: center;
 }
 
+.app-root .app-pipeline-board.is-empty .app-pipeline-empty-column {
+  min-height: clamp(230px, 34vh, 388px);
+}
+
 .app-root .app-pipeline-deal-card {
   border-radius: 13px;
   padding: 15px;
+}
+
+.app-root .app-pipeline-zero-state {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  width: 100%;
+  max-width: 1480px;
+  margin: 0 auto 22px;
+  padding: 26px;
+  border: 1px solid rgba(82,102,235,0.26);
+  border-left: 3px solid var(--mercury-blue);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top left, rgba(82,102,235,0.14), transparent 28rem),
+    linear-gradient(180deg, rgba(30,30,42,0.92), rgba(23,23,33,0.84));
+  box-shadow: var(--app-shadow);
+}
+
+.app-root .app-pipeline-zero-state h2 {
+  color: var(--app-text);
+  font-size: clamp(24px, 2vw, 32px);
+  font-weight: 680;
+  letter-spacing: -0.045em;
+  line-height: 1.08;
+}
+
+.app-root .app-pipeline-zero-state p:not(.app-intake-kicker) {
+  max-width: 620px;
+  color: var(--app-muted);
+  font-size: 14px;
+  line-height: 1.6;
+  margin-top: 10px;
+}
+
+.app-root .app-pipeline-zero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
 .app-root .app-settings-stack > section .border-gray-200,
@@ -1633,6 +1687,15 @@ body {
   .app-root .app-pipeline-toolbar {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .app-root .app-pipeline-zero-state {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .app-root .app-pipeline-zero-actions {
+    justify-content: flex-start;
   }
 
   .app-root .app-pipeline-actions {
@@ -1692,6 +1755,20 @@ body {
 
   .app-root .app-pipeline-actions {
     width: 100%;
+  }
+
+  .app-root .app-pipeline-zero-state {
+    padding: 20px;
+  }
+
+  .app-root .app-pipeline-zero-actions {
+    width: 100%;
+  }
+
+  .app-root .app-pipeline-zero-actions button,
+  .app-root .app-pipeline-zero-actions a {
+    flex: 1;
+    text-align: center;
   }
 
   .app-root .app-pipeline-actions button {

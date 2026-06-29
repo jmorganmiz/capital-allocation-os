@@ -82,8 +82,9 @@ export default function KanbanBoard({
       return true
     })
   }, [deals, ownerFilter, query, typeFilter])
+  const isEmptyPipeline = deals.length === 0
 
-  // Build deal_id → Set<checklist_item_id> for fast incomplete lookups
+  // Build deal_id -> Set<checklist_item_id> for fast incomplete lookups
   const progressMap = useMemo(() => {
     const m = new Map<string, Set<string>>()
     for (const p of dealProgress) {
@@ -108,7 +109,6 @@ export default function KanbanBoard({
     })
   }
 
-  // Check for incomplete checklist items; show warning or proceed immediately
   function checkAndMove(deal: Deal, newStageId: string, oldStageId: string) {
     const stageItems = checklistItems.filter(i => i.stage_id === oldStageId)
     const completed = progressMap.get(deal.id) ?? new Set<string>()
@@ -180,13 +180,31 @@ export default function KanbanBoard({
         </div>
       </div>
 
+      {isEmptyPipeline && (
+        <div className="app-pipeline-zero-state">
+          <div>
+            <p className="app-intake-kicker">First pipeline</p>
+            <h2>Build your first deal pipeline.</h2>
+            <p>
+              Upload an OM, import an existing CSV, or add a deal manually. New opportunities will
+              land in the first stage and move across your firm workflow from here.
+            </p>
+          </div>
+          <div className="app-pipeline-zero-actions">
+            <button onClick={() => setShowUploadOM(true)} className="btn-primary">Upload an OM</button>
+            <button onClick={() => setShowCreate(true)} className="btn-secondary">Add deal manually</button>
+            <a href="/import/deals" className="btn-secondary">Import CSV</a>
+          </div>
+        </div>
+      )}
+
       <DndContext
         sensors={sensors}
         onDragStart={e => setActiveId(e.active.id as string)}
         onDragEnd={handleDragEnd}
         onDragCancel={() => setActiveId(null)}
       >
-        <div className="app-pipeline-board">
+        <div className={`app-pipeline-board ${isEmptyPipeline ? 'is-empty' : ''}`}>
           {activeStages.map(stage => (
             <DealColumn
               key={stage.id}
