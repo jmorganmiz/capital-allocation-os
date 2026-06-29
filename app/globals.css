@@ -1186,6 +1186,49 @@ body {
   border-color: rgba(82,102,235,0.35) !important;
 }
 
+.app-root .app-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 18px;
+  padding: 14px;
+  background: rgba(30,30,42,0.72);
+  border: 1px solid var(--app-border-soft);
+  border-radius: 14px;
+}
+
+.app-root .app-filter-bar input[name='q'] {
+  width: min(100%, 18rem) !important;
+}
+
+.app-root .app-table-card {
+  overflow: hidden;
+  background: var(--app-card);
+  border: 1px solid var(--app-border);
+  border-radius: 14px;
+  box-shadow: var(--app-shadow);
+}
+
+.app-root .app-table-card thead {
+  background: rgba(39,39,53,0.9) !important;
+}
+
+.app-root .app-table-card tr {
+  transition: background 0.16s ease;
+}
+
+.app-root .app-table-card tbody tr:hover {
+  background: var(--app-card-hover) !important;
+}
+
+.app-root .app-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
 @media (max-width: 1100px) {
   .app-root .app-workspace-grid,
   .app-root .app-settings-grid {

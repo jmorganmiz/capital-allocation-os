@@ -95,17 +95,17 @@ export default function ContactsPage() {
         <button onClick={() => setShowCreate(true)} className="btn-primary">+ Add Contact</button>
       </div>
 
-      <div className="flex gap-3 mb-6 flex-wrap">
+      <div className="app-filter-bar">
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Search by name or company…"
-          className="input-base w-56"
+          className="input-base w-full sm:w-72"
         />
         <select
           value={typeFilter}
           onChange={e => setTypeFilter(e.target.value as ContactType | '')}
-          className="input-base w-36"
+          className="input-base w-40"
         >
           {TYPES.map(t => (
             <option key={t.value} value={t.value}>{t.label}</option>
@@ -119,13 +119,13 @@ export default function ContactsPage() {
       {loading ? (
         <div className="text-center py-16" style={{ fontSize: '13px', color: 'var(--lead)' }}>Loading…</div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-lg py-16 text-center" style={{ border: '1px dashed rgba(112,112,125,0.25)' }}>
+        <div className="rounded-xl py-16 text-center" style={{ border: '1px dashed rgba(112,112,125,0.25)', background: 'rgba(30,30,42,0.5)' }}>
           <p style={{ fontSize: '13px', color: 'var(--lead)' }}>
             {contacts.length === 0 ? 'No contacts yet. Add your first contact.' : 'No contacts match your filters.'}
           </p>
         </div>
       ) : (
-        <div className="rounded-lg overflow-hidden" style={{ border: '1px solid rgba(112,112,125,0.2)', boxShadow: 'var(--card-shadow)' }}>
+        <div className="app-table-card">
           <table className="w-full min-w-[760px] text-sm">
             <thead style={{ background: 'var(--graphite)', borderBottom: '1px solid rgba(112,112,125,0.15)' }}>
               <tr>
@@ -144,10 +144,8 @@ export default function ContactsPage() {
                   <tr
                     key={contact.id}
                     onClick={() => handleRowClick(contact)}
-                    className="cursor-pointer transition-colors"
+                    className="app-row-link cursor-pointer transition-colors"
                     style={{ borderTop: i > 0 ? '1px solid rgba(112,112,125,0.1)' : 'none', background: 'var(--midnight-slate)' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--graphite)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'var(--midnight-slate)')}
                   >
                     <td style={{ padding: '14px 20px', fontSize: '13px', fontWeight: 500, color: 'var(--starlight)' }}>{contact.name}</td>
                     <td style={{ padding: '14px 20px' }}>

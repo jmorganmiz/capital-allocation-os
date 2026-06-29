@@ -79,12 +79,19 @@ export default async function SettingsPage({ searchParams }: Props) {
 
       <div className="app-settings-grid">
         <nav className="app-settings-nav" aria-label="Settings sections">
+          <div className="px-3 py-2">
+            <p style={{ color: 'var(--app-faint)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>Configuration</p>
+          </div>
           <a href="#billing">Billing</a>
           <a href="#team">Team</a>
           <a href="#buy-box">Buy Box</a>
           <a href="#pipeline-rules">Pipeline</a>
           <a href="#kill-reasons">Kill Reasons</a>
           <a href="#scoring">Scoring</a>
+          <div className="mt-2 rounded-lg p-3" style={{ background: 'rgba(82,102,235,0.08)', border: '1px solid rgba(82,102,235,0.18)' }}>
+            <p style={{ color: 'var(--ghost-blue)', fontSize: '12px', fontWeight: 600 }}>Workspace rules</p>
+            <p style={{ color: 'var(--app-faint)', fontSize: '11px', lineHeight: 1.5, marginTop: '4px' }}>These settings control how every deal is scored, staged, and remembered.</p>
+          </div>
         </nav>
 
         <div className="app-settings-stack">

@@ -59,7 +59,7 @@ export default async function GraveyardPage({ searchParams }: { searchParams: Se
 
       {/* Kill reason summary pills */}
       {Object.keys(killCounts).length > 0 && (
-        <div className="flex gap-2 flex-wrap mb-6">
+        <div className="app-pill-row">
           {Object.entries(killCounts).sort((a, b) => b[1] - a[1]).map(([name, count]) => (
             <div key={name} className="flex items-center gap-2 rounded-lg px-3 py-2" style={{
               background: 'var(--midnight-slate)',
@@ -78,10 +78,10 @@ export default async function GraveyardPage({ searchParams }: { searchParams: Se
       )}
 
       {/* Filters */}
-      <div className="flex gap-3 mb-6 flex-wrap">
-        <form className="flex gap-3 flex-wrap">
+      <div className="app-filter-bar">
+        <form className="flex w-full gap-3 flex-wrap">
           <input name="q" defaultValue={searchParams.q} placeholder="Search deals…" className="input-base w-48" />
-          <select name="market" defaultValue={searchParams.market} className="input-base w-40">
+          <select name="market" defaultValue={searchParams.market} className="input-base w-44">
             <option value="">All Markets</option>
             {uniqueMarkets.map(m => <option key={m} value={m!}>{m}</option>)}
           </select>
@@ -93,11 +93,11 @@ export default async function GraveyardPage({ searchParams }: { searchParams: Se
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-lg py-16 text-center" style={{ border: '1px dashed rgba(112,112,125,0.25)' }}>
+        <div className="rounded-xl py-16 text-center" style={{ border: '1px dashed rgba(112,112,125,0.25)', background: 'rgba(30,30,42,0.5)' }}>
           <p style={{ fontSize: '13px', color: 'var(--lead)' }}>No killed deals found.</p>
         </div>
       ) : (
-        <div className="rounded-lg overflow-hidden" style={{ border: '1px solid rgba(112,112,125,0.2)', boxShadow: 'var(--card-shadow)' }}>
+        <div className="app-table-card">
           <table className="w-full min-w-[640px] text-sm">
             <thead style={{ background: 'var(--graphite)', borderBottom: '1px solid rgba(112,112,125,0.15)' }}>
               <tr>
