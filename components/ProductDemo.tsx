@@ -15,7 +15,7 @@ const promptReplies = {
     'Recent price kills include Garland Flats, East Dallas 16, and Mesquite 8-Unit. Each missed your target by 11–18% on price per unit.',
 }
 
-const pipelineDeals = {
+const pipelineDeals: Record<string, (string | number)[][]> = {
   New: [
     ['4810 Gaston Ave', 'Dallas, TX', 'Multifamily', 82],
     ['Bishop Arts Flats', 'Dallas, TX', 'Mixed-use', 68],
@@ -101,6 +101,131 @@ const baseMessages = [
   ['ai', 'Verify rent roll quality, deferred maintenance, and whether seller underwriting assumes post-renovation rents too aggressively.'],
 ]
 
+type ScoringCriterion = { label: string; rating: number }
+
+interface DealInfo {
+  name: string
+  address: string
+  market: string
+  assetType: string
+  score: number
+  stage: string
+  ask: string
+  noi: string
+  capRate: string
+  pricePerUnit: string
+  units: number | string
+  strategy: string
+  broker: string
+  scoring: ScoringCriterion[]
+  overview: string
+  risks: string
+}
+
+const dealDetailMap: Record<string, DealInfo> = {
+  '4810 Gaston Ave': {
+    name: '4810 Gaston Ave',
+    address: '4810 Gaston Ave, Dallas, TX 75246',
+    market: 'Dallas, TX',
+    assetType: 'Multifamily',
+    score: 82,
+    stage: 'New',
+    ask: '$1,050,000',
+    noi: '$65,100',
+    capRate: '6.2%',
+    pricePerUnit: '$87,500',
+    units: 12,
+    strategy: 'Value-add MF',
+    broker: 'Marcus Webb / CBRE',
+    scoring: [
+      { label: 'Location Grade', rating: 4 },
+      { label: 'Tenant Quality', rating: 3 },
+      { label: 'Lease Term Remaining', rating: 3 },
+      { label: 'Debt Coverage Ratio', rating: 2 },
+      { label: 'Cap Rate vs Threshold', rating: 4 },
+      { label: 'Market Demand', rating: 3 },
+    ],
+    overview: '12-unit value-add multifamily in East Dallas. Below-market rents with ~22% upside to market. Seller underwriting appears aggressive on post-reno rents.',
+    risks: 'Deferred maintenance reserve may be understated. Verify rent roll quality before LOI.',
+  },
+  'Bishop Arts Flats': {
+    name: 'Bishop Arts Flats',
+    address: '412 N Bishop Ave, Dallas, TX 75208',
+    market: 'Dallas, TX',
+    assetType: 'Mixed-use',
+    score: 68,
+    stage: 'Screening',
+    ask: '$840,000',
+    noi: '$48,720',
+    capRate: '5.8%',
+    pricePerUnit: '$105,000',
+    units: 8,
+    strategy: 'Mixed-use',
+    broker: 'Jennifer Liu / JLL',
+    scoring: [
+      { label: 'Location Grade', rating: 4 },
+      { label: 'Tenant Quality', rating: 4 },
+      { label: 'Lease Term Remaining', rating: 3 },
+      { label: 'Debt Coverage Ratio', rating: 3 },
+      { label: 'Cap Rate vs Threshold', rating: 3 },
+      { label: 'Market Demand', rating: 3 },
+    ],
+    overview: '8-unit mixed-use in Bishop Arts District. Strong foot traffic and retail demand. Below-market cap rate relative to firm threshold.',
+    risks: 'Cap rate below threshold at 5.8%. Ground floor retail tenant on month-to-month lease creates rollover exposure.',
+  },
+  'Trinity Duplex Pack': {
+    name: 'Trinity Duplex Pack',
+    address: 'Multiple — Fort Worth, TX',
+    market: 'Fort Worth, TX',
+    assetType: 'SFR Pack',
+    score: 47,
+    stage: 'New',
+    ask: '$620,000',
+    noi: '$30,380',
+    capRate: '4.9%',
+    pricePerUnit: '$103,333',
+    units: 6,
+    strategy: 'SFR Pack',
+    broker: 'David Park / Newmark',
+    scoring: [
+      { label: 'Location Grade', rating: 2 },
+      { label: 'Tenant Quality', rating: 2 },
+      { label: 'Lease Term Remaining', rating: 3 },
+      { label: 'Debt Coverage Ratio', rating: 2 },
+      { label: 'Cap Rate vs Threshold', rating: 1 },
+      { label: 'Market Demand', rating: 3 },
+    ],
+    overview: '6-unit scattered-site duplex portfolio in Fort Worth. Mixed condition properties with management complexity.',
+    risks: 'Cap rate far below threshold at 4.9%. Significant deferred maintenance. Scattered-site management adds operational overhead.',
+  },
+}
+
+function buildGenericDeal(name: string): DealInfo {
+  for (const [stage, deals] of Object.entries(pipelineDeals)) {
+    for (const deal of deals) {
+      const [dealName, market, type, score] = deal
+      if (dealName === name) {
+        return {
+          name: dealName as string,
+          address: `${dealName as string}, ${market as string}`,
+          market: market as string,
+          assetType: type as string,
+          score: score as number,
+          stage,
+          ask: '—', noi: '—', capRate: '—', pricePerUnit: '—',
+          units: '—', strategy: type as string, broker: '—',
+          scoring: [], overview: '', risks: '',
+        }
+      }
+    }
+  }
+  return {
+    name, address: name, market: '—', assetType: '—', score: 0, stage: '—',
+    ask: '—', noi: '—', capRate: '—', pricePerUnit: '—',
+    units: '—', strategy: '—', broker: '—', scoring: [], overview: '', risks: '',
+  }
+}
+
 function scoreClass(score: number) {
   if (score > 70) return 'score-good'
   if (score >= 50) return 'score-mid'
@@ -175,6 +300,8 @@ export function ProductDemo() {
   )
 }
 
+// ── INTAKE ────────────────────────────────────────────────────────────────────
+
 function IntakePanel() {
   return (
     <div className="intake-panel">
@@ -222,7 +349,16 @@ function IntakePanel() {
   )
 }
 
+// ── PIPELINE ──────────────────────────────────────────────────────────────────
+
 function PipelinePanel() {
+  const [selectedDealName, setSelectedDealName] = useState<string | null>(null)
+
+  if (selectedDealName) {
+    const deal = dealDetailMap[selectedDealName] ?? buildGenericDeal(selectedDealName)
+    return <DealDetail key={selectedDealName} deal={deal} onBack={() => setSelectedDealName(null)} />
+  }
+
   return (
     <div className="demo-kanban">
       {Object.entries(pipelineDeals).map(([column, deals]) => (
@@ -232,15 +368,19 @@ function PipelinePanel() {
             <b>{deals.length}</b>
           </div>
           {deals.map(([name, market, type, score]) => (
-            <div className="kanban-card" key={name}>
+            <div
+              className="kanban-card"
+              key={name as string}
+              onClick={() => setSelectedDealName(name as string)}
+            >
               <div className="kanban-card-top">
                 <div>
-                  <h3>{name}</h3>
-                  <p>{market}</p>
+                  <h3>{name as string}</h3>
+                  <p>{market as string}</p>
                 </div>
-                <span className={`score-pill ${scoreClass(Number(score))}`}>{score}</span>
+                <span className={`score-pill ${scoreClass(Number(score))}`}>{score as number}</span>
               </div>
-              <span className="asset-tag">{type}</span>
+              <span className="asset-tag">{type as string}</span>
             </div>
           ))}
         </div>
@@ -248,6 +388,188 @@ function PipelinePanel() {
     </div>
   )
 }
+
+// ── DEAL DETAIL ───────────────────────────────────────────────────────────────
+
+const detailTabNames = ['Financials', 'Scoring', 'Notes', 'Files', 'Contacts']
+
+function DealDetail({ deal, onBack }: { deal: DealInfo; onBack: () => void }) {
+  const [detailTab, setDetailTab] = useState(0)
+
+  return (
+    <div className="deal-detail">
+      <button type="button" className="deal-back" onClick={onBack}>← Pipeline</button>
+
+      <div className="deal-header">
+        <div className="deal-header-left">
+          <div className="deal-title">{deal.name}</div>
+          <div className="deal-meta-row">
+            <span>{deal.address}</span>
+            <span className="deal-meta-sep">·</span>
+            <span className="asset-tag" style={{ fontSize: '10px', padding: '2px 8px' }}>{deal.assetType}</span>
+            <span className="deal-meta-sep">·</span>
+            <span>{deal.broker}</span>
+          </div>
+        </div>
+        <div className="deal-actions">
+          <select className="stage-select" defaultValue={deal.stage}>
+            {pipelineStages.map(s => <option key={s}>{s}</option>)}
+          </select>
+          <button type="button" className="kill-btn">Kill Deal</button>
+        </div>
+      </div>
+
+      <div className="detail-tabs">
+        {detailTabNames.map((tab, i) => (
+          <button
+            key={tab}
+            type="button"
+            className={`detail-tab ${detailTab === i ? 'active' : ''}`}
+            onClick={() => setDetailTab(i)}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      <div className="detail-content">
+        {detailTab === 0 && <DetailFinancials deal={deal} />}
+        {detailTab === 1 && <DetailScoring deal={deal} />}
+        {detailTab === 2 && <DetailNotes deal={deal} />}
+        {detailTab === 3 && <DetailFiles deal={deal} />}
+        {detailTab === 4 && <DetailContacts deal={deal} />}
+      </div>
+
+      <DecisionLog deal={deal} />
+    </div>
+  )
+}
+
+function DetailFinancials({ deal }: { deal: DealInfo }) {
+  return (
+    <>
+      <div className="stat-grid">
+        <div className="stat-box"><div className="stat-label">Asking Price</div><div className="stat-value">{deal.ask}</div></div>
+        <div className="stat-box"><div className="stat-label">NOI</div><div className="stat-value">{deal.noi}</div></div>
+        <div className="stat-box"><div className="stat-label">Cap Rate</div><div className="stat-value">{deal.capRate}</div></div>
+        <div className="stat-box"><div className="stat-label">Price / Unit</div><div className="stat-value">{deal.pricePerUnit}</div></div>
+      </div>
+      <div className="stat-grid">
+        <div className="stat-box"><div className="stat-label">Units</div><div className="stat-value">{deal.units}</div></div>
+        <div className="stat-box"><div className="stat-label">Strategy</div><div className="stat-value">{deal.strategy}</div></div>
+        <div className="stat-box"><div className="stat-label">Market</div><div className="stat-value">{deal.market}</div></div>
+        <div className="stat-box"><div className="stat-label">Broker</div><div className="stat-value">{deal.broker}</div></div>
+      </div>
+    </>
+  )
+}
+
+function DetailScoring({ deal }: { deal: DealInfo }) {
+  return (
+    <>
+      <div className="score-summary-row">
+        <div className="score-big-num">{deal.score}</div>
+        <div className="score-summary-meta">
+          <div className="score-out-of">out of 100</div>
+          <div className="score-bar-track">
+            <div className="score-bar-fill" style={{ width: `${deal.score}%` }} />
+          </div>
+        </div>
+      </div>
+      {deal.scoring.length > 0 && (
+        <>
+          <div className="scored-count">8 of 8 criteria scored.</div>
+          <div className="rating-list">
+            {deal.scoring.map(({ label, rating }) => (
+              <div className="rating-row" key={label}>
+                <span className="rating-label">{label}</span>
+                <div className="rating-btns">
+                  {[1, 2, 3, 4, 5].map(n => (
+                    <button key={n} type="button" className={`rating-btn${n === rating ? ' selected' : ''}`}>{n}</button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="scoring-total-row">
+            <span className="scoring-total-label">Total score</span>
+            <span className="scoring-total-val">{deal.score}/100</span>
+          </div>
+        </>
+      )}
+    </>
+  )
+}
+
+function DetailNotes({ deal }: { deal: DealInfo }) {
+  return (
+    <div className="notes-fields">
+      <div>
+        <div className="notes-field-label">Overview</div>
+        <textarea className="notes-textarea" defaultValue={deal.overview} />
+      </div>
+      <div>
+        <div className="notes-field-label">Risks</div>
+        <textarea className="notes-textarea" defaultValue={deal.risks} />
+      </div>
+      <div>
+        <div className="notes-field-label">Notes</div>
+        <textarea className="notes-textarea" placeholder="General notes, meeting summaries, follow-ups..." />
+      </div>
+    </div>
+  )
+}
+
+function DetailFiles({ deal }: { deal: DealInfo }) {
+  const fileName = deal.name.replace(/\s+/g, '_') + '_OM.pdf'
+  return (
+    <div className="files-panel">
+      <div className="file-row">
+        <span className="file-name">{fileName}</span>
+        <span className="file-meta">8.2 MB · Uploaded Jun 12</span>
+        <a href="#" className="file-download" onClick={e => e.preventDefault()}>Download</a>
+      </div>
+      <button type="button" className="ghost-btn-sm">+ Upload File</button>
+      <div className="file-empty">Drop files here or click to upload.</div>
+    </div>
+  )
+}
+
+function DetailContacts({ deal }: { deal: DealInfo }) {
+  const parts = deal.broker.split(' / ')
+  const brokerName = parts[0]
+  const brokerFirm = parts[1] ?? deal.broker
+  return (
+    <div className="contacts-panel">
+      <div className="contact-row">
+        <div className="contact-info">
+          <div className="contact-name">{brokerName}</div>
+          <div className="contact-role">Broker · Source</div>
+          <div className="contact-firm">{brokerFirm}</div>
+        </div>
+        <div className="contact-tags">
+          <span className="tag tp">Broker</span>
+          <span className="tag tg">Source</span>
+        </div>
+      </div>
+      <button type="button" className="ghost-btn-sm">+ Add Contact</button>
+    </div>
+  )
+}
+
+function DecisionLog({ deal }: { deal: DealInfo }) {
+  return (
+    <div className="decision-log">
+      <div className="decision-log-title">Decision Log</div>
+      <div className="decision-entry">
+        Jun 12 — Deal added to pipeline via firm inbox. OM parsed automatically. Score: {deal.score}/100.
+      </div>
+      <button type="button" className="ghost-btn-sm">+ Add Entry</button>
+    </div>
+  )
+}
+
+// ── DEAL SCORE ────────────────────────────────────────────────────────────────
 
 function DealScorePanel() {
   return (
@@ -283,6 +605,8 @@ function DealScorePanel() {
     </div>
   )
 }
+
+// ── GRAVEYARD ─────────────────────────────────────────────────────────────────
 
 function GraveyardPanel() {
   const [activeFilter, setActiveFilter] = useState<string | null>(null)
@@ -321,18 +645,20 @@ function GraveyardPanel() {
           <span>Date</span>
         </div>
         {visibleDeals.map(([property, market, reason, score, date]) => (
-          <div className="graveyard-row" key={property}>
-            <span>{property}</span>
-            <span>{market}</span>
-            <span><em>{reason}</em></span>
-            <span>{score}</span>
-            <span>{date}</span>
+          <div className="graveyard-row" key={property as string}>
+            <span>{property as string}</span>
+            <span>{market as string}</span>
+            <span><em>{reason as string}</em></span>
+            <span>{score as number}</span>
+            <span>{date as string}</span>
           </div>
         ))}
       </div>
     </div>
   )
 }
+
+// ── SIMILAR DEALS ─────────────────────────────────────────────────────────────
 
 function SimilarDealsPanel() {
   return (
@@ -345,15 +671,15 @@ function SimilarDealsPanel() {
       <div className="similar-line" aria-hidden="true" />
       <div className="similar-stack">
         {similarDeals.map(([name, score, outcome, note, date]) => (
-          <div className="similar-card" key={name}>
+          <div className="similar-card" key={name as string}>
             <div>
-              <h3>{name}</h3>
-              <p>{note}</p>
-              <small>{date}</small>
+              <h3>{name as string}</h3>
+              <p>{note as string}</p>
+              <small>{date as string}</small>
             </div>
             <div className="similar-meta">
-              <b>{score}</b>
-              <span className={outcome === 'Killed' ? 'outcome-killed' : 'outcome-advanced'}>{outcome}</span>
+              <b>{score as number}</b>
+              <span className={outcome === 'Killed' ? 'outcome-killed' : 'outcome-advanced'}>{outcome as string}</span>
             </div>
           </div>
         ))}
@@ -361,6 +687,8 @@ function SimilarDealsPanel() {
     </div>
   )
 }
+
+// ── AI ANALYST ────────────────────────────────────────────────────────────────
 
 function AiAnalystPanel({ messages, addPrompt }: { messages: string[][], addPrompt: (prompt: keyof typeof promptReplies) => void }) {
   return (
@@ -383,18 +711,14 @@ function AiAnalystPanel({ messages, addPrompt }: { messages: string[][], addProm
   )
 }
 
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+
 function DashboardPanel() {
   return (
     <div className="dashboard-panel">
       <div className="dash-stat-row">
-        <div className="dash-stat-card">
-          <b>21</b>
-          <span>Active Deals</span>
-        </div>
-        <div className="dash-stat-card">
-          <b>15</b>
-          <span>Killed Deals</span>
-        </div>
+        <div className="dash-stat-card"><b>21</b><span>Active Deals</span></div>
+        <div className="dash-stat-card"><b>15</b><span>Killed Deals</span></div>
       </div>
       <div className="demo-kicker" style={{ marginTop: '28px', marginBottom: '16px' }}>Kill Reason Breakdown</div>
       <div className="kill-breakdown">
@@ -414,6 +738,8 @@ function DashboardPanel() {
   )
 }
 
+// ── SETTINGS ──────────────────────────────────────────────────────────────────
+
 function SettingsPanel() {
   return (
     <div className="settings-panel">
@@ -425,7 +751,7 @@ function SettingsPanel() {
             <div className="buybox-criteria">Cap Rate ≥ 6.0%</div>
             <div className="buybox-criteria">Max Price $5.0M</div>
           </div>
-          <a href="#" className="settings-link">Edit</a>
+          <a href="#" className="settings-link" onClick={e => e.preventDefault()}>Edit</a>
         </div>
         <button type="button" className="settings-ghost-btn">+ New Buy Box</button>
       </div>
@@ -455,7 +781,7 @@ function SettingsPanel() {
             <div className="stage-row" key={stage}>
               <span className="scoring-num">{i + 1}</span>
               <span className="scoring-label">{stage}</span>
-              <a href="#" className="settings-link-muted">Edit</a>
+              <a href="#" className="settings-link-muted" onClick={e => e.preventDefault()}>Edit</a>
             </div>
           ))}
         </div>
