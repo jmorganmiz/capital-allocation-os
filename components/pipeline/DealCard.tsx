@@ -48,9 +48,9 @@ export default function DealCard({ deal, stage, onKill, onMove }: Props) {
       style={style}
       {...listeners}
       {...attributes}
-      className={`bg-white border border-gray-200 rounded-lg p-3 md:cursor-grab md:active:cursor-grabbing
-                  shadow-sm hover:shadow-md transition-shadow select-none
-                  ${isDragging ? 'opacity-50 shadow-lg' : ''}`}
+      className={`bg-gray-100 border border-gray-200 rounded-lg p-3 md:cursor-grab md:active:cursor-grabbing
+                  transition-colors select-none
+                  ${isDragging ? 'opacity-50' : 'hover:bg-gray-200'}`}
     >
       <div className="flex items-start justify-between gap-2 mb-2">
         <Link

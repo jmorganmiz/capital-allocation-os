@@ -29,8 +29,8 @@ export default function DealColumn({ stage, deals, onKill, onMove }: Props) {
 
       <div
         ref={setNodeRef}
-        className={`min-h-24 rounded-lg transition-colors space-y-2 p-1
-          ${isOver ? 'bg-blue-50 ring-2 ring-blue-200' : 'bg-gray-50'}`}
+        className={`min-h-24 rounded-lg transition-colors space-y-2 p-1 border border-gray-200
+          ${isOver ? 'bg-blue-50 ring-2 ring-blue-200' : 'bg-white'}`}
       >
         {deals.length === 0 ? (
           <div className="text-xs text-gray-300 text-center py-6">
