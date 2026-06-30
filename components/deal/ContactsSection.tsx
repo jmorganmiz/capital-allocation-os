@@ -2,12 +2,12 @@
 
 import { useState } from 'react'
 import {
+  ContactType,
+  createContact,
+  getContacts,
   linkContactToDeal,
   unlinkContactFromDeal,
   updateDealContactSource,
-  createContact,
-  getContacts,
-  ContactType,
 } from '@/lib/actions/contacts'
 
 interface Contact {
@@ -32,10 +32,13 @@ interface Props {
   initialDealContacts: DealContact[]
 }
 
-const TYPE_COLORS: Record<string, string> = {
-  broker: 'bg-blue-50 text-blue-700',
-  seller: 'bg-green-50 text-green-700',
-  lender: 'bg-purple-50 text-purple-700',
+function contactInitials(contact: Contact) {
+  return contact.name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('') || 'C'
 }
 
 export default function ContactsSection({ dealId, initialDealContacts }: Props) {
@@ -52,20 +55,24 @@ export default function ContactsSection({ dealId, initialDealContacts }: Props) 
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const linkedIds = new Set(dealContacts.map(dc => dc.contact_id))
+  const linkedIds = new Set(dealContacts.map((dealContact) => dealContact.contact_id))
 
   async function handleSearch(q: string) {
     setSearchQuery(q)
-    if (!q.trim()) { setSearchResults([]); return }
+    if (!q.trim()) {
+      setSearchResults([])
+      return
+    }
+
     setSearching(true)
     const result = await getContacts()
     if (result.contacts) {
       const lower = q.toLowerCase()
       setSearchResults(
-        (result.contacts as Contact[]).filter(
-          c => !linkedIds.has(c.id) &&
-            (c.name.toLowerCase().includes(lower) || (c.company ?? '').toLowerCase().includes(lower))
-        ).slice(0, 8)
+        (result.contacts as Contact[])
+          .filter((contact) => !linkedIds.has(contact.id) &&
+            (contact.name.toLowerCase().includes(lower) || (contact.company ?? '').toLowerCase().includes(lower)))
+          .slice(0, 8),
       )
     }
     setSearching(false)
@@ -73,161 +80,168 @@ export default function ContactsSection({ dealId, initialDealContacts }: Props) 
 
   async function handleLink(contact: Contact) {
     const result = await linkContactToDeal(contact.id, dealId, false)
-    if (result.error) { setError(result.error); return }
-    const newDc: DealContact = {
+    if (result.error) {
+      setError(result.error)
+      return
+    }
+
+    const newDealContact: DealContact = {
       id: crypto.randomUUID(),
       contact_id: contact.id,
       deal_id: dealId,
       is_source: false,
       contacts: contact,
     }
-    setDealContacts(prev => [...prev, newDc])
+    setDealContacts((prev) => [...prev, newDealContact])
     setShowAddPanel(false)
     setSearchQuery('')
     setSearchResults([])
   }
 
-  async function handleUnlink(dc: DealContact) {
-    const result = await unlinkContactFromDeal(dc.contact_id, dealId)
-    if (result.error) { setError(result.error); return }
-    setDealContacts(prev => prev.filter(d => d.id !== dc.id))
+  async function handleUnlink(dealContact: DealContact) {
+    const result = await unlinkContactFromDeal(dealContact.contact_id, dealId)
+    if (result.error) {
+      setError(result.error)
+      return
+    }
+    setDealContacts((prev) => prev.filter((item) => item.id !== dealContact.id))
   }
 
-  async function handleToggleSource(dc: DealContact) {
-    const next = !dc.is_source
-    const result = await updateDealContactSource(dc.contact_id, dealId, next)
-    if (result.error) { setError(result.error); return }
-    setDealContacts(prev => prev.map(d => d.id === dc.id ? { ...d, is_source: next } : d))
+  async function handleToggleSource(dealContact: DealContact) {
+    const next = !dealContact.is_source
+    const result = await updateDealContactSource(dealContact.contact_id, dealId, next)
+    if (result.error) {
+      setError(result.error)
+      return
+    }
+    setDealContacts((prev) => prev.map((item) => item.id === dealContact.id ? { ...item, is_source: next } : item))
   }
 
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleCreate(event: React.FormEvent) {
+    event.preventDefault()
     if (!newName.trim()) return
+
     setCreating(true)
     setError(null)
     const result = await createContact({
-      name:         newName.trim(),
+      name: newName.trim(),
       contact_type: (newType || null) as ContactType | null,
-      company:      newCompany.trim() || null,
-      email:        newEmail.trim() || null,
+      company: newCompany.trim() || null,
+      email: newEmail.trim() || null,
     })
+
     if (result.error) {
       setError(result.error)
       setCreating(false)
       return
     }
+
     const contact = (result as any).contact as Contact
     await handleLink(contact)
-    setNewName(''); setNewType(''); setNewCompany(''); setNewEmail('')
+    setNewName('')
+    setNewType('')
+    setNewCompany('')
+    setNewEmail('')
     setShowCreateForm(false)
     setCreating(false)
   }
 
   return (
-    <section>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Contacts</h2>
-        <button
-          onClick={() => setShowAddPanel(v => !v)}
-          className="btn-secondary text-sm"
-        >
+    <>
+      <div className="app-deal-section-header">
+        <div>
+          <p>Relationship map</p>
+          <h2>Contacts</h2>
+        </div>
+        <button onClick={() => setShowAddPanel((value) => !value)} className="app-deal-pill-button">
           + Add Contact
         </button>
       </div>
 
-      {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
+      {error && <p className="app-deal-error">{error}</p>}
 
-      {/* Add panel */}
       {showAddPanel && (
-        <div className="mb-4 rounded-lg p-4 space-y-3" style={{ border: '1px solid rgba(112,112,125,0.18)', background: 'var(--midnight-slate)' }}>
+        <div className="app-deal-contact-panel">
           {!showCreateForm ? (
             <>
               <input
                 value={searchQuery}
-                onChange={e => handleSearch(e.target.value)}
-                placeholder="Search existing contacts…"
-                className="input-base"
+                onChange={(event) => handleSearch(event.target.value)}
+                placeholder="Search existing contacts..."
                 autoFocus
               />
-              {searching && <p className="text-sm text-gray-400">Searching…</p>}
+
+              {searching && <p className="app-deal-muted">Searching...</p>}
+
               {searchResults.length > 0 && (
-                <div className="rounded-lg overflow-hidden" style={{ border: '1px solid rgba(112,112,125,0.18)' }}>
-                  {searchResults.map(c => (
-                    <button
-                      key={c.id}
-                      onClick={() => handleLink(c)}
-                      className="w-full text-left px-3 py-2.5 hover:bg-gray-50 flex items-center justify-between"
-                    >
-                      <div>
-                        <span className="text-sm font-medium text-gray-800">{c.name}</span>
-                        {c.company && <span className="text-xs text-gray-400 ml-2">{c.company}</span>}
-                      </div>
-                      {c.contact_type && (
-                        <span className={`text-xs px-2 py-0.5 rounded font-medium capitalize ${TYPE_COLORS[c.contact_type] ?? ''}`}>
-                          {c.contact_type}
-                        </span>
-                      )}
+                <div className="app-deal-contact-results">
+                  {searchResults.map((contact) => (
+                    <button key={contact.id} onClick={() => handleLink(contact)}>
+                      <span>
+                        <strong>{contact.name}</strong>
+                        {contact.company && <em>{contact.company}</em>}
+                      </span>
+                      {contact.contact_type && <small>{contact.contact_type}</small>}
                     </button>
                   ))}
                 </div>
               )}
+
               {searchQuery && searchResults.length === 0 && !searching && (
-                <p className="text-sm text-gray-400">No matches found.</p>
+                <p className="app-deal-muted">No matches found.</p>
               )}
-              <div className="flex items-center justify-between pt-1">
-                <button
-                  onClick={() => setShowCreateForm(true)}
-                  className="text-sm text-blue-600 hover:underline"
-                >
+
+              <div className="app-deal-form-actions">
+                <button onClick={() => setShowCreateForm(true)} data-primary="true">
                   + Create new contact
                 </button>
-                <button onClick={() => { setShowAddPanel(false); setSearchQuery(''); setSearchResults([]) }} className="btn-ghost text-sm">
+                <button onClick={() => {
+                  setShowAddPanel(false)
+                  setSearchQuery('')
+                  setSearchResults([])
+                }}>
                   Cancel
                 </button>
               </div>
             </>
           ) : (
-            <form onSubmit={handleCreate} className="space-y-3">
-              <p className="text-sm font-medium text-gray-700">New Contact</p>
+            <form onSubmit={handleCreate} className="app-deal-contact-form">
+              <p>New Contact</p>
               <input
                 value={newName}
-                onChange={e => setNewName(e.target.value)}
+                onChange={(event) => setNewName(event.target.value)}
                 required
                 placeholder="Name *"
-                className="input-base"
                 autoFocus
               />
               <select
                 value={newType}
-                onChange={e => setNewType(e.target.value as ContactType | '')}
-                className="input-base"
+                onChange={(event) => setNewType(event.target.value as ContactType | '')}
               >
-                <option value="">Select type…</option>
+                <option value="">Select type...</option>
                 <option value="broker">Broker</option>
                 <option value="seller">Seller</option>
                 <option value="lender">Lender</option>
               </select>
               <input
                 value={newCompany}
-                onChange={e => setNewCompany(e.target.value)}
+                onChange={(event) => setNewCompany(event.target.value)}
                 placeholder="Company"
-                className="input-base"
               />
               <input
                 type="email"
                 value={newEmail}
-                onChange={e => setNewEmail(e.target.value)}
+                onChange={(event) => setNewEmail(event.target.value)}
                 placeholder="Email"
-                className="input-base"
               />
-              <div className="flex gap-2 justify-end">
-                <button type="button" onClick={() => setShowCreateForm(false)} className="btn-ghost text-sm">Back</button>
+              <div className="app-deal-form-actions">
+                <button type="button" onClick={() => setShowCreateForm(false)}>Back</button>
                 <button
                   type="submit"
                   disabled={creating || !newName.trim()}
-                  className="btn-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  data-primary="true"
                 >
-                  {creating ? 'Creating…' : 'Create & Link'}
+                  {creating ? 'Creating...' : 'Create & Link'}
                 </button>
               </div>
             </form>
@@ -236,53 +250,33 @@ export default function ContactsSection({ dealId, initialDealContacts }: Props) 
       )}
 
       {dealContacts.length === 0 ? (
-        <div className="rounded-lg p-8 text-center" style={{ border: '1px dashed rgba(112,112,125,0.25)' }}>
-          <p style={{ fontSize: '13px', color: 'var(--lead)' }}>No contacts linked to this deal.</p>
-        </div>
+        <div className="app-deal-empty">No contacts linked to this deal yet.</div>
       ) : (
-        <div className="rounded-lg overflow-hidden" style={{ border: '1px solid rgba(112,112,125,0.18)' }}>
-          {dealContacts.map(dc => {
-            const c = dc.contacts
-            if (!c) return null
+        <div className="app-deal-contact-list">
+          {dealContacts.map((dealContact) => {
+            const contact = dealContact.contacts
+            if (!contact) return null
+
             return (
-              <div key={dc.id} className="flex items-center justify-between px-4 py-3">
-                <div className="flex items-center gap-3">
+              <div key={dealContact.id} className="app-deal-contact-row">
+                <div className="app-deal-contact-person">
+                  <span>{contactInitials(contact)}</span>
                   <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-900">{c.name}</span>
-                      {c.contact_type && (
-                        <span className={`text-xs px-2 py-0.5 rounded font-medium capitalize ${TYPE_COLORS[c.contact_type] ?? ''}`}>
-                          {c.contact_type}
-                        </span>
-                      )}
-                      {dc.is_source && (
-                        <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded font-medium">
-                          Source
-                        </span>
-                      )}
-                    </div>
-                    {c.company && (
-                      <p className="text-xs text-gray-400 mt-0.5">{c.company}</p>
-                    )}
+                    <strong>{contact.name}</strong>
+                    <em>{contact.company || contact.email || 'No company captured'}</em>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => handleToggleSource(dc)}
-                    title={dc.is_source ? 'Remove as source' : 'Mark as source'}
-                    className={`text-xs px-2 py-1 rounded border transition-colors ${
-                      dc.is_source
-                        ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
-                        : 'border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300'
-                    }`}
-                  >
-                    {dc.is_source ? '★ Source' : '☆ Source'}
+
+                <div className="app-deal-contact-tags">
+                  {contact.contact_type && <small>{contact.contact_type}</small>}
+                  {dealContact.is_source && <small data-tone="amber">Source</small>}
+                </div>
+
+                <div className="app-deal-contact-actions">
+                  <button onClick={() => handleToggleSource(dealContact)}>
+                    {dealContact.is_source ? 'Remove source' : 'Mark source'}
                   </button>
-                  <button
-                    onClick={() => handleUnlink(dc)}
-                    className="text-xs text-gray-400 hover:text-red-600"
-                    title="Remove from deal"
-                  >
+                  <button onClick={() => handleUnlink(dealContact)} data-danger="true">
                     Remove
                   </button>
                 </div>
@@ -291,6 +285,6 @@ export default function ContactsSection({ dealId, initialDealContacts }: Props) 
           })}
         </div>
       )}
-    </section>
+    </>
   )
 }
