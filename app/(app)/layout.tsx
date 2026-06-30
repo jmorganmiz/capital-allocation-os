@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import MobileSidebar from '@/components/layout/MobileSidebar'
 import Toaster from '@/components/ui/Toaster'
 import AccessGate from '@/components/billing/AccessGate'
+import AnalystDrawer from '@/components/analyst/AnalystDrawer'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -30,6 +31,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           {children}
         </AccessGate>
       </main>
+      <AnalystDrawer />
       <Toaster />
     </div>
   )
