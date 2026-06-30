@@ -59,62 +59,49 @@ export default function ScoringCriteriaSettings({ criteria: initial }: { criteri
 
   return (
     <section>
-      <h2 className="text-base font-semibold text-gray-900 mb-1">Scoring Criteria</h2>
-      <p className="text-sm text-gray-500 mb-3">
-        Define what gets evaluated when underwriting a deal. Rate each 1–5 per deal.
+      <div className="app-settings-section-header">
+        <div>
+          <p>AI scoring</p>
+          <h2>Scoring Criteria</h2>
+        </div>
+        <span>{criteria.filter(c => c.is_active).length} active</span>
+      </div>
+      <p className="app-settings-section-copy">
+        Define what gets evaluated when underwriting a deal. Rate each 1-5 per deal.
       </p>
 
-      <div className="border border-gray-200 rounded-lg divide-y divide-gray-100">
+      <div className="app-settings-rule-list">
         {criteria.length === 0 && (
-          <div className="px-4 py-8 text-center text-sm text-gray-400">
-            No criteria yet. Add your first below.
-          </div>
+          <div className="app-settings-empty-row">No criteria yet. Add your first below.</div>
         )}
         {criteria.map((c, i) => (
-          <div key={c.id} className={`flex items-center justify-between px-4 py-3 ${!c.is_active ? 'opacity-50' : ''}`}>
+          <div key={c.id} className="app-settings-rule-row" data-inactive={!c.is_active ? 'true' : 'false'}>
             {editId === c.id ? (
               <input
                 value={editName}
                 onChange={e => setEditName(e.target.value)}
-                className="input-base flex-1 mr-3"
+                className="input-base"
                 autoFocus
                 onKeyDown={e => { if (e.key === 'Enter') handleRename(c.id); if (e.key === 'Escape') setEditId(null) }}
               />
             ) : (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-400 w-5">{i + 1}.</span>
-                <span className="text-sm text-gray-800">{c.name}</span>
-                {!c.is_active && (
-                  <span className="text-xs bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded">hidden</span>
-                )}
+              <div className="app-settings-rule-main">
+                <span>{i + 1}</span>
+                <strong>{c.name}</strong>
+                {!c.is_active && <em>hidden</em>}
               </div>
             )}
-            <div className="flex gap-3 items-center">
+            <div className="app-settings-rule-actions">
               {editId === c.id ? (
                 <>
-                  <button onClick={() => handleRename(c.id)} className="text-xs text-blue-600 hover:underline">Save</button>
-                  <button onClick={() => setEditId(null)} className="text-xs text-gray-400 hover:underline">Cancel</button>
+                  <button onClick={() => handleRename(c.id)}>Save</button>
+                  <button onClick={() => setEditId(null)}>Cancel</button>
                 </>
               ) : (
                 <>
-                  <button
-                    onClick={() => { setEditId(c.id); setEditName(c.name) }}
-                    className="text-xs text-gray-500 hover:text-gray-700"
-                  >
-                    Rename
-                  </button>
-                  <button
-                    onClick={() => handleToggleActive(c)}
-                    className="text-xs text-gray-500 hover:text-gray-700"
-                  >
-                    {c.is_active ? 'Hide' : 'Show'}
-                  </button>
-                  <button
-                    onClick={() => handleDelete(c.id)}
-                    className="text-xs text-red-500 hover:text-red-700"
-                  >
-                    Delete
-                  </button>
+                  <button onClick={() => { setEditId(c.id); setEditName(c.name) }}>Rename</button>
+                  <button onClick={() => handleToggleActive(c)}>{c.is_active ? 'Hide' : 'Show'}</button>
+                  <button onClick={() => handleDelete(c.id)} data-danger="true">Delete</button>
                 </>
               )}
             </div>
@@ -122,12 +109,12 @@ export default function ScoringCriteriaSettings({ criteria: initial }: { criteri
         ))}
       </div>
 
-      <div className="flex gap-2 mt-3">
+      <div className="app-settings-add-row">
         <input
           value={newName}
           onChange={e => setNewName(e.target.value)}
-          placeholder="New criteria name…"
-          className="input-base flex-1"
+          placeholder="New criteria name..."
+          className="input-base"
           onKeyDown={e => e.key === 'Enter' && handleAdd()}
         />
         <button

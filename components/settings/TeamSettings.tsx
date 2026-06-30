@@ -48,61 +48,65 @@ export default function TeamSettings({ members, invites: initialInvites, firmNam
     })
   }
 
+  const pendingInvites = invites.filter(i => !i.accepted_at)
+
   return (
     <section>
-      <h2 className="text-base font-semibold text-gray-900 mb-1">Team Members</h2>
-      <p className="text-sm text-gray-500 mb-4">{firmName}</p>
+      <div className="app-settings-section-header">
+        <div>
+          <p>Access</p>
+          <h2>Team Members</h2>
+        </div>
+        <span>{members.length} members</span>
+      </div>
+      <p className="app-settings-section-copy">{firmName}</p>
 
-      {/* Current members */}
-      <div className="border border-gray-200 rounded-lg divide-y divide-gray-100 mb-6">
+      <div className="app-settings-rule-list">
         {members.map(member => (
-          <div key={member.id} className="flex items-center justify-between px-4 py-3">
+          <div key={member.id} className="app-settings-person-row">
             <div>
-              <p className="text-sm font-medium text-gray-800">{member.full_name ?? 'Unknown'}</p>
-              <p className="text-xs text-gray-400">{member.email}</p>
+              <strong>{member.full_name ?? 'Unknown'}</strong>
+              <span>{member.email}</span>
             </div>
-            <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">
-              {member.role ?? 'member'}
-            </span>
+            <em>{member.role ?? 'member'}</em>
           </div>
         ))}
       </div>
 
-      {/* Invite form */}
-      <h3 className="text-sm font-semibold text-gray-700 mb-3">Invite Teammate</h3>
-      <div className="flex gap-2 mb-4">
-        <input
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          placeholder="colleague@firm.com"
-          className="input-base flex-1"
-          onKeyDown={e => e.key === 'Enter' && handleInvite()}
-          type="email"
-        />
-        <button
-          onClick={handleInvite}
-          disabled={isPending || !email.trim()}
-          className="btn-primary disabled:opacity-50"
-        >
-          {isPending ? 'Sending…' : 'Send Invite'}
-        </button>
+      <div className="app-settings-invite-box">
+        <div>
+          <h3>Invite teammate</h3>
+          <p>Bring the investment team into the same decision history.</p>
+        </div>
+        <div className="app-settings-add-row compact">
+          <input
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="colleague@firm.com"
+            className="input-base"
+            onKeyDown={e => e.key === 'Enter' && handleInvite()}
+            type="email"
+          />
+          <button onClick={handleInvite} disabled={isPending || !email.trim()} className="btn-primary disabled:opacity-50">
+            {isPending ? 'Sending...' : 'Send Invite'}
+          </button>
+        </div>
       </div>
 
-      {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
-      {success && <p className="text-sm text-green-600 mb-3">{success}</p>}
+      {error && <p className="app-settings-status error">{error}</p>}
+      {success && <p className="app-settings-status success">{success}</p>}
 
-      {/* Pending invites */}
-      {invites.filter(i => !i.accepted_at).length > 0 && (
-        <div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-2">Pending Invites</h3>
-          <div className="border border-gray-200 rounded-lg divide-y divide-gray-100">
-            {invites.filter(i => !i.accepted_at).map(invite => (
-              <div key={invite.id} className="flex items-center justify-between px-4 py-3">
-                <p className="text-sm text-gray-600">{invite.email}</p>
-                <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded">Pending</span>
+      {pendingInvites.length > 0 && (
+        <div className="app-settings-rule-list">
+          {pendingInvites.map(invite => (
+            <div key={invite.id} className="app-settings-person-row">
+              <div>
+                <strong>{invite.email}</strong>
+                <span>Pending invitation</span>
               </div>
-            ))}
-          </div>
+              <em data-tone="amber">Pending</em>
+            </div>
+          ))}
         </div>
       )}
     </section>

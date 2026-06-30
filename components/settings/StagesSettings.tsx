@@ -27,8 +27,6 @@ export default function StagesSettings({ stages: initial, checklistItems: initia
   const [editItemName, setEditItemName] = useState('')
   const [isPending, startTransition] = useTransition()
 
-  // ── Stage handlers ──────────────────────────────────────────────────────────
-
   function handleAdd() {
     if (!newName.trim()) return
     startTransition(async () => {
@@ -56,8 +54,6 @@ export default function StagesSettings({ stages: initial, checklistItems: initia
       if (expandedStageId === id) setExpandedStageId(null)
     })
   }
-
-  // ── Checklist item handlers ─────────────────────────────────────────────────
 
   function itemsForStage(stageId: string) {
     return items.filter(i => i.stage_id === stageId).sort((a, b) => a.position - b.position)
@@ -115,134 +111,105 @@ export default function StagesSettings({ stages: initial, checklistItems: initia
 
   return (
     <section>
-      <h2 className="text-base font-semibold text-gray-900 mb-3">Pipeline Stages</h2>
-      <div className="border border-gray-200 rounded-lg divide-y divide-gray-100">
+      <div className="app-settings-section-header">
+        <div>
+          <p>Workflow rules</p>
+          <h2>Pipeline Stages</h2>
+        </div>
+        <span>{stages.length} stages</span>
+      </div>
+      <p className="app-settings-section-copy">Define how deals move through your firm workflow.</p>
+
+      <div className="app-settings-rule-list">
         {stages.map((stage, i) => {
           const stageItems = itemsForStage(stage.id)
           const isExpanded = expandedStageId === stage.id
 
           return (
-            <div key={stage.id}>
-              {/* Stage row */}
-              <div className="flex items-center justify-between px-4 py-3">
+            <div key={stage.id} className="app-settings-stage-block">
+              <div className="app-settings-rule-row">
                 {editId === stage.id ? (
                   <input
                     value={editName}
                     onChange={e => setEditName(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleUpdate(stage.id)}
-                    className="input-base flex-1 mr-3"
+                    className="input-base"
                     autoFocus
                   />
                 ) : (
-                  <div className="flex items-center gap-2 flex-1">
-                    <span className="text-xs text-gray-400 w-5">{i + 1}.</span>
-                    <span className="text-sm text-gray-800">{stage.name}</span>
-                    {stage.is_terminal && (
-                      <span className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">terminal</span>
-                    )}
+                  <div className="app-settings-rule-main">
+                    <span>{i + 1}</span>
+                    <strong>{stage.name}</strong>
+                    {stage.is_terminal && <em>terminal</em>}
                   </div>
                 )}
 
-                <div className="flex items-center gap-2">
-                  {/* Checklist toggle */}
+                <div className="app-settings-rule-actions">
                   {editId !== stage.id && (
-                    <button
-                      onClick={() => setExpandedStageId(isExpanded ? null : stage.id)}
-                      className="text-xs text-gray-400 hover:text-gray-600 transition-colors px-1.5 py-0.5 rounded hover:bg-gray-100"
-                    >
-                      {stageItems.length > 0
-                        ? `Checklist (${stageItems.length})`
-                        : '+ Checklist'}
+                    <button onClick={() => setExpandedStageId(isExpanded ? null : stage.id)}>
+                      {stageItems.length > 0 ? `Checklist (${stageItems.length})` : '+ Checklist'}
                     </button>
                   )}
                   {editId === stage.id ? (
                     <>
-                      <button onClick={() => handleUpdate(stage.id)} className="text-xs text-blue-600 hover:underline">Save</button>
-                      <button onClick={() => setEditId(null)} className="text-xs text-gray-400 hover:underline">Cancel</button>
+                      <button onClick={() => handleUpdate(stage.id)}>Save</button>
+                      <button onClick={() => setEditId(null)}>Cancel</button>
                     </>
                   ) : (
                     <>
-                      <button
-                        onClick={() => { setEditId(stage.id); setEditName(stage.name) }}
-                        className="text-xs text-gray-500 hover:text-gray-700"
-                      >Edit</button>
-                      <button
-                        onClick={() => handleDelete(stage.id)}
-                        className="text-xs text-red-500 hover:text-red-700"
-                      >Delete</button>
+                      <button onClick={() => { setEditId(stage.id); setEditName(stage.name) }}>Edit</button>
+                      <button onClick={() => handleDelete(stage.id)} data-danger="true">Delete</button>
                     </>
                   )}
                 </div>
               </div>
 
-              {/* Checklist sub-panel */}
               {isExpanded && (
-                <div className="bg-gray-50 border-t border-gray-100 px-4 py-3 space-y-2">
+                <div className="app-settings-checklist-panel">
                   {stageItems.length === 0 && (
-                    <p className="text-xs text-gray-400 italic">No checklist items yet.</p>
+                    <p className="app-settings-empty-row">No checklist items yet.</p>
                   )}
                   {stageItems.map((item, idx) => (
-                    <div key={item.id} className="flex items-center gap-2">
-                      <span className="text-xs text-gray-300 w-4">{idx + 1}.</span>
+                    <div key={item.id} className="app-settings-checklist-row">
+                      <span>{idx + 1}</span>
                       {editItemId === item.id ? (
                         <input
                           value={editItemName}
                           onChange={e => setEditItemName(e.target.value)}
                           onKeyDown={e => e.key === 'Enter' && handleUpdateItem(item.id)}
-                          className="input-base flex-1 text-xs py-1"
+                          className="input-base"
                           autoFocus
                         />
                       ) : (
-                        <span className="text-sm text-gray-700 flex-1">{item.name}</span>
+                        <strong>{item.name}</strong>
                       )}
-                      <div className="flex items-center gap-1">
+                      <div className="app-settings-rule-actions">
                         {editItemId === item.id ? (
                           <>
-                            <button onClick={() => handleUpdateItem(item.id)} className="text-xs text-blue-600 hover:underline">Save</button>
-                            <button onClick={() => setEditItemId(null)} className="text-xs text-gray-400 hover:underline">Cancel</button>
+                            <button onClick={() => handleUpdateItem(item.id)}>Save</button>
+                            <button onClick={() => setEditItemId(null)}>Cancel</button>
                           </>
                         ) : (
                           <>
-                            <button
-                              onClick={() => handleMoveItem(item.id, stage.id, 'up')}
-                              disabled={idx === 0}
-                              className="text-xs text-gray-300 hover:text-gray-500 disabled:opacity-30 px-0.5"
-                              aria-label="Move up"
-                            >↑</button>
-                            <button
-                              onClick={() => handleMoveItem(item.id, stage.id, 'down')}
-                              disabled={idx === stageItems.length - 1}
-                              className="text-xs text-gray-300 hover:text-gray-500 disabled:opacity-30 px-0.5"
-                              aria-label="Move down"
-                            >↓</button>
-                            <button
-                              onClick={() => { setEditItemId(item.id); setEditItemName(item.name) }}
-                              className="text-xs text-gray-500 hover:text-gray-700"
-                            >Edit</button>
-                            <button
-                              onClick={() => handleDeleteItem(item.id)}
-                              className="text-xs text-red-500 hover:text-red-700"
-                            >Delete</button>
+                            <button onClick={() => handleMoveItem(item.id, stage.id, 'up')} disabled={idx === 0} aria-label="Move up">↑</button>
+                            <button onClick={() => handleMoveItem(item.id, stage.id, 'down')} disabled={idx === stageItems.length - 1} aria-label="Move down">↓</button>
+                            <button onClick={() => { setEditItemId(item.id); setEditItemName(item.name) }}>Edit</button>
+                            <button onClick={() => handleDeleteItem(item.id)} data-danger="true">Delete</button>
                           </>
                         )}
                       </div>
                     </div>
                   ))}
 
-                  {/* Add item row */}
-                  <div className="flex gap-2 pt-1">
+                  <div className="app-settings-add-row compact">
                     <input
                       value={newItemName}
                       onChange={e => setNewItemName(e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && handleAddItem(stage.id)}
-                      placeholder="Add checklist item…"
-                      className="input-base flex-1 text-xs py-1"
+                      placeholder="Add checklist item..."
+                      className="input-base"
                     />
-                    <button
-                      onClick={() => handleAddItem(stage.id)}
-                      disabled={isPending || !newItemName.trim()}
-                      className="btn-secondary text-xs py-1 px-3 disabled:opacity-50"
-                    >
+                    <button onClick={() => handleAddItem(stage.id)} disabled={isPending || !newItemName.trim()} className="btn-secondary disabled:opacity-50">
                       Add
                     </button>
                   </div>
@@ -253,20 +220,15 @@ export default function StagesSettings({ stages: initial, checklistItems: initia
         })}
       </div>
 
-      {/* Add stage row */}
-      <div className="flex gap-2 mt-3">
+      <div className="app-settings-add-row">
         <input
           value={newName}
           onChange={e => setNewName(e.target.value)}
-          placeholder="New stage name…"
-          className="input-base flex-1"
+          placeholder="New stage name..."
+          className="input-base"
           onKeyDown={e => e.key === 'Enter' && handleAdd()}
         />
-        <button
-          onClick={handleAdd}
-          disabled={isPending || !newName.trim()}
-          className="btn-secondary disabled:opacity-50"
-        >
+        <button onClick={handleAdd} disabled={isPending || !newName.trim()} className="btn-secondary disabled:opacity-50">
           Add Stage
         </button>
       </div>

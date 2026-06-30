@@ -39,46 +39,54 @@ export default function KillReasonsSettings({ killReasons: initial }: { killReas
 
   return (
     <section>
-      <h2 className="text-base font-semibold text-gray-900 mb-3">Kill Reasons</h2>
-      <p className="text-sm text-gray-500 mb-3">Required when a deal is killed. Drives structured reporting.</p>
-      <div className="border border-gray-200 rounded-lg divide-y divide-gray-100">
+      <div className="app-settings-section-header">
+        <div>
+          <p>Decision memory</p>
+          <h2>Kill Reasons</h2>
+        </div>
+        <span>{reasons.length} reasons</span>
+      </div>
+      <p className="app-settings-section-copy">Required when a deal is killed. Drives structured reporting and future recall.</p>
+
+      <div className="app-settings-rule-list">
         {reasons.map((reason, i) => (
-          <div key={reason.id} className="flex items-center justify-between px-4 py-3">
+          <div key={reason.id} className="app-settings-rule-row">
             {editId === reason.id ? (
               <input
                 value={editName}
                 onChange={e => setEditName(e.target.value)}
-                className="input-base flex-1 mr-3"
+                className="input-base"
                 autoFocus
               />
             ) : (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-400 w-5">{i + 1}.</span>
-                <span className="text-sm text-gray-800">{reason.name}</span>
+              <div className="app-settings-rule-main">
+                <span>{i + 1}</span>
+                <strong>{reason.name}</strong>
               </div>
             )}
-            <div className="flex gap-2">
+            <div className="app-settings-rule-actions">
               {editId === reason.id ? (
                 <>
-                  <button onClick={() => handleUpdate(reason.id)} className="text-xs text-blue-600 hover:underline">Save</button>
-                  <button onClick={() => setEditId(null)} className="text-xs text-gray-400 hover:underline">Cancel</button>
+                  <button onClick={() => handleUpdate(reason.id)}>Save</button>
+                  <button onClick={() => setEditId(null)}>Cancel</button>
                 </>
               ) : (
                 <>
-                  <button onClick={() => { setEditId(reason.id); setEditName(reason.name) }} className="text-xs text-gray-500 hover:text-gray-700">Edit</button>
-                  <button onClick={() => handleDelete(reason.id)} className="text-xs text-red-500 hover:text-red-700">Delete</button>
+                  <button onClick={() => { setEditId(reason.id); setEditName(reason.name) }}>Edit</button>
+                  <button onClick={() => handleDelete(reason.id)} data-danger="true">Delete</button>
                 </>
               )}
             </div>
           </div>
         ))}
       </div>
-      <div className="flex gap-2 mt-3">
+
+      <div className="app-settings-add-row">
         <input
           value={newName}
           onChange={e => setNewName(e.target.value)}
-          placeholder="New kill reason…"
-          className="input-base flex-1"
+          placeholder="New kill reason..."
+          className="input-base"
           onKeyDown={e => e.key === 'Enter' && handleAdd()}
         />
         <button onClick={handleAdd} disabled={isPending || !newName.trim()} className="btn-secondary disabled:opacity-50">

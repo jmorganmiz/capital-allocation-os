@@ -2436,6 +2436,292 @@ body {
   color: var(--app-muted);
 }
 
+.app-root .app-settings-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 10px;
+}
+
+.app-root .app-settings-section-header p {
+  color: var(--app-faint) !important;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.app-root .app-settings-section-header h2 {
+  color: var(--app-text) !important;
+  font-size: 18px !important;
+  font-weight: 680;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin-top: 6px;
+}
+
+.app-root .app-settings-section-header > span {
+  color: var(--ghost-blue);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.app-root .app-settings-section-copy {
+  color: var(--app-muted) !important;
+  font-size: 13px;
+  line-height: 1.55;
+  margin-bottom: 18px;
+}
+
+.app-root .app-settings-rule-list {
+  overflow: hidden;
+  border: 1px solid rgba(112,112,125,0.16);
+  border-radius: 14px;
+  background: rgba(23,23,33,0.48);
+}
+
+.app-root .app-settings-rule-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  min-height: 58px;
+  padding: 12px 14px;
+  border-top: 1px solid rgba(112,112,125,0.1);
+}
+
+.app-root .app-settings-rule-row:first-child {
+  border-top: 0;
+}
+
+.app-root .app-settings-rule-row[data-inactive='true'] {
+  opacity: 0.56;
+}
+
+.app-root .app-settings-stage-block + .app-settings-stage-block {
+  border-top: 1px solid rgba(112,112,125,0.1);
+}
+
+.app-root .app-settings-stage-block .app-settings-rule-row {
+  border-top: 0;
+}
+
+.app-root .app-settings-rule-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.app-root .app-settings-rule-main > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid rgba(112,112,125,0.16);
+  border-radius: 999px;
+  background: rgba(112,112,125,0.08);
+  color: var(--app-faint);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.app-root .app-settings-rule-main strong {
+  overflow: hidden;
+  color: var(--app-text);
+  font-size: 14px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-root .app-settings-rule-main em,
+.app-root .app-settings-person-row em {
+  border: 1px solid rgba(112,112,125,0.18);
+  border-radius: 999px;
+  background: rgba(112,112,125,0.08);
+  color: var(--app-muted);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  padding: 4px 8px;
+  text-transform: uppercase;
+}
+
+.app-root .app-settings-person-row em[data-tone='amber'] {
+  border-color: rgba(245,158,11,0.22);
+  background: rgba(245,158,11,0.1);
+  color: #fbbf24;
+}
+
+.app-root .app-settings-rule-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.app-root .app-settings-rule-actions button {
+  border: 1px solid rgba(112,112,125,0.18);
+  border-radius: 999px;
+  background: rgba(112,112,125,0.08);
+  color: var(--app-muted);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 9px;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.app-root .app-settings-rule-actions button:hover:not(:disabled) {
+  border-color: rgba(82,102,235,0.32);
+  background: rgba(82,102,235,0.1);
+  color: var(--ghost-blue);
+}
+
+.app-root .app-settings-rule-actions button[data-danger='true'] {
+  border-color: rgba(248,113,113,0.2);
+  background: rgba(248,113,113,0.08);
+  color: #f87171;
+}
+
+.app-root .app-settings-rule-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.36;
+}
+
+.app-root .app-settings-add-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.app-root .app-settings-add-row.compact {
+  margin-top: 10px;
+}
+
+.app-root .app-settings-add-row input {
+  width: 100% !important;
+}
+
+.app-root .app-settings-checklist-panel {
+  border-top: 1px solid rgba(112,112,125,0.1);
+  background: rgba(12,12,20,0.26);
+  padding: 12px;
+}
+
+.app-root .app-settings-checklist-row {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 42px;
+  border: 1px solid rgba(112,112,125,0.12);
+  border-radius: 12px;
+  background: rgba(30,30,42,0.58);
+  padding: 8px 10px;
+}
+
+.app-root .app-settings-checklist-row + .app-settings-checklist-row {
+  margin-top: 8px;
+}
+
+.app-root .app-settings-checklist-row > span {
+  color: var(--app-faint);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.app-root .app-settings-checklist-row strong {
+  color: var(--app-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.app-root .app-settings-empty-row {
+  color: var(--app-faint);
+  font-size: 13px;
+  padding: 18px;
+  text-align: center;
+}
+
+.app-root .app-settings-person-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 64px;
+  padding: 13px 14px;
+  border-top: 1px solid rgba(112,112,125,0.1);
+}
+
+.app-root .app-settings-person-row:first-child {
+  border-top: 0;
+}
+
+.app-root .app-settings-person-row strong {
+  display: block;
+  color: var(--app-text);
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.app-root .app-settings-person-row span {
+  display: block;
+  color: var(--app-faint);
+  font-size: 12px;
+  margin-top: 3px;
+}
+
+.app-root .app-settings-invite-box {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.7fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  margin-top: 16px;
+  margin-bottom: 16px;
+  border: 1px solid rgba(82,102,235,0.18);
+  border-radius: 14px;
+  background: rgba(82,102,235,0.06);
+  padding: 16px;
+}
+
+.app-root .app-settings-invite-box h3 {
+  color: var(--app-text);
+  font-size: 14px;
+  font-weight: 680;
+}
+
+.app-root .app-settings-invite-box p {
+  color: var(--app-faint) !important;
+  font-size: 12px;
+  line-height: 1.45;
+  margin-top: 4px;
+}
+
+.app-root .app-settings-status {
+  border-radius: 12px;
+  font-size: 13px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+}
+
+.app-root .app-settings-status.error {
+  border: 1px solid rgba(248,113,113,0.22);
+  background: rgba(248,113,113,0.08);
+  color: #f87171 !important;
+}
+
+.app-root .app-settings-status.success {
+  border: 1px solid rgba(34,197,94,0.22);
+  background: rgba(34,197,94,0.08);
+  color: #4ade80 !important;
+}
+
 @media (max-width: 1100px) {
   .app-root .app-intake-command-grid {
     grid-template-columns: 1fr;
@@ -2498,6 +2784,10 @@ body {
   .app-root .app-settings-nav a {
     white-space: nowrap;
   }
+
+  .app-root .app-settings-invite-box {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 700px) {
@@ -2555,6 +2845,23 @@ body {
     border: 1px solid rgba(112,112,125,0.16);
     border-radius: 14px;
     background: rgba(23,23,33,0.58);
+  }
+
+  .app-root .app-settings-rule-row,
+  .app-root .app-settings-checklist-row {
+    grid-template-columns: 1fr;
+  }
+
+  .app-root .app-settings-rule-actions {
+    justify-content: flex-start;
+  }
+
+  .app-root .app-settings-add-row {
+    grid-template-columns: 1fr;
+  }
+
+  .app-root .app-settings-add-row button {
+    width: 100%;
   }
 
   .app-root .app-graveyard-panel {
