@@ -3,16 +3,15 @@
 import { useEffect, useRef, useState } from 'react'
 
 const TABS = [
-  { label: 'Financials', id: 'section-financials'  },
-  { label: 'Scoring',    id: 'section-scoring'     },
-  { label: 'Notes',      id: 'section-notes'      },
-  { label: 'Files',      id: 'section-files'       },
-  { label: 'Contacts',   id: 'section-contacts'    },
-  { label: 'Activity',   id: 'section-activity'    },
-  { label: 'Similar',    id: 'section-similar'     },
+  { label: 'Financials', id: 'section-financials' },
+  { label: 'Scoring', id: 'section-scoring' },
+  { label: 'Notes', id: 'section-notes' },
+  { label: 'Files', id: 'section-files' },
+  { label: 'Contacts', id: 'section-contacts' },
+  { label: 'Activity', id: 'section-activity' },
+  { label: 'Similar', id: 'section-similar' },
 ]
 
-// Walk up the DOM to find the nearest scrollable ancestor
 function findScrollContainer(el: Element | null): Element | null {
   if (!el || el === document.documentElement) return null
   const { overflow, overflowY } = getComputedStyle(el)
@@ -28,18 +27,16 @@ export default function DealTabs() {
   const containerRef = useRef<Element | null>(null)
 
   useEffect(() => {
-    // Find the scroll container from the first section element
     const firstEl = document.getElementById(TABS[0].id)
     const container = findScrollContainer(firstEl ?? null)
     containerRef.current = container
 
-    const targets = TABS.map(t => document.getElementById(t.id)).filter(Boolean) as HTMLElement[]
+    const targets = TABS.map((tab) => document.getElementById(tab.id)).filter(Boolean) as HTMLElement[]
 
     observerRef.current = new IntersectionObserver(
-      entries => {
-        // Pick the topmost currently-visible section
+      (entries) => {
         const visible = entries
-          .filter(e => e.isIntersecting)
+          .filter((entry) => entry.isIntersecting)
           .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)
         if (visible.length > 0) setActive(visible[0].target.id)
       },
@@ -47,45 +44,41 @@ export default function DealTabs() {
         root: container ?? null,
         rootMargin: '-20% 0px -60% 0px',
         threshold: 0,
-      }
+      },
     )
 
-    targets.forEach(el => observerRef.current!.observe(el))
+    targets.forEach((el) => observerRef.current?.observe(el))
     return () => observerRef.current?.disconnect()
   }, [])
 
   function scrollTo(id: string) {
     const el = document.getElementById(id)
     if (!el) return
-    const OFFSET = 80 // clears sticky tab bar + header
+    const offset = 88
     const container = containerRef.current
 
     if (container) {
-      const top = container.scrollTop + el.getBoundingClientRect().top - container.getBoundingClientRect().top - OFFSET
+      const top = container.scrollTop + el.getBoundingClientRect().top - container.getBoundingClientRect().top - offset
       container.scrollTo({ top, behavior: 'smooth' })
     } else {
-      window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - OFFSET, behavior: 'smooth' })
+      window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - offset, behavior: 'smooth' })
     }
     setActive(id)
   }
 
   return (
-    <div className="sticky top-0 z-20 -mx-8 px-8 pt-3 pb-3 mb-8" style={{ background: 'rgba(12,12,20,0.86)', backdropFilter: 'blur(14px)', borderBottom: '1px solid rgba(112,112,125,0.14)' }}>
-      <div className="flex gap-2 overflow-x-auto scrollbar-none">
-        {TABS.map(tab => (
+    <nav className="app-deal-tabs" aria-label="Deal sections">
+      <div>
+        {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => scrollTo(tab.id)}
-            className={`px-3.5 py-2.5 text-sm font-medium whitespace-nowrap border transition-colors rounded-full
-              ${active === tab.id
-                ? 'border-blue-500/40 text-gray-900 bg-blue-50'
-                : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-200'
-              }`}
+            data-active={active === tab.id}
           >
             {tab.label}
           </button>
         ))}
       </div>
-    </div>
+    </nav>
   )
 }

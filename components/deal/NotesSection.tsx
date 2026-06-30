@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useCallback, useRef } from 'react'
+import { useCallback, useRef, useState, useTransition } from 'react'
 import { upsertDealNote } from '@/lib/actions/deals'
 
 interface Props {
@@ -32,54 +32,30 @@ export default function NotesSection({ dealId, section, title, initialContent, p
     debounceRef.current = setTimeout(() => save(value), 1500)
   }
 
-  const isEmpty = highlight && !content.trim()
+  const isEmpty = Boolean(highlight && !content.trim())
 
   return (
-    <section>
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
-          {title}
-          {isEmpty && (
-            <span style={{ marginLeft: '8px', fontSize: '11px', fontWeight: 400, color: 'var(--mercury-blue)', textTransform: 'none', letterSpacing: 0 }}>
-              — start here
-            </span>
-          )}
-        </h2>
-        <span style={{
-          fontSize: '11px',
-          color: isPending ? 'var(--amber)' : saved ? 'var(--lead)' : 'var(--amber)',
-          transition: 'color 0.2s',
-        }}>
-          {isPending ? 'Saving…' : saved ? '' : 'Unsaved'}
-        </span>
+    <section className="app-deal-note-card" data-highlight={isEmpty}>
+      <div className="app-deal-section-header compact">
+        <div>
+          <p>{section === 'overview' ? 'Thesis' : section}</p>
+          <h2>
+            {title}
+            {isEmpty && <span>Start here</span>}
+          </h2>
+        </div>
+        <span>{isPending ? 'Saving...' : saved ? '' : 'Unsaved'}</span>
       </div>
+
       <textarea
         value={content}
-        onChange={e => handleChange(e.target.value)}
+        onChange={(event) => handleChange(event.target.value)}
         placeholder={
           isEmpty
-            ? `What's the opportunity? Describe the asset, location, and thesis…`
-            : (placeholder ?? `Add ${title.toLowerCase()}…`)
+            ? `What's the opportunity? Describe the asset, location, and thesis...`
+            : (placeholder ?? `Add ${title.toLowerCase()}...`)
         }
         rows={6}
-        style={{
-          width: '100%',
-          background: isEmpty ? 'rgba(82,102,235,0.06)' : 'var(--midnight-slate)',
-          border: isEmpty
-            ? '1px dashed rgba(82,102,235,0.4)'
-            : '1px solid rgba(112,112,125,0.18)',
-          borderRadius: '8px',
-          padding: '12px 14px',
-          fontSize: '13px',
-          lineHeight: 1.7,
-          color: 'var(--silver)',
-          resize: 'vertical',
-          outline: 'none',
-          fontFamily: 'inherit',
-          transition: 'border-color 0.15s',
-        }}
-        onFocus={e => { e.currentTarget.style.borderColor = 'rgba(82,102,235,0.4)' }}
-        onBlur={e => { e.currentTarget.style.borderColor = isEmpty ? 'rgba(82,102,235,0.4)' : 'rgba(112,112,125,0.18)' }}
       />
     </section>
   )

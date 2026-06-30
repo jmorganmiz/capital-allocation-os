@@ -1,4 +1,3 @@
-import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import DealHeader from '@/components/deal/DealHeader'
 import DealTabs from '@/components/deal/DealTabs'
@@ -10,8 +9,9 @@ import FinancialSnapshot from '@/components/deal/FinancialSnapshot'
 import DealInfo from '@/components/deal/DealInfo'
 import ContactsSection from '@/components/deal/ContactsSection'
 import ScoringSection from '@/components/deal/ScoringSection'
-import { getScoringCriteria, getDealScores } from '@/lib/actions/scoring'
 import SimilarDeals from '@/components/deal/SimilarDeals'
+import { getScoringCriteria, getDealScores } from '@/lib/actions/scoring'
+import { createClient } from '@/lib/supabase/server'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -54,7 +54,6 @@ export default async function DealPage({ params }: Props) {
       .eq('deal_id', id),
   ])
 
-  // Checklist for the current stage (fetched after deal is known)
   const dealStageId = deal?.stage_id ?? null
   const [{ data: checklistItems }, { data: checklistProgress }] = await Promise.all([
     dealStageId
@@ -70,7 +69,6 @@ export default async function DealPage({ params }: Props) {
 
   if (!deal) notFound()
 
-  // Similar deals: same firm, same deal_type or same market, excluding self
   let similarQuery = supabase
     .from('deals')
     .select('id, title, market, deal_type, asking_price, is_archived, stage_id, deal_scores(score), deal_stages(name)')
@@ -86,7 +84,7 @@ export default async function DealPage({ params }: Props) {
   const { data: rawSimilar } = orParts.length > 0 ? await similarQuery : { data: [] }
 
   const similarDeals = ((rawSimilar ?? []) as any[])
-    .map(d => {
+    .map((d) => {
       const scores = (d.deal_scores ?? []).map((s: any) => Number(s.score)).filter(Boolean)
       const avg = scores.length ? scores.reduce((a: number, b: number) => a + b, 0) / scores.length : null
       const score = avg !== null ? Math.round(((avg - 1) / 4) * 100) : null
@@ -114,19 +112,17 @@ export default async function DealPage({ params }: Props) {
     })
     .slice(0, 6)
 
-  // Get firm users for owner dropdown
   const { data: firmUsers } = await supabase
     .from('profiles')
     .select('id, full_name')
     .eq('firm_id', deal.firm_id)
 
-  const currentStage = stages?.find(s => s.id === deal.stage_id)
-  const getNote = (section: string) => notes?.find(n => n.section === section)?.content ?? ''
-
-  const hasAnyNotes = (notes ?? []).some(n => n.content?.trim().length > 0)
+  const currentStage = stages?.find((stage) => stage.id === deal.stage_id)
+  const getNote = (section: string) => notes?.find((note) => note.section === section)?.content ?? ''
+  const hasAnyNotes = (notes ?? []).some((note) => note.content?.trim().length > 0)
 
   return (
-    <div className="app-page">
+    <div className="app-page app-deal-page">
       <DealHeader
         deal={deal}
         stages={stages ?? []}
@@ -137,25 +133,24 @@ export default async function DealPage({ params }: Props) {
 
       <DealTabs />
 
-      <div className="app-workspace-grid mt-2">
-        {/* ── Main content column ── */}
-        <div className="flex-1 min-w-0 flex flex-col gap-10">
+      <div className="app-workspace-grid app-deal-grid">
+        <div className="app-deal-main">
           {(checklistItems ?? []).length > 0 && currentStage && !deal.is_archived && (
             <StageChecklist
               dealId={deal.id}
               stageName={currentStage.name}
               items={checklistItems ?? []}
-              initialCompletedIds={(checklistProgress ?? []).map(p => p.checklist_item_id)}
+              initialCompletedIds={(checklistProgress ?? []).map((progress) => progress.checklist_item_id)}
             />
           )}
 
           <DealInfo deal={deal} />
 
-          <section id="section-financials">
+          <section id="section-financials" className="app-deal-section">
             <FinancialSnapshot dealId={deal.id} firmId={deal.firm_id} snapshots={snapshots ?? []} />
           </section>
 
-          <section id="section-scoring">
+          <section id="section-scoring" className="app-deal-section">
             <ScoringSection
               dealId={deal.id}
               criteria={(scoringCriteriaResult.criteria ?? []) as any}
@@ -163,37 +158,33 @@ export default async function DealPage({ params }: Props) {
             />
           </section>
 
-          <section id="section-notes" className="space-y-6">
+          <section id="section-notes" className="app-deal-section app-deal-notes-stack">
             <NotesSection dealId={deal.id} section="overview" title="Overview" initialContent={getNote('overview')} highlight={!hasAnyNotes} />
-            <NotesSection dealId={deal.id} section="risks" title="Risks" initialContent={getNote('risks')} placeholder="Document key risks and mitigation strategies…" />
-            <NotesSection dealId={deal.id} section="notes" title="Notes" initialContent={getNote('notes')} placeholder="General notes, meeting summaries, follow-ups…" />
+            <NotesSection dealId={deal.id} section="risks" title="Risks" initialContent={getNote('risks')} placeholder="Document key risks and mitigation strategies..." />
+            <NotesSection dealId={deal.id} section="notes" title="Notes" initialContent={getNote('notes')} placeholder="General notes, meeting summaries, follow-ups..." />
           </section>
 
-          <section id="section-files">
+          <section id="section-files" className="app-deal-section">
             <FilesSection dealId={deal.id} files={files ?? []} />
           </section>
 
-          <section id="section-contacts">
+          <section id="section-contacts" className="app-deal-section">
             <ContactsSection dealId={deal.id} initialDealContacts={(dealContacts ?? []) as any} />
           </section>
 
-          <section id="section-activity">
+          <section id="section-activity" className="app-deal-section">
             <DecisionLog events={events ?? []} snapshots={snapshots ?? []} />
           </section>
         </div>
 
-        {/* ── Similar deals sidebar ── */}
-        <div className="hidden lg:block">
-          <div className="sticky top-8">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 style={{ fontSize: '11px', fontWeight: 600, color: 'var(--lead)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                Similar Deals
-              </h3>
-              {similarDeals.length > 0 && (
-                <span style={{ fontSize: '11px', color: 'var(--lead)', background: 'rgba(112,112,125,0.1)', border: '1px solid rgba(112,112,125,0.15)', borderRadius: '999px', padding: '1px 7px' }}>
-                  {similarDeals.length}
-                </span>
-              )}
+        <aside id="section-similar" className="app-deal-rail">
+          <div className="app-deal-rail-card">
+            <div className="app-deal-rail-header">
+              <div>
+                <p>Deal memory</p>
+                <h3>Similar Deals</h3>
+              </div>
+              <span>{similarDeals.length}</span>
             </div>
             <SimilarDeals
               deals={similarDeals}
@@ -202,7 +193,7 @@ export default async function DealPage({ params }: Props) {
               sidebar
             />
           </div>
-        </div>
+        </aside>
       </div>
     </div>
   )

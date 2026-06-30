@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { MapPin } from 'lucide-react'
-import { Deal, DealStage, KillReason } from '@/lib/types/database'
-import { updateDealStage, killDeal, updateDealOwner, updateDealFields } from '@/lib/actions/deals'
+import { useState, useTransition } from 'react'
 import KillModal from '@/components/pipeline/KillModal'
+import { killDeal, updateDealFields, updateDealOwner, updateDealStage } from '@/lib/actions/deals'
 import { showToast } from '@/lib/toast'
+import { Deal, DealStage, KillReason } from '@/lib/types/database'
 
 interface Props {
   deal: Deal
@@ -27,14 +27,15 @@ export default function DealHeader({ deal, stages, killReasons, firmUsers }: Pro
   const [editingAddress, setEditingAddress] = useState(false)
   const [isPending, startTransition] = useTransition()
 
-  const killedStage = stages.find(s => s.name === 'Killed')
+  const killedStage = stages.find((stage) => stage.name === 'Killed')
 
   function handleStageChange(newStageId: string) {
-    const targetStage = stages.find(s => s.id === newStageId)
+    const targetStage = stages.find((stage) => stage.id === newStageId)
     if (targetStage?.name === 'Killed') {
       setShowKillModal(true)
       return
     }
+
     const previous = stageId
     setStageId(newStageId)
     startTransition(async () => {
@@ -66,6 +67,7 @@ export default function DealHeader({ deal, stages, killReasons, firmUsers }: Pro
         showToast(result.error, 'error')
         return
       }
+
       setIsArchived(true)
       setStageId(killedStage.id)
       setShowKillModal(false)
@@ -87,7 +89,6 @@ export default function DealHeader({ deal, stages, killReasons, firmUsers }: Pro
     })
   }
 
-  // Use full address for Maps link when available, otherwise fall back to market
   const mapsQuery = address || deal.market
   const mapsUrl = mapsQuery
     ? `https://www.google.com/maps/search/?q=${encodeURIComponent(mapsQuery)}`
@@ -95,41 +96,38 @@ export default function DealHeader({ deal, stages, killReasons, firmUsers }: Pro
 
   return (
     <div className="app-detail-header">
-      <div className="flex items-center gap-2 text-sm text-gray-500 mb-5">
-        <Link href="/pipeline" className="hover:text-gray-700">Pipeline</Link>
+      <div className="app-detail-breadcrumb">
+        <Link href="/pipeline">Pipeline</Link>
         <span>/</span>
-        <span className="text-gray-800">{deal.title}</span>
+        <span>{deal.title}</span>
       </div>
 
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 flex-1">
+      <div className="app-detail-header-main">
+        <div className="app-detail-heading">
           <h1 className="app-detail-title">{deal.title}</h1>
 
-          <div className="app-detail-meta flex items-center gap-3 mt-3 text-sm text-gray-500 flex-wrap">
-            {/* Address — inline editable */}
+          <div className="app-detail-meta">
             {editingAddress ? (
               <input
                 autoFocus
                 value={address}
-                onChange={e => setAddress(e.target.value)}
-                onBlur={e => commitAddress(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter') commitAddress(address)
-                  if (e.key === 'Escape') { setAddress(deal.address ?? ''); setEditingAddress(false) }
+                onChange={(event) => setAddress(event.target.value)}
+                onBlur={(event) => commitAddress(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') commitAddress(address)
+                  if (event.key === 'Escape') {
+                    setAddress(deal.address ?? '')
+                    setEditingAddress(false)
+                  }
                 }}
-                className="text-sm border border-blue-300 rounded px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
                 placeholder="123 Main St, Austin, TX 78701"
               />
             ) : (
-              <span className="flex items-center gap-1.5">
+              <span className="app-detail-address">
                 <button
                   onClick={() => !isArchived && setEditingAddress(true)}
                   disabled={isArchived}
-                  className={`text-sm transition-colors ${
-                    address
-                      ? 'text-gray-500 hover:text-gray-700'
-                      : 'text-gray-300 hover:text-gray-400 italic'
-                  } disabled:cursor-default`}
+                  data-empty={!address}
                   title={isArchived ? undefined : 'Click to edit address'}
                 >
                   {address || 'Add address'}
@@ -139,7 +137,6 @@ export default function DealHeader({ deal, stages, killReasons, firmUsers }: Pro
                     href={mapsUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-sm text-blue-500 hover:text-blue-600 transition-colors font-medium"
                     title="View on Google Maps"
                   >
                     <MapPin size={13} strokeWidth={2} />
@@ -149,51 +146,48 @@ export default function DealHeader({ deal, stages, killReasons, firmUsers }: Pro
               </span>
             )}
 
-            {deal.market && <span className="before:content-['·'] before:mr-3">{deal.market}</span>}
-            {deal.deal_type && <span className="before:content-['·'] before:mr-3">{deal.deal_type}</span>}
-            {deal.source_name && <span className="before:content-['·'] before:mr-3">via {deal.source_name}</span>}
+            {deal.market && <span className="app-detail-meta-dot">{deal.market}</span>}
+            {deal.deal_type && <span className="app-detail-meta-dot">{deal.deal_type}</span>}
+            {deal.source_name && <span className="app-detail-meta-dot">via {deal.source_name}</span>}
           </div>
         </div>
 
-        <div className="flex items-center gap-3 flex-wrap justify-end">
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-gray-500">Owner</label>
+        <div className="app-detail-actions">
+          <label>
+            <span>Owner</span>
             <select
               value={ownerId}
-              onChange={e => handleOwnerChange(e.target.value)}
+              onChange={(event) => handleOwnerChange(event.target.value)}
               disabled={isArchived || isPending}
-              className="input-base disabled:opacity-50"
-              style={{ padding: '5px 10px', fontSize: '12px' }}
             >
               <option value="">Unassigned</option>
-              {firmUsers.map(u => (
-                <option key={u.id} value={u.id}>{u.full_name ?? u.id}</option>
+              {firmUsers.map((user) => (
+                <option key={user.id} value={user.id}>{user.full_name ?? user.id}</option>
               ))}
             </select>
-          </div>
+          </label>
 
-          <select
-            value={stageId}
-            onChange={e => handleStageChange(e.target.value)}
-            disabled={isArchived || isPending}
-            className="input-base disabled:opacity-50"
-            style={{ padding: '5px 10px', fontSize: '12px' }}
-          >
-            {stages.filter(s => s.name !== 'Killed').map(s => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-          </select>
+          <label>
+            <span>Stage</span>
+            <select
+              value={stageId}
+              onChange={(event) => handleStageChange(event.target.value)}
+              disabled={isArchived || isPending}
+            >
+              {stages.filter((stage) => stage.name !== 'Killed').map((stage) => (
+                <option key={stage.id} value={stage.id}>{stage.name}</option>
+              ))}
+            </select>
+          </label>
 
           {!isArchived && (
-            <button onClick={() => setShowKillModal(true)} className="btn-danger-outline text-sm">
+            <button onClick={() => setShowKillModal(true)} className="app-detail-kill-button">
               Kill Deal
             </button>
           )}
 
           {isArchived && (
-            <span className="text-xs bg-red-50 text-red-700 border border-red-200 rounded px-2 py-1 font-medium">
-              Killed
-            </span>
+            <span className="app-detail-killed-badge">Killed</span>
           )}
         </div>
       </div>

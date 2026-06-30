@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { upsertDealScore } from '@/lib/actions/scoring'
 import { showToast } from '@/lib/toast'
 
@@ -25,39 +25,43 @@ interface Props {
 }
 
 function calcOverall(scores: Record<string, DealScore>): number | null {
-  const vals = Object.values(scores).map(s => s.score).filter(Boolean)
+  const vals = Object.values(scores).map((score) => score.score).filter(Boolean)
   if (vals.length === 0) return null
   const avg = vals.reduce((a, b) => a + b, 0) / vals.length
   return Math.round(((avg - 1) / 4) * 100)
 }
 
-function scoreColor(score: number): string {
-  if (score >= 70) return '#4ade80'
-  if (score >= 45) return '#fbbf24'
-  return '#f87171'
+function scoreTone(score: number): 'green' | 'amber' | 'red' {
+  if (score >= 70) return 'green'
+  if (score >= 45) return 'amber'
+  return 'red'
 }
 
 export default function ScoringSection({ dealId, criteria, initialScores }: Props) {
   const [scores, setScores] = useState<Record<string, DealScore>>(() => {
     const map: Record<string, DealScore> = {}
-    initialScores.forEach(s => { map[s.criteria_id] = s })
+    initialScores.forEach((score) => {
+      map[score.criteria_id] = score
+    })
     return map
   })
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set())
   const [saving, setSaving] = useState<Set<string>>(new Set())
 
-  const activeCriteria = criteria.filter(c => c.is_active)
+  const activeCriteria = criteria.filter((criterion) => criterion.is_active)
   const overall = calcOverall(scores)
   const scoredCount = Object.keys(scores).length
 
   const handleScore = useCallback(async (criteriaId: string, score: number) => {
     const existing = scores[criteriaId]
     const notes = existing?.notes ?? null
-    setScores(prev => ({ ...prev, [criteriaId]: { criteria_id: criteriaId, score, notes, scored_by: null } }))
-    setSaving(prev => new Set(prev).add(criteriaId))
+
+    setScores((prev) => ({ ...prev, [criteriaId]: { criteria_id: criteriaId, score, notes, scored_by: null } }))
+    setSaving((prev) => new Set(prev).add(criteriaId))
+
     const result = await upsertDealScore(dealId, criteriaId, score, notes)
     if (result.error) {
-      setScores(prev => {
+      setScores((prev) => {
         const next = { ...prev }
         if (existing) next[criteriaId] = existing
         else delete next[criteriaId]
@@ -65,138 +69,114 @@ export default function ScoringSection({ dealId, criteria, initialScores }: Prop
       })
       showToast(result.error, 'error')
     }
-    setSaving(prev => { const n = new Set(prev); n.delete(criteriaId); return n })
+
+    setSaving((prev) => {
+      const next = new Set(prev)
+      next.delete(criteriaId)
+      return next
+    })
   }, [dealId, scores])
 
   const handleNotes = useCallback(async (criteriaId: string, notes: string) => {
     const existing = scores[criteriaId]
     if (!existing?.score) return
-    setScores(prev => ({ ...prev, [criteriaId]: { ...prev[criteriaId], notes: notes || null } }))
-    setSaving(prev => new Set(prev).add(criteriaId))
+
+    setScores((prev) => ({ ...prev, [criteriaId]: { ...prev[criteriaId], notes: notes || null } }))
+    setSaving((prev) => new Set(prev).add(criteriaId))
+
     const result = await upsertDealScore(dealId, criteriaId, existing.score, notes || null)
     if (result.error) {
-      setScores(prev => ({ ...prev, [criteriaId]: existing }))
+      setScores((prev) => ({ ...prev, [criteriaId]: existing }))
       showToast(result.error, 'error')
     }
-    setSaving(prev => { const n = new Set(prev); n.delete(criteriaId); return n })
+
+    setSaving((prev) => {
+      const next = new Set(prev)
+      next.delete(criteriaId)
+      return next
+    })
   }, [dealId, scores])
 
   function toggleNotes(criteriaId: string) {
-    setExpandedNotes(prev => {
-      const n = new Set(prev)
-      if (n.has(criteriaId)) n.delete(criteriaId)
-      else n.add(criteriaId)
-      return n
+    setExpandedNotes((prev) => {
+      const next = new Set(prev)
+      if (next.has(criteriaId)) next.delete(criteriaId)
+      else next.add(criteriaId)
+      return next
     })
   }
 
   return (
-    <section>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Scoring</h2>
+    <>
+      <div className="app-deal-section-header">
+        <div>
+          <p>AI underwriting</p>
+          <h2>Scoring</h2>
+        </div>
         {overall !== null && (
-          <div className="flex items-center gap-3">
-            <span style={{ fontSize: '11px', color: 'var(--lead)' }}>{scoredCount}/{activeCriteria.length} scored</span>
-            <span style={{ fontSize: '20px', fontWeight: 700, color: scoreColor(overall), lineHeight: 1 }}>{overall}</span>
-            <span style={{ fontSize: '11px', color: 'var(--lead)' }}>/ 100</span>
+          <div className="app-deal-score-summary" data-tone={scoreTone(overall)}>
+            <span>{scoredCount}/{activeCriteria.length} scored</span>
+            <strong>{overall}</strong>
+            <em>/100</em>
           </div>
         )}
       </div>
 
       {overall !== null && (
-        <div className="mb-4 rounded-lg overflow-hidden" style={{ height: '4px', background: 'rgba(112,112,125,0.15)' }}>
-          <div style={{ width: `${overall}%`, height: '100%', background: scoreColor(overall), borderRadius: '999px', transition: 'width 0.4s ease' }} />
+        <div className="app-deal-score-bar">
+          <span style={{ width: `${overall}%` }} data-tone={scoreTone(overall)} />
         </div>
       )}
 
       {activeCriteria.length === 0 ? (
-        <div className="rounded-lg p-8 text-center" style={{ border: '1px dashed rgba(112,112,125,0.25)' }}>
-          <p style={{ fontSize: '13px', color: 'var(--lead)' }}>No scoring criteria configured. Add criteria in Settings.</p>
-        </div>
+        <div className="app-deal-empty">No scoring criteria configured. Add criteria in Settings.</div>
       ) : (
-        <div className="rounded-lg overflow-hidden" style={{ border: '1px solid rgba(112,112,125,0.18)' }}>
-          {activeCriteria.map((c, i) => {
-            const current = scores[c.id]
-            const isSaving = saving.has(c.id)
-            const notesOpen = expandedNotes.has(c.id)
+        <div className="app-deal-score-list">
+          {activeCriteria.map((criterion) => {
+            const current = scores[criterion.id]
+            const isSaving = saving.has(criterion.id)
+            const notesOpen = expandedNotes.has(criterion.id)
 
             return (
-              <div
-                key={c.id}
-                style={{
-                  borderTop: i > 0 ? '1px solid rgba(112,112,125,0.12)' : 'none',
-                  padding: '14px 18px',
-                }}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--starlight)' }}>{c.name}</p>
-                      {current?.scored_by === 'ai-auto' && (
-                        <span style={{
-                          fontSize: '10px', fontWeight: 700,
-                          color: 'var(--ghost-blue)',
-                          background: 'rgba(82,102,235,0.12)',
-                          border: '1px solid rgba(82,102,235,0.25)',
-                          borderRadius: '4px',
-                          padding: '1px 5px',
-                          letterSpacing: '0.04em',
-                        }}>AI</span>
-                      )}
-                      {isSaving && <span style={{ fontSize: '11px', color: 'var(--lead)' }}>Saving…</span>}
-                    </div>
-                    {c.description && (
-                      <p style={{ fontSize: '12px', color: 'var(--lead)', marginTop: '2px' }}>{c.description}</p>
-                    )}
+              <div key={criterion.id} className="app-deal-score-row">
+                <div className="app-deal-score-row-main">
+                  <div>
+                    <strong>{criterion.name}</strong>
+                    {current?.scored_by === 'ai-auto' && <em>AI</em>}
+                    {isSaving && <span>Saving...</span>}
                   </div>
+                  {criterion.description && <p>{criterion.description}</p>}
+                </div>
 
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    {[1, 2, 3, 4, 5].map(val => {
-                      const isSelected = current?.score === val
-                      return (
-                        <button
-                          key={val}
-                          onClick={() => handleScore(c.id, val)}
-                          style={{
-                            width: '30px', height: '30px',
-                            borderRadius: '6px',
-                            fontSize: '12px', fontWeight: 600,
-                            border: isSelected ? '1px solid var(--mercury-blue)' : '1px solid rgba(112,112,125,0.2)',
-                            background: isSelected ? 'var(--mercury-blue)' : 'transparent',
-                            color: isSelected ? '#fff' : 'var(--lead)',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s',
-                          }}
-                          title={`Score ${val}`}
-                        >
-                          {val}
-                        </button>
-                      )
-                    })}
-                    {current?.score && (
-                      <button
-                        onClick={() => toggleNotes(c.id)}
-                        style={{ marginLeft: '4px', fontSize: '11px', color: 'var(--lead)', cursor: 'pointer', background: 'none', border: 'none' }}
-                        className="hover:opacity-70 transition-opacity"
-                        title="Toggle notes"
-                      >
-                        {notesOpen ? '▲' : '▼'}
-                      </button>
-                    )}
-                  </div>
+                <div className="app-deal-score-controls">
+                  {[1, 2, 3, 4, 5].map((value) => (
+                    <button
+                      key={value}
+                      onClick={() => handleScore(criterion.id, value)}
+                      data-active={current?.score === value}
+                      title={`Score ${value}`}
+                    >
+                      {value}
+                    </button>
+                  ))}
+                  {current?.score && (
+                    <button
+                      onClick={() => toggleNotes(criterion.id)}
+                      className="app-deal-note-toggle"
+                      title="Toggle notes"
+                    >
+                      {notesOpen ? 'Hide' : 'Note'}
+                    </button>
+                  )}
                 </div>
 
                 {notesOpen && current?.score && (
-                  <div className="mt-2">
-                    <textarea
-                      defaultValue={current.notes ?? ''}
-                      onBlur={e => handleNotes(c.id, e.target.value)}
-                      rows={2}
-                      className="input-base resize-none w-full"
-                      style={{ fontSize: '12px' }}
-                      placeholder="Notes on this score…"
-                    />
-                  </div>
+                  <textarea
+                    defaultValue={current.notes ?? ''}
+                    onBlur={(event) => handleNotes(criterion.id, event.target.value)}
+                    rows={2}
+                    placeholder="Notes on this score..."
+                  />
                 )}
               </div>
             )
@@ -205,8 +185,8 @@ export default function ScoringSection({ dealId, criteria, initialScores }: Prop
       )}
 
       {activeCriteria.length > 0 && overall === null && (
-        <p style={{ fontSize: '11px', color: 'var(--lead)', marginTop: '10px' }}>Rate each criterion 1–5 to calculate the overall score.</p>
+        <p className="app-deal-hint">Rate each criterion 1-5 to calculate the overall score.</p>
       )}
-    </section>
+    </>
   )
 }

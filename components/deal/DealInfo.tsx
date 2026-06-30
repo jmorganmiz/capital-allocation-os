@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Deal } from '@/lib/types/database'
 import { updateDealFields } from '@/lib/actions/deals'
+import { Deal } from '@/lib/types/database'
 
 const DEAL_STRUCTURES = ['Acquisition', 'Joint Venture', 'Sale-Leaseback', 'Recapitalization', 'Other']
 const FINANCING_TYPES = ['Conventional', 'Bridge', 'CMBS', 'Agency', 'All Cash', 'Other']
@@ -21,37 +21,33 @@ function parsePrice(raw: string): number | null {
   return Number.isFinite(n) ? n : null
 }
 
-const cellStyle = {
-  background: 'rgba(39,39,53,0.82)',
-  border: '1px solid rgba(112,112,125,0.18)',
-  borderRadius: '12px',
-  padding: '18px 18px',
+function DetailMetric({
+  label,
+  children,
+}: {
+  label: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="app-deal-metric">
+      <p>{label}</p>
+      {children}
+    </div>
+  )
 }
 
-const labelStyle: React.CSSProperties = {
-  fontSize: '10px',
-  fontWeight: 600,
-  color: 'var(--lead)',
-  letterSpacing: '0.08em',
-  textTransform: 'uppercase',
-  marginBottom: '10px',
-}
-
-const valueStyle: React.CSSProperties = {
-  fontSize: '17px',
-  fontWeight: 650,
-  color: 'var(--starlight)',
-}
-
-const emptyValueStyle: React.CSSProperties = {
-  fontSize: '14px',
-  color: 'var(--lead)',
-  fontStyle: 'italic',
-}
-
-function EditableText({ label, value, placeholder, onSave, disabled }: {
-  label: string; value: string | null; placeholder: string
-  onSave: (v: string | null) => void; disabled: boolean
+function EditableText({
+  label,
+  value,
+  placeholder,
+  onSave,
+  disabled,
+}: {
+  label: string
+  value: string | null
+  placeholder: string
+  onSave: (value: string | null) => void
+  disabled: boolean
 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(value ?? '')
@@ -63,71 +59,94 @@ function EditableText({ label, value, placeholder, onSave, disabled }: {
   }
 
   return (
-    <div style={cellStyle}>
-      <p style={labelStyle}>{label}</p>
+    <DetailMetric label={label}>
       {editing ? (
         <input
           autoFocus
           value={draft}
-          onChange={e => setDraft(e.target.value)}
+          onChange={(event) => setDraft(event.target.value)}
           onBlur={commit}
-          onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') { setDraft(value ?? ''); setEditing(false) } }}
-          className="input-base w-full"
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') commit()
+            if (event.key === 'Escape') {
+              setDraft(value ?? '')
+              setEditing(false)
+            }
+          }}
           placeholder={placeholder}
-          style={{ padding: '4px 8px', fontSize: '13px' }}
         />
       ) : (
         <button
           disabled={disabled}
-          onClick={() => { setDraft(value ?? ''); setEditing(true) }}
-          className="text-left w-full transition-colors hover:opacity-70 disabled:cursor-default"
-          style={value ? valueStyle : emptyValueStyle}
+          onClick={() => {
+            setDraft(value ?? '')
+            setEditing(true)
+          }}
+          data-empty={!value}
         >
           {value ?? placeholder}
         </button>
       )}
-    </div>
+    </DetailMetric>
   )
 }
 
-function EditableSelect({ label, value, options, onSave, disabled }: {
-  label: string; value: string | null; options: string[]
-  onSave: (v: string | null) => void; disabled: boolean
+function EditableSelect({
+  label,
+  value,
+  options,
+  onSave,
+  disabled,
+}: {
+  label: string
+  value: string | null
+  options: string[]
+  onSave: (value: string | null) => void
+  disabled: boolean
 }) {
   const [editing, setEditing] = useState(false)
 
   return (
-    <div style={cellStyle}>
-      <p style={labelStyle}>{label}</p>
+    <DetailMetric label={label}>
       {editing ? (
         <select
           autoFocus
           defaultValue={value ?? ''}
-          onBlur={e => { onSave(e.target.value || null); setEditing(false) }}
-          onChange={e => { onSave(e.target.value || null); setEditing(false) }}
-          className="input-base w-full"
-          style={{ padding: '4px 8px', fontSize: '13px' }}
+          onBlur={(event) => {
+            onSave(event.target.value || null)
+            setEditing(false)
+          }}
+          onChange={(event) => {
+            onSave(event.target.value || null)
+            setEditing(false)
+          }}
         >
           <option value="">—</option>
-          {options.map(o => <option key={o}>{o}</option>)}
+          {options.map((option) => <option key={option}>{option}</option>)}
         </select>
       ) : (
         <button
           disabled={disabled}
           onClick={() => setEditing(true)}
-          className="text-left w-full transition-colors hover:opacity-70 disabled:cursor-default"
-          style={value ? valueStyle : emptyValueStyle}
+          data-empty={!value}
         >
           {value ?? '—'}
         </button>
       )}
-    </div>
+    </DetailMetric>
   )
 }
 
-function EditablePrice({ label, value, onSave, disabled }: {
-  label: string; value: number | null
-  onSave: (v: number | null) => void; disabled: boolean
+function EditablePrice({
+  label,
+  value,
+  onSave,
+  disabled,
+}: {
+  label: string
+  value: number | null
+  onSave: (value: number | null) => void
+  disabled: boolean
 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(value != null ? String(value) : '')
@@ -138,8 +157,7 @@ function EditablePrice({ label, value, onSave, disabled }: {
   }
 
   return (
-    <div style={cellStyle}>
-      <p style={labelStyle}>{label}</p>
+    <DetailMetric label={label}>
       {editing ? (
         <input
           autoFocus
@@ -147,34 +165,40 @@ function EditablePrice({ label, value, onSave, disabled }: {
           min="0"
           step="1"
           value={draft}
-          onChange={e => setDraft(e.target.value)}
+          onChange={(event) => setDraft(event.target.value)}
           onBlur={commit}
-          onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') { setDraft(value != null ? String(value) : ''); setEditing(false) } }}
-          className="input-base w-full"
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') commit()
+            if (event.key === 'Escape') {
+              setDraft(value != null ? String(value) : '')
+              setEditing(false)
+            }
+          }}
           placeholder="5000000"
-          style={{ padding: '4px 8px', fontSize: '13px' }}
         />
       ) : (
         <button
           disabled={disabled}
-          onClick={() => { setDraft(value != null ? String(value) : ''); setEditing(true) }}
-          className="text-left w-full transition-colors hover:opacity-70 disabled:cursor-default"
-          style={value != null ? valueStyle : emptyValueStyle}
+          onClick={() => {
+            setDraft(value != null ? String(value) : '')
+            setEditing(true)
+          }}
+          data-empty={value == null}
         >
           {value != null ? formatPrice(value) : '—'}
         </button>
       )}
-    </div>
+    </DetailMetric>
   )
 }
 
 export default function DealInfo({ deal }: Props) {
   const [isPending, startTransition] = useTransition()
   const [fields, setFields] = useState({
-    asking_price:   deal.asking_price,
+    asking_price: deal.asking_price,
     deal_structure: deal.deal_structure,
     financing_type: deal.financing_type,
-    property_size:  deal.property_size,
+    property_size: deal.property_size,
   })
 
   function save(patch: Partial<typeof fields>) {
@@ -186,37 +210,41 @@ export default function DealInfo({ deal }: Props) {
   }
 
   return (
-    <section>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Deal Info</h2>
-        {isPending && <span style={{ fontSize: '11px', color: 'var(--amber)' }}>Saving…</span>}
+    <section className="app-deal-section">
+      <div className="app-deal-section-header">
+        <div>
+          <p>Asset profile</p>
+          <h2>Deal Info</h2>
+        </div>
+        {isPending && <span>Saving...</span>}
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+
+      <div className="app-deal-metric-grid four">
         <EditablePrice
           label="Asking Price"
           value={fields.asking_price}
-          onSave={v => save({ asking_price: v })}
+          onSave={(value) => save({ asking_price: value })}
           disabled={deal.is_archived || isPending}
         />
         <EditableText
           label="Property Size"
           value={fields.property_size}
           placeholder="45,000 SF"
-          onSave={v => save({ property_size: v })}
+          onSave={(value) => save({ property_size: value })}
           disabled={deal.is_archived || isPending}
         />
         <EditableSelect
           label="Deal Structure"
           value={fields.deal_structure}
           options={DEAL_STRUCTURES}
-          onSave={v => save({ deal_structure: v })}
+          onSave={(value) => save({ deal_structure: value })}
           disabled={deal.is_archived || isPending}
         />
         <EditableSelect
           label="Financing Type"
           value={fields.financing_type}
           options={FINANCING_TYPES}
-          onSave={v => save({ financing_type: v })}
+          onSave={(value) => save({ financing_type: value })}
           disabled={deal.is_archived || isPending}
         />
       </div>
