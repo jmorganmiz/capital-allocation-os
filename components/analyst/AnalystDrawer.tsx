@@ -3,8 +3,12 @@
 import { useEffect, useRef, useState } from 'react'
 
 type Message = {
+  id: string
   role: 'user' | 'assistant'
   content: string
+  question?: string
+  memoryCandidate?: string
+  feedback?: 'helpful' | 'not_helpful' | 'saved' | 'firm_rule'
 }
 
 const SUGGESTED_PROMPTS = [
@@ -14,11 +18,16 @@ const SUGGESTED_PROMPTS = [
   'Summarize firm memory',
 ]
 
+function makeId() {
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`
+}
+
 function formatMessage(content: string) {
-  return content.split('\n').map((line, index) => (
+  const lines = content.split('\n')
+  return lines.map((line, index) => (
     <span key={`${line}-${index}`}>
       {line}
-      {index < content.split('\n').length - 1 && <br />}
+      {index < lines.length - 1 && <br />}
     </span>
   ))
 }
@@ -27,8 +36,10 @@ export default function AnalystDrawer() {
   const [open, setOpen] = useState(false)
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [savingId, setSavingId] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([
     {
+      id: makeId(),
       role: 'assistant',
       content: 'Ask me about your firm memory: stale deals, killed deals, broker history, similar deals, or pipeline shape.',
     },
@@ -50,7 +61,7 @@ export default function AnalystDrawer() {
 
     setInput('')
     setLoading(true)
-    setMessages((prev) => [...prev, { role: 'user', content: trimmed }])
+    setMessages((prev) => [...prev, { id: makeId(), role: 'user', content: trimmed }])
 
     try {
       const res = await fetch('/api/analyst', {
@@ -60,11 +71,21 @@ export default function AnalystDrawer() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Analyst failed.')
-      setMessages((prev) => [...prev, { role: 'assistant', content: data.answer }])
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: makeId(),
+          role: 'assistant',
+          content: data.answer,
+          question: trimmed,
+          memoryCandidate: data.memoryCandidate,
+        },
+      ])
     } catch (error) {
       setMessages((prev) => [
         ...prev,
         {
+          id: makeId(),
           role: 'assistant',
           content: error instanceof Error
             ? `I could not answer that yet: ${error.message}`
@@ -73,6 +94,40 @@ export default function AnalystDrawer() {
       ])
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function saveMemory(message: Message, feedbackType: 'helpful' | 'not_helpful' | 'saved' | 'firm_rule') {
+    const content = feedbackType === 'not_helpful'
+      ? `Analyst answer marked not helpful. Question: ${message.question ?? 'unknown'}. Answer: ${message.content}`
+      : (message.memoryCandidate ?? message.content)
+
+    setSavingId(message.id)
+    try {
+      const res = await fetch('/api/analyst/memory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: message.question,
+          answer: message.content,
+          content,
+          feedbackType,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Could not save memory.')
+      setMessages((prev) => prev.map((item) => item.id === message.id ? { ...item, feedback: feedbackType } : item))
+    } catch (error) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: makeId(),
+          role: 'assistant',
+          content: error instanceof Error ? `Memory was not saved: ${error.message}` : 'Memory was not saved.',
+        },
+      ])
+    } finally {
+      setSavingId(null)
     }
   }
 
@@ -109,18 +164,51 @@ export default function AnalystDrawer() {
 
             <div className="app-analyst-intro">
               <strong>Ask Dealstash what your team already knows.</strong>
-              <span>Answers are scoped to this firm’s deals, graveyard, stages, scores, and source history.</span>
+              <span>Save useful answers as firm memory. Future analyst answers will use those learning loops.</span>
             </div>
 
             <div ref={scrollRef} className="app-analyst-messages">
-              {messages.map((message, index) => (
-                <div key={index} className="app-analyst-message" data-role={message.role}>
-                  {formatMessage(message.content)}
+              {messages.map((message) => (
+                <div key={message.id} className="app-analyst-message-wrap" data-role={message.role}>
+                  <div className="app-analyst-message" data-role={message.role}>
+                    {formatMessage(message.content)}
+                  </div>
+
+                  {message.role === 'assistant' && message.question && (
+                    <div className="app-analyst-feedback">
+                      {message.feedback ? (
+                        <span>
+                          {message.feedback === 'not_helpful'
+                            ? 'Feedback saved'
+                            : message.feedback === 'firm_rule'
+                              ? 'Saved as firm rule'
+                              : 'Saved to memory'}
+                        </span>
+                      ) : (
+                        <>
+                          <button disabled={savingId === message.id} onClick={() => saveMemory(message, 'helpful')}>
+                            Helpful
+                          </button>
+                          <button disabled={savingId === message.id} onClick={() => saveMemory(message, 'saved')}>
+                            Remember
+                          </button>
+                          <button disabled={savingId === message.id} onClick={() => saveMemory(message, 'firm_rule')}>
+                            Firm rule
+                          </button>
+                          <button disabled={savingId === message.id} onClick={() => saveMemory(message, 'not_helpful')}>
+                            Not helpful
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
               {loading && (
-                <div className="app-analyst-message" data-role="assistant">
-                  Thinking through firm memory...
+                <div className="app-analyst-message-wrap" data-role="assistant">
+                  <div className="app-analyst-message" data-role="assistant">
+                    Thinking through firm memory...
+                  </div>
                 </div>
               )}
             </div>

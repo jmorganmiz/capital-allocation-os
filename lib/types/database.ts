@@ -212,6 +212,40 @@ export interface Database {
         }
         Update: never
       }
+      firm_memories: {
+        Row: {
+          id: string
+          firm_id: string
+          source_question: string | null
+          source_answer: string | null
+          content: string
+          feedback_type: 'saved' | 'helpful' | 'not_helpful' | 'correction' | 'firm_rule'
+          tags: string[]
+          created_by: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          firm_id: string
+          source_question?: string | null
+          source_answer?: string | null
+          content: string
+          feedback_type?: 'saved' | 'helpful' | 'not_helpful' | 'correction' | 'firm_rule'
+          tags?: string[]
+          created_by: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          source_question?: string | null
+          source_answer?: string | null
+          content?: string
+          feedback_type?: 'saved' | 'helpful' | 'not_helpful' | 'correction' | 'firm_rule'
+          tags?: string[]
+          updated_at?: string
+        }
+      }
     }
     Functions: {
       current_firm_id: { Args: Record<string, never>; Returns: string }
@@ -234,3 +268,4 @@ export type ScoringCriteria = Database['public']['Tables']['scoring_criteria']['
 export type DealScore = Database['public']['Tables']['deal_scores']['Row']
 export type StageChecklistItem = Database['public']['Tables']['stage_checklist_items']['Row']
 export type DealChecklistProgress = Database['public']['Tables']['deal_checklist_progress']['Row']
+export type FirmMemory = Database['public']['Tables']['firm_memories']['Row']

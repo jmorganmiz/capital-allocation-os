@@ -17,6 +17,14 @@ type DealRow = {
   deal_events: { notes: string | null; kill_reasons: { name: string } | null }[]
 }
 
+type FirmMemory = {
+  id: string
+  content: string
+  feedback_type: string
+  tags: string[]
+  created_at: string
+}
+
 function normalize(input: string) {
   return input.toLowerCase().trim()
 }
@@ -46,6 +54,24 @@ function typeFromQuestion(question: string, deals: DealRow[]) {
   return types.find((type) => lower.includes(type.toLowerCase())) ?? null
 }
 
+function relevantMemories(question: string, memories: FirmMemory[]) {
+  const terms = normalize(question)
+    .split(/[^a-z0-9]+/)
+    .filter((term) => term.length >= 4)
+
+  return memories
+    .map((memory) => {
+      const content = normalize(`${memory.content} ${(memory.tags ?? []).join(' ')}`)
+      const score = terms.reduce((sum, term) => sum + (content.includes(term) ? 1 : 0), 0)
+      const boost = memory.feedback_type === 'firm_rule' ? 2 : memory.feedback_type === 'saved' ? 1 : 0
+      return { memory, score: score + boost }
+    })
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3)
+    .map((item) => item.memory)
+}
+
 function topKillReasons(deals: DealRow[]) {
   const counts = new Map<string, number>()
   for (const deal of deals) {
@@ -69,7 +95,7 @@ function answerStale(deals: DealRow[]) {
 
   return [
     `${stale.length} active deals look stale based on last update time:`,
-    ...stale.map(({ deal }) => `• ${deal.title} — ${deal.deal_stages?.name ?? 'No stage'}, updated ${new Date(deal.updated_at).toLocaleDateString()}.`),
+    ...stale.map(({ deal }) => `- ${deal.title} - ${deal.deal_stages?.name ?? 'No stage'}, updated ${new Date(deal.updated_at).toLocaleDateString()}.`),
     'I would start with the oldest item and either move it forward, kill it, or add a decision note.',
   ].join('\n')
 }
@@ -94,7 +120,7 @@ function answerKilled(question: string, deals: DealRow[]) {
       : 'Most killed deals do not have structured kill reasons captured yet.',
     ...target.slice(0, 4).map((deal) => {
       const note = deal.deal_events?.find((event) => event.notes)?.notes
-      return `• ${deal.title} — ${deal.market ?? 'market unknown'}, ${money(deal.asking_price)}${note ? `; note: ${note}` : ''}`
+      return `- ${deal.title} - ${deal.market ?? 'market unknown'}, ${money(deal.asking_price)}${note ? `; note: ${note}` : ''}`
     }),
   ].join('\n')
 }
@@ -117,11 +143,12 @@ function answerBroker(question: string, deals: DealRow[]) {
 
   const ranked = [...grouped.entries()].sort((a, b) => b[1].length - a[1].length).slice(0, broker ? 1 : 5)
   return [
-    broker ? `Yes — I found ${scoped.length} deals from ${broker}.` : 'Here are the most common captured sources:',
+    broker ? `Yes - I found ${scoped.length} deals from ${broker}.` : 'Here are the most common captured sources:',
     ...ranked.map(([name, items]) => {
       const killed = items.filter((deal) => deal.is_archived).length
-      const avgScore = Math.round(items.map(scoreFor).filter((score): score is number => score !== null).reduce((sum, score, _, arr) => sum + score / arr.length, 0))
-      return `• ${name}: ${items.length} deals, ${killed} killed${Number.isFinite(avgScore) ? `, avg score ${avgScore}` : ''}.`
+      const avgScores = items.map(scoreFor).filter((score): score is number => score !== null)
+      const avgScore = avgScores.length ? Math.round(avgScores.reduce((sum, score) => sum + score, 0) / avgScores.length) : null
+      return `- ${name}: ${items.length} deals, ${killed} killed${avgScore !== null ? `, avg score ${avgScore}` : ''}.`
     }),
   ].join('\n')
 }
@@ -160,28 +187,48 @@ function answerCompare(question: string, deals: DealRow[]) {
 
   const currentScore = scoreFor(current)
   const killed = similar.filter((deal) => deal.is_archived)
-  const avgSimilar = Math.round(similar.map(scoreFor).filter((score): score is number => score !== null).reduce((sum, score, _, arr) => sum + score / arr.length, 0))
+  const similarScores = similar.map(scoreFor).filter((score): score is number => score !== null)
+  const avgSimilar = similarScores.length ? Math.round(similarScores.reduce((sum, score) => sum + score, 0) / similarScores.length) : null
 
   return [
     `${current.title} compares against ${similar.length} similar deals by market or asset type.`,
-    currentScore !== null ? `Current score: ${currentScore}/100${Number.isFinite(avgSimilar) ? ` vs similar average ${avgSimilar}/100` : ''}.` : 'This deal does not have enough scoring data yet.',
+    currentScore !== null ? `Current score: ${currentScore}/100${avgSimilar !== null ? ` vs similar average ${avgSimilar}/100` : ''}.` : 'This deal does not have enough scoring data yet.',
     killed.length > 0 ? `${killed.length} of the similar deals were killed. Top reasons: ${topKillReasons(killed).slice(0, 2).map(([reason, count]) => `${reason} (${count})`).join(', ') || 'not captured'}.` : 'None of the matched similar deals are currently in Graveyard.',
-    ...similar.slice(0, 3).map((deal) => `• ${deal.title} — ${deal.market ?? 'market unknown'}, ${deal.is_archived ? 'killed' : deal.deal_stages?.name ?? 'active'}, score ${scoreFor(deal) ?? 'n/a'}.`),
+    ...similar.slice(0, 3).map((deal) => `- ${deal.title} - ${deal.market ?? 'market unknown'}, ${deal.is_archived ? 'killed' : deal.deal_stages?.name ?? 'active'}, score ${scoreFor(deal) ?? 'n/a'}.`),
   ].join('\n')
 }
 
-function buildAnswer(question: string, deals: DealRow[]) {
+function buildAnswer(question: string, deals: DealRow[], memories: FirmMemory[]) {
   const lower = normalize(question)
-  if (lower.includes('stale') || lower.includes('attention') || lower.includes('review')) return answerStale(deals)
-  if (lower.includes('broker') || lower.includes('source')) return answerBroker(question, deals)
-  if (lower.includes('kill') || lower.includes('graveyard') || lower.includes('fail') || lower.includes('price')) return answerKilled(question, deals)
-  if (lower.includes('compare') || lower.includes('similar') || lower.includes('seen this') || lower.includes('seen before')) return answerCompare(question, deals)
-  if (lower.includes('summarize') || lower.includes('summary') || lower.includes('pipeline') || lower.includes('memory')) return answerSummary(deals)
-  return [
-    answerSummary(deals),
-    '',
-    'Try asking about killed deals, stale pipeline items, broker history, or similar deals for a specific market/type.',
-  ].join('\n')
+  const memoryMatches = relevantMemories(question, memories)
+  let answer: string
+
+  if (lower.includes('stale') || lower.includes('attention') || lower.includes('review')) answer = answerStale(deals)
+  else if (lower.includes('broker') || lower.includes('source')) answer = answerBroker(question, deals)
+  else if (lower.includes('kill') || lower.includes('graveyard') || lower.includes('fail') || lower.includes('price')) answer = answerKilled(question, deals)
+  else if (lower.includes('compare') || lower.includes('similar') || lower.includes('seen this') || lower.includes('seen before')) answer = answerCompare(question, deals)
+  else if (lower.includes('summarize') || lower.includes('summary') || lower.includes('pipeline') || lower.includes('memory')) answer = answerSummary(deals)
+  else {
+    answer = [
+      answerSummary(deals),
+      '',
+      'Try asking about killed deals, stale pipeline items, broker history, or similar deals for a specific market/type.',
+    ].join('\n')
+  }
+
+  if (memoryMatches.length > 0) {
+    answer = [
+      answer,
+      '',
+      'Relevant saved firm memory:',
+      ...memoryMatches.map((memory) => `- ${memory.content}`),
+    ].join('\n')
+  }
+
+  return {
+    answer,
+    memoryCandidate: `When asked "${question}", Dealstash answered: ${answer.slice(0, 1200)}`,
+  }
 }
 
 export async function POST(request: Request) {
@@ -201,25 +248,35 @@ export async function POST(request: Request) {
   const question = typeof body.question === 'string' ? body.question.slice(0, 500) : ''
   if (!question.trim()) return NextResponse.json({ error: 'Question is required' }, { status: 400 })
 
-  const { data: deals, error } = await supabase
-    .from('deals')
-    .select(`
-      id, title, market, deal_type, source_name, asking_price, is_archived, archived_at, created_at, updated_at,
-      deal_stages(name),
-      deal_scores(score),
-      deal_events(notes, kill_reasons(name))
-    `)
-    .eq('firm_id', profile.firm_id)
-    .order('updated_at', { ascending: false })
-    .limit(250)
+  const [{ data: deals, error }, { data: memories }] = await Promise.all([
+    supabase
+      .from('deals')
+      .select(`
+        id, title, market, deal_type, source_name, asking_price, is_archived, archived_at, created_at, updated_at,
+        deal_stages(name),
+        deal_scores(score),
+        deal_events(notes, kill_reasons(name))
+      `)
+      .eq('firm_id', profile.firm_id)
+      .order('updated_at', { ascending: false })
+      .limit(250),
+    supabase
+      .from('firm_memories')
+      .select('id, content, feedback_type, tags, created_at')
+      .eq('firm_id', profile.firm_id)
+      .order('created_at', { ascending: false })
+      .limit(50)
+      .then((result) => result.error ? { data: [] } : result),
+  ])
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  const answer = buildAnswer(question, (deals ?? []) as unknown as DealRow[])
+  const result = buildAnswer(question, (deals ?? []) as unknown as DealRow[], (memories ?? []) as FirmMemory[])
   return NextResponse.json({
-    answer,
+    ...result,
     sources: {
       deals: deals?.length ?? 0,
+      memories: memories?.length ?? 0,
       generatedFrom: 'firm_memory',
     },
   })
