@@ -87,7 +87,7 @@ export default function PrivacyPage() {
               <li><strong>Portability:</strong> You may request an export of your deal data in a standard format.</li>
               <li><strong>Opt-out:</strong> You may opt out of non-essential communications at any time.</li>
             </ul>
-            <p className="mt-3">To exercise these rights, contact us at <a href="mailto:jack@getdealstash.com" className="text-blue-600 hover:underline">jack@getdealstash.com</a>. We will respond within 30 days.</p>
+            <p className="mt-3">To exercise these rights, contact us at <a href="mailto:hello@getdealstash.com" className="text-blue-600 hover:underline">hello@getdealstash.com</a>. We will respond within 30 days.</p>
           </section>
 
           <section>
@@ -112,7 +112,7 @@ export default function PrivacyPage() {
               <p><strong>Jack Morgan</strong></p>
               <p>Dealstash</p>
               <p>Missouri, United States</p>
-              <p>Email: <a href="mailto:jack@getdealstash.com" className="text-blue-600 hover:underline">jack@getdealstash.com</a></p>
+              <p>Email: <a href="mailto:hello@getdealstash.com" className="text-blue-600 hover:underline">hello@getdealstash.com</a></p>
             </div>
           </section>
 

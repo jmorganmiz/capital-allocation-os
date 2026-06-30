@@ -57,93 +57,86 @@ export default function BillingSettings({ isSubscribed, cancelAtPeriodEnd: initi
     ? new Date(currentPeriodEnd * 1000).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
     : null
 
+  const planName = isSubscribed ? 'Team Plan' : 'Free Beta'
+  const planDetail = isSubscribed ? '$149 / month · All features included' : 'All features available during beta'
+
   return (
     <section>
-      <h2 className="text-base font-semibold text-gray-900 mb-1">Billing</h2>
-      <p className="text-sm text-gray-500 mb-4">Manage your subscription.</p>
+      <div className="app-settings-section-header">
+        <div>
+          <p>Subscription</p>
+          <h2>Billing</h2>
+        </div>
+        <span>{isSubscribed ? (cancelAtPeriodEnd ? 'Canceling' : 'Active') : 'Beta'}</span>
+      </div>
+      <p className="app-settings-section-copy">
+        Manage your subscription, plan status, and billing access for the firm.
+      </p>
 
-      <div className="border border-gray-200 rounded-lg p-5">
-        <div className="flex items-start justify-between">
+      <div className="app-settings-billing-card">
+        <div className="app-settings-plan-row">
           <div>
-            <p className="text-sm font-semibold text-gray-800">
-              {isSubscribed ? 'Team Plan' : 'Free Beta'}
-            </p>
-            <p className="text-xs text-gray-400 mt-0.5">
-              {isSubscribed ? '$149 / month · All features included' : 'All features available during beta'}
-            </p>
+            <p>Current plan</p>
+            <h3>{planName}</h3>
+            <span>{planDetail}</span>
           </div>
-          {isSubscribed ? (
-            <span className={`text-xs border rounded px-2 py-1 font-medium ${
-              cancelAtPeriodEnd
-                ? 'bg-amber-50 text-amber-700 border-amber-200'
-                : 'bg-green-50 text-green-700 border-green-200'
-            }`}>
-              {cancelAtPeriodEnd ? 'Canceling' : 'Active'}
-            </span>
-          ) : (
-            <span className="text-xs bg-gray-100 text-gray-500 rounded px-2 py-1 font-medium">
-              Beta
-            </span>
-          )}
+          <em data-tone={cancelAtPeriodEnd ? 'amber' : isSubscribed ? 'green' : 'neutral'}>
+            {cancelAtPeriodEnd ? 'Canceling' : isSubscribed ? 'Active' : 'Beta'}
+          </em>
         </div>
 
-        {/* Pending cancellation notice */}
         {isSubscribed && cancelAtPeriodEnd && (
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2.5">
+          <div className="app-settings-cancel-box" data-tone="amber">
+            <strong>Cancellation scheduled</strong>
+            <span>
               Your subscription will cancel at the end of your billing period.
-              {periodEndDate && ` You'll keep access until ${periodEndDate}.`}
-            </p>
+              {periodEndDate ? ` You will keep access until ${periodEndDate}.` : ''}
+            </span>
           </div>
         )}
 
-        {/* Subscribe button — only show if not subscribed and not pending cancel */}
         {!isSubscribed && !cancelAtPeriodEnd && (
-          <div className="mt-4 pt-4 border-t border-gray-100">
+          <div className="app-settings-billing-action">
             <button
               onClick={handleSubscribe}
               disabled={loading}
-              className="btn-primary disabled:opacity-50"
+              className="btn-primary"
             >
-              {loading ? 'Redirecting…' : 'Subscribe — $149/month'}
+              {loading ? 'Redirecting...' : 'Subscribe — $149/month'}
             </button>
-            <p className="text-xs text-gray-400 mt-2">
+            <p className="app-settings-billing-note">
               You will be charged $149/month on a recurring basis. Cancel anytime by emailing{' '}
-              <a href="mailto:jack@getdealstash.com" className="hover:underline">jack@getdealstash.com</a>.
+              <a href="mailto:hello@getdealstash.com">hello@getdealstash.com</a>.
             </p>
           </div>
         )}
 
-        {/* Cancel button — only show if active and not already pending cancel */}
         {isSubscribed && !cancelAtPeriodEnd && !showCancelConfirm && (
-          <div className="mt-4 pt-4 border-t border-gray-100">
+          <div className="app-settings-billing-action">
             <button
               onClick={() => setShowCancelConfirm(true)}
-              className="text-sm text-red-600 hover:text-red-700"
+              className="app-settings-danger-link"
             >
               Cancel subscription
             </button>
           </div>
         )}
 
-        {/* Confirmation prompt */}
         {showCancelConfirm && (
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <p className="text-sm text-gray-700 mb-3">
-              Are you sure? You'll keep access until the end of your billing period.
-            </p>
-            <div className="flex gap-3">
+          <div className="app-settings-cancel-box">
+            <strong>Cancel subscription?</strong>
+            <span>You will keep access until the end of your billing period.</span>
+            <div className="app-settings-form-actions">
               <button
                 onClick={handleCancel}
                 disabled={loading}
-                className="text-sm bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 disabled:opacity-50 font-medium"
+                data-danger="true"
               >
-                {loading ? 'Canceling…' : 'Yes, cancel subscription'}
+                {loading ? 'Canceling...' : 'Yes, cancel subscription'}
               </button>
               <button
                 onClick={() => setShowCancelConfirm(false)}
                 disabled={loading}
-                className="btn-ghost text-sm"
               >
                 Never mind
               </button>
@@ -151,7 +144,7 @@ export default function BillingSettings({ isSubscribed, cancelAtPeriodEnd: initi
           </div>
         )}
 
-        {error && <p className="text-sm text-red-600 mt-3">{error}</p>}
+        {error && <p className="app-settings-status error">{error}</p>}
       </div>
     </section>
   )

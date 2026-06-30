@@ -30,12 +30,12 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-base font-semibold text-gray-900 mb-2">4. Account Registration</h2>
-            <p>To use the Service, you must create an account by providing accurate and complete information. You are responsible for maintaining the confidentiality of your account credentials and for all activity that occurs under your account. You must notify us immediately of any unauthorized use of your account at jack@getdealstash.com. Each workspace is associated with a single firm, and all team members within a firm share access to that firm's data.</p>
+            <p>To use the Service, you must create an account by providing accurate and complete information. You are responsible for maintaining the confidentiality of your account credentials and for all activity that occurs under your account. You must notify us immediately of any unauthorized use of your account at hello@getdealstash.com. Each workspace is associated with a single firm, and all team members within a firm share access to that firm's data.</p>
           </section>
 
           <section>
             <h2 className="text-base font-semibold text-gray-900 mb-2">5. Subscription and Payment</h2>
-            <p>Dealstash is <strong>$149/month per firm, billed monthly on a recurring basis through Stripe</strong>. You will be charged $149 every month until you cancel. To cancel, email <a href="mailto:jack@getdealstash.com" className="text-blue-600 hover:underline">jack@getdealstash.com</a> or use the cancel option in your account settings. Payments are processed securely through Stripe. All fees are non-refundable except as required by applicable law. We reserve the right to change pricing with 30 days' notice to subscribers.</p>
+            <p>Dealstash is <strong>$149/month per firm, billed monthly on a recurring basis through Stripe</strong>. You will be charged $149 every month until you cancel. To cancel, email <a href="mailto:hello@getdealstash.com" className="text-blue-600 hover:underline">hello@getdealstash.com</a> or use the cancel option in your account settings. Payments are processed securely through Stripe. All fees are non-refundable except as required by applicable law. We reserve the right to change pricing with 30 days' notice to subscribers.</p>
           </section>
 
           <section>
@@ -88,7 +88,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-base font-semibold text-gray-900 mb-2">14. Termination</h2>
-            <p>You may cancel your subscription and terminate your account at any time by contacting us at jack@getdealstash.com. We may terminate or suspend your account immediately, without prior notice, for conduct that we reasonably believe violates these Terms or is harmful to other users, us, or third parties. Upon termination, your right to use the Service ceases immediately. We will retain your data for 30 days after termination, after which it may be permanently deleted.</p>
+            <p>You may cancel your subscription and terminate your account at any time by contacting us at hello@getdealstash.com. We may terminate or suspend your account immediately, without prior notice, for conduct that we reasonably believe violates these Terms or is harmful to other users, us, or third parties. Upon termination, your right to use the Service ceases immediately. We will retain your data for 30 days after termination, after which it may be permanently deleted.</p>
           </section>
 
           <section>
@@ -108,7 +108,7 @@ export default function TermsPage() {
               <p><strong>Jack Morgan</strong></p>
               <p>Dealstash</p>
               <p>Missouri, United States</p>
-              <p>Email: <a href="mailto:jack@getdealstash.com" className="text-blue-600 hover:underline">jack@getdealstash.com</a></p>
+              <p>Email: <a href="mailto:hello@getdealstash.com" className="text-blue-600 hover:underline">hello@getdealstash.com</a></p>
             </div>
           </section>
 

@@ -1,10 +1,8 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { createBuyBox, updateBuyBox, deleteBuyBox } from '@/lib/actions/buybox'
+import { createBuyBox, deleteBuyBox, updateBuyBox } from '@/lib/actions/buybox'
 import { ASSET_TYPES, type BuyBoxWithCriteria } from '@/lib/constants/buybox'
-
-// ── Types ─────────────────────────────────────────────────────────────────────
 
 type CriterionDraft = { tempId: string; name: string; description: string }
 
@@ -19,8 +17,6 @@ type FormState = {
   notes: string
   criteria: CriterionDraft[]
 }
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function blankForm(): FormState {
   return {
@@ -37,53 +33,61 @@ function blankForm(): FormState {
 }
 
 function boxToForm(box: BuyBoxWithCriteria): FormState {
-  const pct = (v: number | null) => v != null ? (v * 100).toFixed(2).replace(/\.?0+$/, '') : ''
+  const pct = (value: number | null) => value != null ? (value * 100).toFixed(2).replace(/\.?0+$/, '') : ''
   return {
-    name:                     box.name,
-    asset_type:               box.asset_type,
-    min_cap_rate:             pct(box.min_cap_rate),
-    max_asking_price:         box.max_asking_price != null ? String(box.max_asking_price) : '',
-    min_noi:                  box.min_noi != null ? String(box.min_noi) : '',
-    preferred_markets:        box.preferred_markets ?? '',
+    name: box.name,
+    asset_type: box.asset_type,
+    min_cap_rate: pct(box.min_cap_rate),
+    max_asking_price: box.max_asking_price != null ? String(box.max_asking_price) : '',
+    min_noi: box.min_noi != null ? String(box.min_noi) : '',
+    preferred_markets: box.preferred_markets ?? '',
     preferred_deal_structure: box.preferred_deal_structure ?? '',
-    notes:                    box.notes ?? '',
+    notes: box.notes ?? '',
     criteria: (box.buy_box_criteria ?? [])
       .sort((a, b) => a.position - b.position)
-      .map(c => ({ tempId: c.id, name: c.name, description: c.description ?? '' })),
+      .map((criterion) => ({
+        tempId: criterion.id,
+        name: criterion.name,
+        description: criterion.description ?? '',
+      })),
   }
 }
 
 function formToInput(form: FormState) {
-  const pct = (v: string) => v.trim() !== '' ? parseFloat(v) / 100 : null
-  const num = (v: string) => v.trim() !== '' ? parseFloat(v) : null
+  const pct = (value: string) => value.trim() !== '' ? parseFloat(value) / 100 : null
+  const num = (value: string) => value.trim() !== '' ? parseFloat(value) : null
   return {
-    name:                     form.name.trim(),
-    asset_type:               form.asset_type,
-    min_cap_rate:             pct(form.min_cap_rate),
-    max_asking_price:         num(form.max_asking_price),
-    min_noi:                  num(form.min_noi),
-    preferred_markets:        form.preferred_markets.trim() || null,
+    name: form.name.trim(),
+    asset_type: form.asset_type,
+    min_cap_rate: pct(form.min_cap_rate),
+    max_asking_price: num(form.max_asking_price),
+    min_noi: num(form.min_noi),
+    preferred_markets: form.preferred_markets.trim() || null,
     preferred_deal_structure: form.preferred_deal_structure.trim() || null,
-    notes:                    form.notes.trim() || null,
-    criteria:                 form.criteria
-      .filter(c => c.name.trim())
-      .map(c => ({ name: c.name.trim(), description: c.description.trim() })),
+    notes: form.notes.trim() || null,
+    criteria: form.criteria
+      .filter((criterion) => criterion.name.trim())
+      .map((criterion) => ({
+        name: criterion.name.trim(),
+        description: criterion.description.trim(),
+      })),
   }
 }
 
 function summaryLine(box: BuyBoxWithCriteria): string {
   const parts: string[] = []
-  if (box.min_cap_rate != null)    parts.push(`Cap ≥ ${(box.min_cap_rate * 100).toFixed(1)}%`)
+  if (box.min_cap_rate != null) parts.push(`Cap >= ${(box.min_cap_rate * 100).toFixed(1)}%`)
   if (box.max_asking_price != null) parts.push(`Max $${(box.max_asking_price / 1_000_000).toFixed(1)}M`)
-  if (box.min_noi != null)          parts.push(`NOI ≥ $${Number(box.min_noi).toLocaleString()}`)
-  if (box.preferred_markets)        parts.push(box.preferred_markets)
+  if (box.min_noi != null) parts.push(`NOI >= $${Number(box.min_noi).toLocaleString()}`)
+  if (box.preferred_markets) parts.push(box.preferred_markets)
   return parts.join(' · ') || 'No thresholds set'
 }
 
 let tempIdCounter = 0
-function nextTempId() { return `t-${++tempIdCounter}` }
-
-// ── Form component ─────────────────────────────────────────────────────────────
+function nextTempId() {
+  tempIdCounter += 1
+  return `t-${tempIdCounter}`
+}
 
 function BuyBoxForm({
   initial,
@@ -97,182 +101,206 @@ function BuyBoxForm({
   const [form, setForm] = useState<FormState>(initial)
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
-  const isEditing = !!(initial as any).__id
+  const isEditing = Boolean((initial as FormState & { __id?: string }).__id)
 
   function set(field: keyof FormState, value: string) {
-    setForm(prev => ({ ...prev, [field]: value }))
+    setForm((prev) => ({ ...prev, [field]: value }))
   }
 
   function addCriterion() {
-    setForm(prev => ({
+    setForm((prev) => ({
       ...prev,
       criteria: [...prev.criteria, { tempId: nextTempId(), name: '', description: '' }],
     }))
   }
 
   function updateCriterion(tempId: string, field: 'name' | 'description', value: string) {
-    setForm(prev => ({
+    setForm((prev) => ({
       ...prev,
-      criteria: prev.criteria.map(c => c.tempId === tempId ? { ...c, [field]: value } : c),
+      criteria: prev.criteria.map((criterion) => criterion.tempId === tempId ? { ...criterion, [field]: value } : criterion),
     }))
   }
 
   function removeCriterion(tempId: string) {
-    setForm(prev => ({ ...prev, criteria: prev.criteria.filter(c => c.tempId !== tempId) }))
+    setForm((prev) => ({ ...prev, criteria: prev.criteria.filter((criterion) => criterion.tempId !== tempId) }))
   }
 
   function handleSave() {
-    if (!form.name.trim()) { setError('Name is required.'); return }
+    if (!form.name.trim()) {
+      setError('Name is required.')
+      return
+    }
+
     setError(null)
     const input = formToInput(form)
     startTransition(async () => {
-      const id = (initial as any).__id as string | undefined
+      const id = (initial as FormState & { __id?: string }).__id
       const result = id
         ? await updateBuyBox(id, input)
         : await createBuyBox(input)
-      if (result.error) { setError(result.error); return }
+
+      if (result.error) {
+        setError(result.error)
+        return
+      }
+
       if (result.buyBox) onSave(result.buyBox)
     })
   }
 
   return (
-    <div className="border border-gray-200 rounded-lg p-5 bg-white">
-      {/* Name + asset type */}
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        <div className="col-span-2 sm:col-span-1">
-          <label className="block text-xs font-medium text-gray-600 mb-1">Buy Box Name</label>
+    <div className="app-settings-buybox-form">
+      <div className="app-settings-form-grid two">
+        <label className="app-settings-field">
+          <span>Buy box name</span>
           <input
             type="text"
             value={form.name}
-            onChange={e => set('name', e.target.value)}
-            placeholder="e.g. Sunbelt Multifamily Core"
-            className="input-base"
+            onChange={(event) => set('name', event.target.value)}
+            placeholder="Sunbelt Multifamily Core"
             autoFocus
           />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Asset Type</label>
+        </label>
+
+        <label className="app-settings-field">
+          <span>Asset type</span>
           <select
             value={form.asset_type}
-            onChange={e => set('asset_type', e.target.value)}
-            className="input-base"
+            onChange={(event) => set('asset_type', event.target.value)}
           >
-            {ASSET_TYPES.map(t => (
-              <option key={t} value={t}>{t}</option>
+            {ASSET_TYPES.map((type) => (
+              <option key={type} value={type}>{type}</option>
             ))}
           </select>
+        </label>
+      </div>
+
+      <div className="app-settings-form-block">
+        <p>Return thresholds</p>
+        <div className="app-settings-form-grid three">
+          <label className="app-settings-field">
+            <span>Min cap rate (%)</span>
+            <input
+              type="number"
+              step="any"
+              value={form.min_cap_rate}
+              onChange={(event) => set('min_cap_rate', event.target.value)}
+              placeholder="5.5"
+            />
+          </label>
+
+          <label className="app-settings-field">
+            <span>Max asking price ($)</span>
+            <input
+              type="number"
+              step="any"
+              value={form.max_asking_price}
+              onChange={(event) => set('max_asking_price', event.target.value)}
+              placeholder="20000000"
+            />
+          </label>
+
+          <label className="app-settings-field">
+            <span>Min NOI ($)</span>
+            <input
+              type="number"
+              step="any"
+              value={form.min_noi}
+              onChange={(event) => set('min_noi', event.target.value)}
+              placeholder="150000"
+            />
+          </label>
         </div>
       </div>
 
-      {/* Thresholds */}
-      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Thresholds</p>
-      <div className="grid grid-cols-2 gap-3 mb-3 sm:grid-cols-3">
-        <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Min Cap Rate (%)</label>
-          <input type="number" step="any" value={form.min_cap_rate}
-            onChange={e => set('min_cap_rate', e.target.value)}
-            placeholder="5.5" className="input-base" />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Max Asking Price ($)</label>
-          <input type="number" step="any" value={form.max_asking_price}
-            onChange={e => set('max_asking_price', e.target.value)}
-            placeholder="20000000" className="input-base" />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Min NOI ($)</label>
-          <input type="number" step="any" value={form.min_noi}
-            onChange={e => set('min_noi', e.target.value)}
-            placeholder="150000" className="input-base" />
-        </div>
-        <div className="col-span-2 sm:col-span-1">
-          <label className="block text-xs font-medium text-gray-600 mb-1">Preferred Markets</label>
-          <input type="text" value={form.preferred_markets}
-            onChange={e => set('preferred_markets', e.target.value)}
-            placeholder="Austin TX, Nashville TN…" className="input-base" />
-        </div>
-        <div className="col-span-2">
-          <label className="block text-xs font-medium text-gray-600 mb-1">Preferred Deal Structure</label>
-          <input type="text" value={form.preferred_deal_structure}
-            onChange={e => set('preferred_deal_structure', e.target.value)}
-            placeholder="Value-add, NNN, sale-leaseback…" className="input-base" />
-        </div>
+      <div className="app-settings-form-grid two">
+        <label className="app-settings-field">
+          <span>Preferred markets</span>
+          <input
+            type="text"
+            value={form.preferred_markets}
+            onChange={(event) => set('preferred_markets', event.target.value)}
+            placeholder="Austin TX, Nashville TN..."
+          />
+        </label>
+
+        <label className="app-settings-field">
+          <span>Preferred deal structure</span>
+          <input
+            type="text"
+            value={form.preferred_deal_structure}
+            onChange={(event) => set('preferred_deal_structure', event.target.value)}
+            placeholder="Value-add, NNN, sale-leaseback..."
+          />
+        </label>
       </div>
 
-      <div className="mb-4">
-        <label className="block text-xs font-medium text-gray-600 mb-1">Notes</label>
+      <label className="app-settings-field">
+        <span>AI notes</span>
         <textarea
           value={form.notes}
-          onChange={e => set('notes', e.target.value)}
-          placeholder="Any other criteria the AI should consider when scoring this asset type…"
-          rows={2}
-          className="input-base resize-none"
+          onChange={(event) => set('notes', event.target.value)}
+          placeholder="Any other criteria the AI should consider when scoring this asset type..."
+          rows={3}
         />
-      </div>
+      </label>
 
-      {/* Custom criteria */}
-      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Custom Criteria</p>
-      {form.criteria.length === 0 && (
-        <p className="text-xs text-gray-400 mb-2">No custom criteria — the AI will use your firm's default scoring criteria.</p>
-      )}
-      <div className="space-y-2 mb-2">
-        {form.criteria.map(c => (
-          <div key={c.tempId} className="flex gap-2 items-start">
-            <div className="flex-1 grid grid-cols-2 gap-2">
-              <input
-                type="text"
-                value={c.name}
-                onChange={e => updateCriterion(c.tempId, 'name', e.target.value)}
-                placeholder="Criterion name"
-                className="input-base text-sm"
-              />
-              <input
-                type="text"
-                value={c.description}
-                onChange={e => updateCriterion(c.tempId, 'description', e.target.value)}
-                placeholder="Description / scoring notes"
-                className="input-base text-sm"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={() => removeCriterion(c.tempId)}
-              className="mt-1.5 text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
-              aria-label="Remove criterion"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+      <div className="app-settings-form-block">
+        <div className="app-settings-form-block-title">
+          <p>Custom criteria</p>
+          <button type="button" onClick={addCriterion}>+ Add criterion</button>
+        </div>
+
+        {form.criteria.length === 0 ? (
+          <div className="app-settings-empty-row">
+            No custom criteria yet. Dealstash will use your firm default scoring criteria.
           </div>
-        ))}
+        ) : (
+          <div className="app-settings-criteria-list">
+            {form.criteria.map((criterion) => (
+              <div key={criterion.tempId} className="app-settings-criterion-row">
+                <input
+                  type="text"
+                  value={criterion.name}
+                  onChange={(event) => updateCriterion(criterion.tempId, 'name', event.target.value)}
+                  placeholder="Criterion name"
+                />
+                <input
+                  type="text"
+                  value={criterion.description}
+                  onChange={(event) => updateCriterion(criterion.tempId, 'description', event.target.value)}
+                  placeholder="Description / scoring notes"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeCriterion(criterion.tempId)}
+                  aria-label="Remove criterion"
+                  data-danger="true"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-      <button
-        type="button"
-        onClick={addCriterion}
-        className="text-xs text-blue-600 hover:underline mb-4"
-      >
-        + Add criterion
-      </button>
 
-      {error && <p className="text-xs text-red-600 mb-3">{error}</p>}
+      {error && <p className="app-settings-status error">{error}</p>}
 
-      <div className="flex gap-2 justify-end pt-2 border-t border-gray-100">
-        <button type="button" onClick={onCancel} className="btn-ghost text-sm">Cancel</button>
+      <div className="app-settings-form-actions">
+        <button type="button" onClick={onCancel}>Cancel</button>
         <button
           type="button"
           onClick={handleSave}
           disabled={isPending}
-          className="btn-primary text-sm disabled:opacity-50"
+          data-primary="true"
         >
-          {isPending ? 'Saving…' : isEditing ? 'Save Changes' : 'Create Buy Box'}
+          {isPending ? 'Saving...' : isEditing ? 'Save changes' : 'Create buy box'}
         </button>
       </div>
     </div>
   )
 }
-
-// ── Card component ─────────────────────────────────────────────────────────────
 
 function BuyBoxCard({
   box,
@@ -295,11 +323,14 @@ function BuyBoxCard({
   }
 
   if (editing) {
-    const initial = { ...boxToForm(box), __id: box.id } as any
+    const initial = { ...boxToForm(box), __id: box.id } as FormState & { __id: string }
     return (
       <BuyBoxForm
         initial={initial}
-        onSave={updated => { onUpdated(updated); setEditing(false) }}
+        onSave={(updated) => {
+          onUpdated(updated)
+          setEditing(false)
+        }}
         onCancel={() => setEditing(false)}
       />
     )
@@ -308,79 +339,74 @@ function BuyBoxCard({
   const criteriaCount = box.buy_box_criteria?.length ?? 0
 
   return (
-    <div className="border border-gray-200 rounded-lg p-4 bg-white">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap mb-1">
-            <h3 className="text-sm font-semibold text-gray-900">{box.name}</h3>
-            <span className="text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
-              {box.asset_type}
-            </span>
-          </div>
-          <p className="text-xs text-gray-500 truncate">{summaryLine(box)}</p>
-          {criteriaCount > 0 && (
-            <p className="text-xs text-gray-400 mt-1">
-              {criteriaCount} custom {criteriaCount === 1 ? 'criterion' : 'criteria'}
-            </p>
-          )}
+    <div className="app-settings-buybox-card">
+      <div className="app-settings-buybox-main">
+        <div className="app-settings-buybox-title-row">
+          <h3>{box.name}</h3>
+          <em>{box.asset_type}</em>
         </div>
-        <div className="flex gap-3 flex-shrink-0">
-          <button
-            onClick={() => setEditing(true)}
-            className="text-xs text-gray-500 hover:text-gray-800 transition-colors"
-          >
-            Edit
-          </button>
-          <button
-            onClick={handleDelete}
-            disabled={isPending}
-            className="text-xs text-red-500 hover:text-red-700 transition-colors disabled:opacity-50"
-          >
-            {isPending ? '…' : 'Delete'}
-          </button>
-        </div>
+        <p>{summaryLine(box)}</p>
+        <span>
+          {criteriaCount > 0
+            ? `${criteriaCount} custom ${criteriaCount === 1 ? 'criterion' : 'criteria'}`
+            : 'Using firm default scoring criteria'}
+        </span>
+      </div>
+
+      <div className="app-settings-rule-actions">
+        <button onClick={() => setEditing(true)}>Edit</button>
+        <button
+          onClick={handleDelete}
+          disabled={isPending}
+          data-danger="true"
+        >
+          {isPending ? '...' : 'Delete'}
+        </button>
       </div>
     </div>
   )
 }
-
-// ── Main component ─────────────────────────────────────────────────────────────
 
 export default function BuyBoxSettings({ buyBoxes: initial }: { buyBoxes: BuyBoxWithCriteria[] }) {
   const [boxes, setBoxes] = useState<BuyBoxWithCriteria[]>(initial)
   const [creating, setCreating] = useState(false)
 
   function handleCreated(box: BuyBoxWithCriteria) {
-    setBoxes(prev => [box, ...prev])
+    setBoxes((prev) => [box, ...prev])
     setCreating(false)
   }
 
   function handleUpdated(box: BuyBoxWithCriteria) {
-    setBoxes(prev => prev.map(b => b.id === box.id ? box : b))
+    setBoxes((prev) => prev.map((existing) => existing.id === box.id ? box : existing))
   }
 
   function handleDeleted(id: string) {
-    setBoxes(prev => prev.filter(b => b.id !== id))
+    setBoxes((prev) => prev.filter((box) => box.id !== id))
   }
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
+      <div className="app-settings-section-header">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Buy Box</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Define your investment thesis by asset type. The AI uses these thresholds and criteria when scoring inbound deals.
-          </p>
+          <p>Investment thesis</p>
+          <h2>Buy Box</h2>
         </div>
-        {!creating && (
-          <button onClick={() => setCreating(true)} className="btn-primary text-sm flex-shrink-0">
+        <span>{boxes.length} {boxes.length === 1 ? 'box' : 'boxes'}</span>
+      </div>
+      <p className="app-settings-section-copy">
+        Define the markets, return thresholds, and thesis notes the AI should use when scoring inbound deals.
+      </p>
+
+      {!creating && (
+        <div className="app-settings-toolbar">
+          <button onClick={() => setCreating(true)} className="btn-primary">
             + New Buy Box
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {creating && (
-        <div className="mb-4">
+        <div className="app-settings-buybox-create">
           <BuyBoxForm
             initial={blankForm()}
             onSave={handleCreated}
@@ -390,16 +416,14 @@ export default function BuyBoxSettings({ buyBoxes: initial }: { buyBoxes: BuyBox
       )}
 
       {boxes.length === 0 && !creating ? (
-        <div className="border border-dashed border-gray-200 rounded-lg p-12 text-center">
-          <p className="text-sm font-medium text-gray-600 mb-1">No buy boxes yet</p>
-          <p className="text-xs text-gray-400 mb-4">Define your first investment thesis to guide AI scoring.</p>
-          <button onClick={() => setCreating(true)} className="btn-secondary text-sm">
-            + Create Buy Box
-          </button>
+        <div className="app-settings-empty-state">
+          <p>No buy boxes yet</p>
+          <span>Define your first investment thesis to guide AI scoring.</span>
+          <button onClick={() => setCreating(true)}>+ Create Buy Box</button>
         </div>
       ) : (
-        <div className="space-y-3">
-          {boxes.map(box => (
+        <div className="app-settings-buybox-list">
+          {boxes.map((box) => (
             <BuyBoxCard
               key={box.id}
               box={box}
