@@ -2001,6 +2001,231 @@ body {
   padding: 8px 13px;
 }
 
+.app-root .app-contacts-page {
+  max-width: 1200px;
+}
+
+.app-root .app-contacts-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.app-root .app-contacts-kpi {
+  min-height: 118px;
+  border: 1px solid rgba(112,112,125,0.18);
+  border-radius: 16px;
+  background: rgba(30,30,42,0.72);
+  box-shadow: var(--app-shadow);
+  padding: 22px;
+}
+
+.app-root .app-contacts-kpi:first-child {
+  border-color: rgba(82,102,235,0.28);
+  background: rgba(82,102,235,0.08);
+}
+
+.app-root .app-contacts-kpi[data-alert='true'] {
+  border-color: rgba(245,158,11,0.28);
+  background: rgba(245,158,11,0.07);
+}
+
+.app-root .app-contacts-kpi p {
+  color: var(--app-text);
+  font-size: 36px;
+  font-weight: 720;
+  letter-spacing: -0.055em;
+  line-height: 0.95;
+}
+
+.app-root .app-contacts-kpi:first-child p {
+  color: var(--mercury-blue);
+}
+
+.app-root .app-contacts-kpi[data-alert='true'] p {
+  color: #fbbf24;
+}
+
+.app-root .app-contacts-kpi span {
+  display: block;
+  overflow: hidden;
+  color: var(--app-faint);
+  font-size: 12px;
+  margin-top: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-root .app-contacts-panel {
+  border: 1px solid var(--app-border);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(30,30,42,0.9), rgba(30,30,42,0.72));
+  box-shadow: var(--app-shadow);
+  padding: 24px;
+}
+
+.app-root .app-contacts-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.app-root .app-contacts-panel-header h2 {
+  color: var(--app-text);
+  font-size: 18px;
+  font-weight: 680;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin-top: 6px;
+}
+
+.app-root .app-contacts-panel-header > span {
+  color: var(--ghost-blue);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.app-root .app-contacts-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 14px;
+  border: 1px solid var(--app-border-soft);
+  border-radius: 14px;
+  background: rgba(23,23,33,0.58);
+}
+
+.app-root .app-contacts-toolbar input {
+  width: min(100%, 320px) !important;
+}
+
+.app-root .app-contacts-toolbar select {
+  width: 180px !important;
+}
+
+.app-root .app-contacts-table {
+  overflow: hidden;
+  border: 1px solid rgba(112,112,125,0.16);
+  border-radius: 14px;
+  background: rgba(23,23,33,0.56);
+}
+
+.app-root .app-contacts-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.15fr) minmax(90px, 0.45fr) minmax(210px, 1fr) minmax(180px, 0.9fr) minmax(120px, 0.55fr) minmax(70px, 0.35fr);
+  gap: 18px;
+  align-items: center;
+  width: 100%;
+  min-height: 68px;
+  padding: 13px 20px;
+  border: 0;
+  border-top: 1px solid rgba(112,112,125,0.1);
+  background: transparent;
+  color: var(--app-muted);
+  text-align: left;
+}
+
+.app-root button.app-contacts-row {
+  cursor: pointer;
+  transition: background 0.16s ease;
+}
+
+.app-root button.app-contacts-row:hover {
+  background: var(--app-card-hover);
+}
+
+.app-root .app-contacts-head {
+  min-height: 42px;
+  border-top: 0;
+  background: rgba(39,39,53,0.78);
+}
+
+.app-root .app-contacts-head span {
+  color: var(--app-faint);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.app-root .app-contacts-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.app-root .app-contacts-name-cell > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(82,102,235,0.22);
+  border-radius: 999px;
+  background: rgba(82,102,235,0.12);
+  color: var(--ghost-blue);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.app-root .app-contacts-name-cell div {
+  min-width: 0;
+}
+
+.app-root .app-contacts-name-cell strong {
+  display: block;
+  overflow: hidden;
+  color: var(--app-text);
+  font-size: 13px;
+  font-weight: 680;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-root .app-contacts-name-cell em {
+  display: block;
+  overflow: hidden;
+  color: var(--app-faint);
+  font-size: 12px;
+  font-style: normal;
+  margin-top: 3px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-root .app-contacts-row > span,
+.app-root .app-contacts-muted {
+  overflow: hidden;
+  color: var(--app-muted);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-root .app-contacts-row a {
+  color: var(--ghost-blue);
+  text-decoration: none;
+}
+
+.app-root .app-contacts-deal-count {
+  justify-self: start;
+  min-width: 28px;
+  border: 1px solid rgba(82,102,235,0.22);
+  border-radius: 999px;
+  background: rgba(82,102,235,0.1);
+  color: var(--ghost-blue);
+  font-size: 12px;
+  font-weight: 750;
+  padding: 4px 9px;
+  text-align: center;
+}
+
 .app-root .app-pipeline-page {
   display: flex;
   flex-direction: column;
@@ -2224,8 +2449,16 @@ body {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .app-root .app-contacts-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .app-root .app-graveyard-row {
     grid-template-columns: minmax(240px, 1.4fr) minmax(100px, 0.55fr) minmax(160px, 0.8fr) minmax(110px, 0.55fr) minmax(110px, 0.45fr);
+  }
+
+  .app-root .app-contacts-row {
+    grid-template-columns: minmax(220px, 1.1fr) minmax(90px, 0.45fr) minmax(180px, 0.9fr) minmax(150px, 0.75fr) minmax(90px, 0.45fr) minmax(70px, 0.35fr);
   }
 
   .app-root .app-dashboard-grid {
@@ -2285,9 +2518,43 @@ body {
 
   .app-root .app-dashboard-kpis,
   .app-root .app-graveyard-kpis,
+  .app-root .app-contacts-kpis,
   .app-root .app-dashboard-attention-summary,
   .app-root .app-dashboard-stage-grid {
     grid-template-columns: 1fr;
+  }
+
+  .app-root .app-contacts-panel {
+    padding: 18px;
+  }
+
+  .app-root .app-contacts-toolbar input,
+  .app-root .app-contacts-toolbar select {
+    width: 100% !important;
+  }
+
+  .app-root .app-contacts-toolbar button {
+    flex: 1;
+  }
+
+  .app-root .app-contacts-table {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+
+  .app-root .app-contacts-head {
+    display: none;
+  }
+
+  .app-root .app-contacts-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+    border: 1px solid rgba(112,112,125,0.16);
+    border-radius: 14px;
+    background: rgba(23,23,33,0.58);
   }
 
   .app-root .app-graveyard-panel {
