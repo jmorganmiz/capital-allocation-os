@@ -8,6 +8,11 @@ type Message = {
   content: string
   question?: string
   memoryCandidate?: string
+  memoryReferences?: Array<{
+    id: string
+    content: string
+    feedbackType: 'saved' | 'correction' | 'firm_rule'
+  }>
   feedback?: 'helpful' | 'not_helpful' | 'saved' | 'firm_rule'
 }
 
@@ -37,6 +42,8 @@ export default function AnalystDrawer() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [savingId, setSavingId] = useState<string | null>(null)
+  const [correctionId, setCorrectionId] = useState<string | null>(null)
+  const [correction, setCorrection] = useState('')
   const [messages, setMessages] = useState<Message[]>([
     {
       id: makeId(),
@@ -79,6 +86,7 @@ export default function AnalystDrawer() {
           content: data.answer,
           question: trimmed,
           memoryCandidate: data.memoryCandidate,
+          memoryReferences: data.memoryReferences ?? [],
         },
       ])
     } catch (error) {
@@ -131,6 +139,38 @@ export default function AnalystDrawer() {
     }
   }
 
+  async function saveCorrection(message: Message) {
+    const content = correction.trim()
+    if (!content) return
+
+    setSavingId(message.id)
+    try {
+      const res = await fetch('/api/analyst/memory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: message.question,
+          answer: message.content,
+          content,
+          feedbackType: 'correction',
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Could not save correction.')
+      setMessages(prev => prev.map(item => item.id === message.id ? { ...item, feedback: 'saved' } : item))
+      setCorrectionId(null)
+      setCorrection('')
+    } catch (error) {
+      setMessages(prev => [...prev, {
+        id: makeId(),
+        role: 'assistant',
+        content: error instanceof Error ? `Correction was not saved: ${error.message}` : 'Correction was not saved.',
+      }])
+    } finally {
+      setSavingId(null)
+    }
+  }
+
   function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault()
@@ -174,33 +214,67 @@ export default function AnalystDrawer() {
                     {formatMessage(message.content)}
                   </div>
 
-                  {message.role === 'assistant' && message.question && (
-                    <div className="app-analyst-feedback">
-                      {message.feedback ? (
-                        <span>
-                          {message.feedback === 'not_helpful'
-                            ? 'Feedback saved'
-                            : message.feedback === 'firm_rule'
-                              ? 'Saved as firm rule'
-                              : 'Saved to memory'}
-                        </span>
-                      ) : (
-                        <>
-                          <button disabled={savingId === message.id} onClick={() => saveMemory(message, 'helpful')}>
-                            Helpful
-                          </button>
-                          <button disabled={savingId === message.id} onClick={() => saveMemory(message, 'saved')}>
-                            Remember
-                          </button>
-                          <button disabled={savingId === message.id} onClick={() => saveMemory(message, 'firm_rule')}>
-                            Firm rule
-                          </button>
-                          <button disabled={savingId === message.id} onClick={() => saveMemory(message, 'not_helpful')}>
-                            Not helpful
-                          </button>
-                        </>
-                      )}
+                  {message.role === 'assistant' && (message.memoryReferences?.length ?? 0) > 0 && (
+                    <div className="app-analyst-citations">
+                      <strong>Used firm memory</strong>
+                      {message.memoryReferences?.map(memory => (
+                        <div key={memory.id}>
+                          <span>{memory.feedbackType === 'firm_rule' ? 'Firm rule' : memory.feedbackType === 'correction' ? 'Correction' : 'Saved memory'}</span>
+                          <p>{memory.content}</p>
+                        </div>
+                      ))}
                     </div>
+                  )}
+
+                  {message.role === 'assistant' && message.question && (
+                    <>
+                      <div className="app-analyst-feedback">
+                        {message.feedback ? (
+                          <span>
+                            {message.feedback === 'firm_rule'
+                              ? 'Saved as firm rule'
+                              : message.feedback === 'saved'
+                                ? 'Correction saved'
+                                : 'Feedback saved'}
+                          </span>
+                        ) : (
+                          <>
+                            <button disabled={savingId === message.id} onClick={() => saveMemory(message, 'helpful')}>
+                              Helpful
+                            </button>
+                            <button disabled={savingId === message.id} onClick={() => saveMemory(message, 'saved')}>
+                              Remember
+                            </button>
+                            <button disabled={savingId === message.id} onClick={() => saveMemory(message, 'firm_rule')}>
+                              Firm rule
+                            </button>
+                            <button disabled={savingId === message.id} onClick={() => { setCorrectionId(message.id); setCorrection('') }}>
+                              Correct
+                            </button>
+                            <button disabled={savingId === message.id} onClick={() => saveMemory(message, 'not_helpful')}>
+                              Not helpful
+                            </button>
+                          </>
+                        )}
+                      </div>
+                      {correctionId === message.id && !message.feedback && (
+                        <div className="app-analyst-correction">
+                          <label htmlFor={`correction-${message.id}`}>What should Dealstash remember instead?</label>
+                          <textarea
+                            id={`correction-${message.id}`}
+                            value={correction}
+                            onChange={event => setCorrection(event.target.value)}
+                            placeholder="Write the corrected fact or decision rule..."
+                            rows={3}
+                            autoFocus
+                          />
+                          <div>
+                            <button onClick={() => { setCorrectionId(null); setCorrection('') }}>Cancel</button>
+                            <button onClick={() => saveCorrection(message)} disabled={!correction.trim() || savingId === message.id}>Save correction</button>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               ))}

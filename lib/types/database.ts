@@ -208,7 +208,7 @@ export interface Database {
           square_footage?: number | null; year_built?: number | null
           num_units?: number | null; occupancy_rate?: number | null
           notes?: string | null
-          created_by: string
+          created_by: string | null
         }
         Update: never
       }

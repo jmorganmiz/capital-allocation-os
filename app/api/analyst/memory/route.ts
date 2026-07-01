@@ -46,9 +46,67 @@ export async function POST(request: Request) {
       tags: tagsFrom(sourceQuestion ?? '', content),
       created_by: user.id,
     })
-    .select('id, content, feedback_type')
+    .select('id, source_question, content, feedback_type, tags, created_at, updated_at')
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ memory: data })
+}
+
+export async function PATCH(request: Request) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { data: profile } = await supabase.from('profiles').select('firm_id').eq('id', user.id).single()
+  if (!profile?.firm_id) return NextResponse.json({ error: 'Firm not found' }, { status: 403 })
+
+  const body = await request.json().catch(() => ({}))
+  const id = typeof body.id === 'string' ? body.id : ''
+  const content = typeof body.content === 'string' ? body.content.trim().slice(0, 4000) : ''
+  const feedbackType = typeof body.feedbackType === 'string' && ALLOWED_TYPES.has(body.feedbackType)
+    ? body.feedbackType
+    : null
+
+  if (!id || !content || !feedbackType) {
+    return NextResponse.json({ error: 'Memory id, content, and type are required' }, { status: 400 })
+  }
+
+  const { data, error } = await supabase
+    .from('firm_memories')
+    .update({
+      content,
+      feedback_type: feedbackType,
+      tags: tagsFrom('', content),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .eq('firm_id', profile.firm_id)
+    .select('*')
+    .single()
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ memory: data })
+}
+
+export async function DELETE(request: Request) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { data: profile } = await supabase.from('profiles').select('firm_id').eq('id', user.id).single()
+  if (!profile?.firm_id) return NextResponse.json({ error: 'Firm not found' }, { status: 403 })
+
+  const body = await request.json().catch(() => ({}))
+  const id = typeof body.id === 'string' ? body.id : ''
+  if (!id) return NextResponse.json({ error: 'Memory id is required' }, { status: 400 })
+
+  const { error } = await supabase
+    .from('firm_memories')
+    .delete()
+    .eq('id', id)
+    .eq('firm_id', profile.firm_id)
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ success: true })
 }

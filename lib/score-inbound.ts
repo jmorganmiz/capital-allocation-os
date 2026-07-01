@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { approvedScoringRules } from '@/lib/firm-memory.mjs'
 
 const DEFAULT_CRITERIA = [
   'Location Grade',
@@ -46,7 +47,7 @@ export async function scoreInboundDeal(
     }
     if (!criteria?.length) return { scoresWritten: 0, error: 'No scoring criteria available' }
 
-    const [{ data: deal }, { data: snapshot }] = await Promise.all([
+    const [{ data: deal }, { data: snapshot }, { data: firmMemories }] = await Promise.all([
       supabase
         .from('deals')
         .select('title, address, market, deal_type, asking_price, source_name')
@@ -61,6 +62,13 @@ export async function scoreInboundDeal(
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle(),
+      supabase
+        .from('firm_memories')
+        .select('content, feedback_type')
+        .eq('firm_id', firmId)
+        .eq('feedback_type', 'firm_rule')
+        .order('updated_at', { ascending: false })
+        .limit(20),
     ])
     if (!deal) return { scoresWritten: 0, error: 'Deal not found' }
 
@@ -82,6 +90,7 @@ export async function scoreInboundDeal(
       deal,
       latest_financial_snapshot: snapshot,
       matching_buy_box: buyBox,
+      approved_firm_rules: approvedScoringRules(firmMemories ?? []),
       criteria: criteria.map((criterion: any) => ({
         id: criterion.id,
         name: criterion.name,
@@ -117,7 +126,7 @@ export async function scoreInboundDeal(
       }],
       messages: [{
         role: 'user',
-        content: `Score this inbound CRE deal from 1-5 on every criterion. Use 3 when information is insufficient. Apply the matching buy box as the primary rubric. Return every exact criterion ID.\n\n${JSON.stringify(context)}`,
+        content: `Score this inbound CRE deal from 1-5 on every criterion. Use 3 when information is insufficient. Apply the matching buy box as the primary rubric, then apply only the approved firm rules supplied in context. Never invent a firm rule. Return every exact criterion ID.\n\n${JSON.stringify(context)}`,
       }],
     })
 

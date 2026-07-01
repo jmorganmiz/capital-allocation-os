@@ -2564,6 +2564,98 @@ body {
   color: #4ade80;
 }
 
+.app-root .app-analyst-citations {
+  display: grid;
+  gap: 6px;
+  width: 88%;
+  border-left: 2px solid rgba(82,102,235,0.48);
+  padding: 3px 0 3px 10px;
+}
+
+.app-root .app-analyst-citations > strong {
+  color: var(--ghost-blue);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.app-root .app-analyst-citations > div {
+  border: 1px solid rgba(112,112,125,0.12);
+  border-radius: 10px;
+  background: rgba(12,12,20,0.22);
+  padding: 8px 9px;
+}
+
+.app-root .app-analyst-citations span {
+  color: var(--app-faint);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.app-root .app-analyst-citations p {
+  color: var(--app-muted);
+  font-size: 11px;
+  line-height: 1.45;
+  margin-top: 3px;
+}
+
+.app-root .app-analyst-correction {
+  display: grid;
+  gap: 8px;
+  width: 88%;
+  border: 1px solid rgba(82,102,235,0.22);
+  border-radius: 12px;
+  background: rgba(82,102,235,0.06);
+  padding: 11px;
+}
+
+.app-root .app-analyst-correction label {
+  color: var(--app-text);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.app-root .app-analyst-correction textarea,
+.app-root .app-memory-create textarea,
+.app-root .app-memory-row textarea {
+  width: 100%;
+  border: 1px solid rgba(112,112,125,0.18);
+  border-radius: 10px;
+  background: rgba(12,12,20,0.36);
+  color: var(--app-text);
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.5;
+  outline: none;
+  padding: 9px 10px;
+  resize: vertical;
+}
+
+.app-root .app-analyst-correction > div {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.app-root .app-analyst-correction button {
+  border: 1px solid rgba(112,112,125,0.16);
+  border-radius: 999px;
+  background: rgba(112,112,125,0.08);
+  color: var(--app-muted);
+  font-size: 10px;
+  font-weight: 750;
+  padding: 6px 9px;
+}
+
+.app-root .app-analyst-correction button:last-child {
+  border-color: rgba(82,102,235,0.45);
+  background: var(--app-blue);
+  color: #ffffff;
+}
+
 .app-root .app-analyst-prompts {
   display: flex;
   gap: 8px;
@@ -4450,6 +4542,152 @@ body {
   padding: 8px 14px;
 }
 
+.app-root .app-memory-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.app-root .app-memory-summary > div {
+  border: 1px solid rgba(112,112,125,0.16);
+  border-radius: 12px;
+  background: rgba(23,23,33,0.48);
+  padding: 13px;
+}
+
+.app-root .app-memory-summary > div[data-tone='blue'] {
+  border-color: rgba(82,102,235,0.28);
+  background: rgba(82,102,235,0.08);
+}
+
+.app-root .app-memory-summary strong {
+  display: block;
+  color: var(--app-text);
+  font-size: 24px;
+  font-weight: 680;
+  letter-spacing: -0.04em;
+}
+
+.app-root .app-memory-summary span {
+  display: block;
+  color: var(--app-faint);
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+.app-root .app-memory-create {
+  display: grid;
+  grid-template-columns: minmax(190px, 0.55fr) minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid rgba(82,102,235,0.22);
+  border-radius: 14px;
+  background: rgba(82,102,235,0.06);
+  padding: 14px;
+}
+
+.app-root .app-memory-create strong {
+  display: block;
+  color: var(--app-text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.app-root .app-memory-create span {
+  display: block;
+  color: var(--app-faint);
+  font-size: 11px;
+  line-height: 1.45;
+  margin-top: 4px;
+}
+
+.app-root .app-memory-create button {
+  border: 1px solid rgba(82,102,235,0.5);
+  border-radius: 999px;
+  background: var(--app-blue);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 750;
+  padding: 8px 11px;
+}
+
+.app-root .app-memory-create button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.app-root .app-memory-status {
+  border: 1px solid rgba(82,102,235,0.18);
+  border-radius: 10px;
+  background: rgba(82,102,235,0.06);
+  color: var(--ghost-blue) !important;
+  font-size: 12px;
+  margin-top: 12px;
+  padding: 9px 11px;
+}
+
+.app-root .app-memory-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.app-root .app-memory-row {
+  display: grid;
+  gap: 9px;
+  border: 1px solid rgba(112,112,125,0.16);
+  border-radius: 14px;
+  background: rgba(23,23,33,0.48);
+  padding: 14px;
+}
+
+.app-root .app-memory-row[data-type='firm_rule'] {
+  border-color: rgba(82,102,235,0.28);
+  background: rgba(82,102,235,0.055);
+}
+
+.app-root .app-memory-row[data-type='correction'] {
+  border-color: rgba(245,158,11,0.22);
+}
+
+.app-root .app-memory-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.app-root .app-memory-meta span {
+  border: 1px solid rgba(82,102,235,0.25);
+  border-radius: 999px;
+  background: rgba(82,102,235,0.1);
+  color: var(--ghost-blue);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  padding: 4px 7px;
+  text-transform: uppercase;
+}
+
+.app-root .app-memory-meta time,
+.app-root .app-memory-row small {
+  color: var(--app-faint);
+  font-size: 10px;
+}
+
+.app-root .app-memory-row > p {
+  color: var(--app-muted) !important;
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.app-root .app-memory-row .app-settings-rule-actions {
+  border-top: 1px solid rgba(112,112,125,0.1);
+  padding-top: 9px;
+}
+
 @media (max-width: 1100px) {
   .app-root .app-intake-command-grid {
     grid-template-columns: 1fr;
@@ -4465,6 +4703,10 @@ body {
 
   .app-root .app-contacts-kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .app-root .app-memory-create {
+    grid-template-columns: 1fr;
   }
 
   .app-root .app-graveyard-row {

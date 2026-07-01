@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import Anthropic from '@anthropic-ai/sdk'
+import { approvedScoringRules } from '@/lib/firm-memory.mjs'
 import { checkAiRateLimit } from '@/lib/rate-limit'
 
 const DEFAULT_CRITERIA = [
@@ -259,7 +260,7 @@ export async function autoScoreDeal(dealId: string, firmId: string): Promise<Aut
     }
     console.log('[auto-score] deal fetched:', deal.title)
 
-    const [{ data: snapshot }, { data: buyBox }] = await Promise.all([
+    const [{ data: snapshot }, { data: buyBox }, { data: firmMemories }] = await Promise.all([
       supabase
         .from('deal_financial_snapshots')
         .select('purchase_price, noi, cap_rate, debt_rate, ltv, irr, square_footage, year_built, num_units, occupancy_rate')
@@ -278,6 +279,13 @@ export async function autoScoreDeal(dealId: string, firmId: string): Promise<Aut
             .limit(1)
             .maybeSingle()
         : Promise.resolve({ data: null }),
+      supabase
+        .from('firm_memories')
+        .select('content, feedback_type')
+        .eq('firm_id', firmId)
+        .eq('feedback_type', 'firm_rule')
+        .order('updated_at', { ascending: false })
+        .limit(20),
     ])
     console.log('[auto-score] snapshot:', snapshot ? 'found' : 'none', '| buy box:', buyBox ? 'found' : 'none')
 
@@ -314,6 +322,11 @@ export async function autoScoreDeal(dealId: string, firmId: string): Promise<Aut
       buyBoxCriteria.length > 0      && `- Custom criteria to evaluate: ${buyBoxCriteria.map((c: any) => c.name + (c.description ? ` (${c.description})` : '')).join('; ')}`,
     ].filter(Boolean).join('\n') : ''
 
+    const firmRules = approvedScoringRules(firmMemories ?? [])
+    const firmRulesContext = firmRules.length > 0
+      ? `\nApproved firm rules (apply these as underwriting guidance; never invent rules beyond this list):\n${firmRules.map((rule: string) => `- ${rule}`).join('\n')}`
+      : ''
+
     const criteriaText = activeCriteria
       .map(c => `- id: ${c.id} | name: ${c.name}${c.description ? ` | description: ${c.description}` : ''}`)
       .join('\n')
@@ -333,6 +346,7 @@ Rate each criterion 1–5 (1 = very poor, 3 = neutral/insufficient info, 5 = exc
 Deal:
 ${dealContext}
 ${buyBoxContext}
+${firmRulesContext}
 
 Criteria to score (include ALL of these in the scores array — use the exact criteria_id shown):
 ${criteriaText}`

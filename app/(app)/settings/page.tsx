@@ -8,6 +8,7 @@ import { getAllScoringCriteria } from '@/lib/actions/scoring'
 import { getStripe } from '@/lib/stripe'
 import BuyBoxSettings from '@/components/settings/BuyBoxSettings'
 import { getBuyBoxes } from '@/lib/actions/buybox'
+import FirmMemorySettings from '@/components/settings/FirmMemorySettings'
 
 interface Props {
   searchParams: Promise<{ success?: string }>
@@ -53,6 +54,7 @@ export default async function SettingsPage({ searchParams }: Props) {
     { data: checklistItems },
     scoringResult,
     buyBoxResult,
+    { data: firmMemories },
   ] = await Promise.all([
     supabase.from('deal_stages').select('*').order('position'),
     supabase.from('kill_reasons').select('*').order('position'),
@@ -61,6 +63,12 @@ export default async function SettingsPage({ searchParams }: Props) {
     supabase.from('stage_checklist_items').select('*').order('position'),
     getAllScoringCriteria(),
     getBuyBoxes(),
+    supabase
+      .from('firm_memories')
+      .select('id, source_question, content, feedback_type, tags, created_at, updated_at')
+      .eq('firm_id', firmId)
+      .in('feedback_type', ['saved', 'correction', 'firm_rule'])
+      .order('updated_at', { ascending: false }),
   ])
 
   return (
@@ -85,6 +93,7 @@ export default async function SettingsPage({ searchParams }: Props) {
           <a href="#billing">Billing</a>
           <a href="#team">Team</a>
           <a href="#buy-box">Buy Box</a>
+          <a href="#firm-memory">Firm Memory</a>
           <a href="#pipeline-rules">Pipeline</a>
           <a href="#kill-reasons">Kill Reasons</a>
           <a href="#scoring">Scoring</a>
@@ -111,6 +120,9 @@ export default async function SettingsPage({ searchParams }: Props) {
           </section>
           <section id="buy-box" className="app-section-anchor">
             <BuyBoxSettings buyBoxes={buyBoxResult.buyBoxes ?? []} />
+          </section>
+          <section id="firm-memory" className="app-section-anchor">
+            <FirmMemorySettings initialMemories={(firmMemories ?? []) as any} />
           </section>
           <section id="pipeline-rules" className="app-section-anchor">
             <StagesSettings stages={stages ?? []} checklistItems={checklistItems ?? []} />

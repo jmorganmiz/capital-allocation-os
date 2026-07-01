@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { rankRelevantMemories } from '@/lib/firm-memory.mjs'
 
 type DealRow = {
   id: string
@@ -52,24 +53,6 @@ function typeFromQuestion(question: string, deals: DealRow[]) {
   const lower = normalize(question)
   const types = [...new Set(deals.map((deal) => deal.deal_type).filter(Boolean) as string[])]
   return types.find((type) => lower.includes(type.toLowerCase())) ?? null
-}
-
-function relevantMemories(question: string, memories: FirmMemory[]) {
-  const terms = normalize(question)
-    .split(/[^a-z0-9]+/)
-    .filter((term) => term.length >= 4)
-
-  return memories
-    .map((memory) => {
-      const content = normalize(`${memory.content} ${(memory.tags ?? []).join(' ')}`)
-      const score = terms.reduce((sum, term) => sum + (content.includes(term) ? 1 : 0), 0)
-      const boost = memory.feedback_type === 'firm_rule' ? 2 : memory.feedback_type === 'saved' ? 1 : 0
-      return { memory, score: score + boost }
-    })
-    .filter((item) => item.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 3)
-    .map((item) => item.memory)
 }
 
 function topKillReasons(deals: DealRow[]) {
@@ -200,7 +183,7 @@ function answerCompare(question: string, deals: DealRow[]) {
 
 function buildAnswer(question: string, deals: DealRow[], memories: FirmMemory[]) {
   const lower = normalize(question)
-  const memoryMatches = relevantMemories(question, memories)
+  const memoryMatches = rankRelevantMemories(question, memories)
   let answer: string
 
   if (lower.includes('stale') || lower.includes('attention') || lower.includes('review')) answer = answerStale(deals)
@@ -216,18 +199,14 @@ function buildAnswer(question: string, deals: DealRow[], memories: FirmMemory[])
     ].join('\n')
   }
 
-  if (memoryMatches.length > 0) {
-    answer = [
-      answer,
-      '',
-      'Relevant saved firm memory:',
-      ...memoryMatches.map((memory) => `- ${memory.content}`),
-    ].join('\n')
-  }
-
   return {
     answer,
     memoryCandidate: `When asked "${question}", Dealstash answered: ${answer.slice(0, 1200)}`,
+    memoryReferences: memoryMatches.map((memory: FirmMemory) => ({
+      id: memory.id,
+      content: memory.content,
+      feedbackType: memory.feedback_type,
+    })),
   }
 }
 
@@ -264,6 +243,7 @@ export async function POST(request: Request) {
       .from('firm_memories')
       .select('id, content, feedback_type, tags, created_at')
       .eq('firm_id', profile.firm_id)
+      .in('feedback_type', ['saved', 'correction', 'firm_rule'])
       .order('created_at', { ascending: false })
       .limit(50)
       .then((result) => result.error ? { data: [] } : result),
