@@ -13,6 +13,7 @@ import { FAQ } from '@/components/FAQ'
 import { FooterCTA } from '@/components/FooterCTA'
 import { SiteFooter } from '@/components/SiteFooter'
 import { CookieBanner } from '@/components/CookieBanner'
+import { LandingAnalyst } from '@/components/LandingAnalyst'
 
 export default function HomePage() {
   useEffect(() => {
@@ -54,6 +55,7 @@ export default function HomePage() {
       <FooterCTA />
       <SiteFooter />
       <CookieBanner />
+      <LandingAnalyst />
     </div>
   )
 }
