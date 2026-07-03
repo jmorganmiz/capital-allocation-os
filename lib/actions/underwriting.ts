@@ -60,10 +60,34 @@ function validateInput(raw: QuickPencilInput): QuickPencilInput {
 
 function scenarioInput(base: QuickPencilInput, scenario: ScenarioKey, projectionStartDate: string) {
   const adjustment = scenario === 'downside'
-    ? { vacancy: 0.02, rentGrowth: -0.01, exitCap: 0.005, renovation: 1.15 }
+    ? {
+        vacancy: 0.03,
+        rentGrowth: -0.015,
+        exitCap: 0.0075,
+        renovation: 1.2,
+        operatingCosts: 1.1,
+        interestRate: 0.0075,
+        marketRent: 0.95,
+      }
     : scenario === 'upside'
-      ? { vacancy: -0.01, rentGrowth: 0.01, exitCap: -0.0025, renovation: 0.9 }
-      : { vacancy: 0, rentGrowth: 0, exitCap: 0, renovation: 1 }
+      ? {
+          vacancy: -0.01,
+          rentGrowth: 0.005,
+          exitCap: -0.0025,
+          renovation: 0.9,
+          operatingCosts: 0.95,
+          interestRate: 0,
+          marketRent: 1.03,
+        }
+      : {
+          vacancy: 0,
+          rentGrowth: 0,
+          exitCap: 0,
+          renovation: 1,
+          operatingCosts: 1,
+          interestRate: 0,
+          marketRent: 1,
+        }
 
   return {
     purchasePrice: base.purchasePrice,
@@ -73,17 +97,17 @@ function scenarioInput(base: QuickPencilInput, scenario: ScenarioKey, projection
       units: base.totalUnits,
       unitsToRenovate: base.totalUnits,
       currentRent: base.currentRent,
-      marketRent: base.marketRent,
+      marketRent: base.marketRent * adjustment.marketRent,
       renovationPremium: 0,
     }],
-    payroll: base.fixedOperatingExpenses,
-    propertyTaxes: base.propertyTaxes,
-    insurance: base.insurance,
+    payroll: base.fixedOperatingExpenses * adjustment.operatingCosts,
+    propertyTaxes: base.propertyTaxes * adjustment.operatingCosts,
+    insurance: base.insurance * adjustment.operatingCosts,
     vacancyPct: Math.min(0.5, Math.max(0, base.vacancyPct + adjustment.vacancy)),
     renovationCostPerUnit: base.renovationCostPerUnit * adjustment.renovation,
     unitsRenovatedPerYear: Math.min(base.totalUnits, base.unitsRenovatedPerYear),
     ltv: base.ltv,
-    interestRate: base.interestRate,
+    interestRate: base.interestRate + adjustment.interestRate,
     amortizationYears: base.amortizationYears,
     interestOnlyMonths: base.interestOnlyMonths,
     loanTermYears: base.holdPeriodYears,
@@ -196,4 +220,3 @@ export async function saveQuickPencil(
     return { error: error instanceof Error ? error.message : 'Quick Pencil failed.' }
   }
 }
-

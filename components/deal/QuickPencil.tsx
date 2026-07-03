@@ -58,6 +58,12 @@ function outputOf(run: UnderwritingRun): Record<string, unknown> {
     : {}
 }
 
+function inputOf(run: UnderwritingRun): Record<string, unknown> {
+  return run.input_snapshot && typeof run.input_snapshot === 'object' && !Array.isArray(run.input_snapshot)
+    ? run.input_snapshot as Record<string, unknown>
+    : {}
+}
+
 function InputField({
   label,
   value,
@@ -257,6 +263,7 @@ export default function QuickPencil({ dealId, entitlementLabel, monthlyAllowance
         <div className="app-uw-results">
           {orderedRuns.map((run) => {
             const output = outputOf(run)
+            const input = inputOf(run)
             const irr = Number(output.leveredIrr)
             return (
               <article key={run.id} data-scenario={run.scenario_key}>
@@ -267,6 +274,12 @@ export default function QuickPencil({ dealId, entitlementLabel, monthlyAllowance
                   </div>
                   <strong>{formatPercent(irr)}</strong>
                 </div>
+                <p className="app-uw-scenario-assumptions">
+                  <span>Vacancy {formatPercent(Number(input.vacancyPct))}</span>
+                  <span>Growth {formatPercent(Number(input.rentGrowthInPlace))}</span>
+                  <span>Exit {formatPercent(Number(input.exitCapRate))}</span>
+                  <span>Reno {formatMoney(Number(input.renovationCostPerUnit))}/unit</span>
+                </p>
                 <div className="app-uw-return-bar"><span style={{ width: `${Math.max(2, Math.min(100, irr * 400))}%` }} /></div>
                 <dl>
                   <div><dt>Equity multiple</dt><dd>{formatMultiple(Number(output.equityMultiple))}</dd></div>
@@ -277,6 +290,9 @@ export default function QuickPencil({ dealId, entitlementLabel, monthlyAllowance
               </article>
             )
           })}
+          <p className="app-uw-results-note">
+            Downside also applies a 10% operating-cost increase, a 75 bps debt-rate increase, and a 5% renovated-rent haircut. Every scenario definition is saved with its result.
+          </p>
         </div>
       )}
     </section>

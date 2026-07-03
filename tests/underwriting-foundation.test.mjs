@@ -62,4 +62,8 @@ test('Quick Pencil visibly distinguishes assumptions from approved underwriting'
   assert.match(quickPencil, /saved outputs remain “needs review.”/)
   assert.match(quickPencil, /Needs review/)
   assert.match(quickPencil, /Downside stresses vacancy, rent growth, renovation cost, and exit cap/)
+  assert.match(quickPencil, /Every scenario definition is saved with its result/)
+  assert.match(action, /interestRate: 0\.0075/)
+  assert.match(action, /operatingCosts: 1\.1/)
+  assert.match(action, /marketRent: 0\.95/)
 })
