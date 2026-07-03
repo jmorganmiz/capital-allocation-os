@@ -24,6 +24,7 @@ const room = fs.readFileSync(path.join(ROOT, 'components/deal/UnderwritingRoom.t
 const fullAction = fs.readFileSync(path.join(ROOT, 'lib/actions/full-underwrite.ts'), 'utf8')
 const fullRoom = fs.readFileSync(path.join(ROOT, 'components/deal/FullUnderwriteExecution.tsx'), 'utf8')
 const extraction = fs.readFileSync(path.join(ROOT, 'lib/underwriting-extraction.ts'), 'utf8')
+const memo = fs.readFileSync(path.join(ROOT, 'lib/ic-memo-pdf.ts'), 'utf8')
 
 test('underwriting records and usage are tenant scoped', () => {
   for (const table of [
@@ -176,6 +177,15 @@ test('Analysts can reject unsupported extraction without silently changing the m
   assert.match(fullAction, /assumption_key\.split\('::'\)/)
   assert.match(fullAction, /conflicting .* is already approved/)
   assert.match(fullRoom, /Continue with locked inputs/)
+})
+
+test('Completed underwriting produces sensitivities and a sourced IC memo', () => {
+  assert.match(fullAction, /exit_cap_shifts/)
+  assert.match(fullAction, /rent_growth_shifts/)
+  assert.match(fullRoom, /Levered IRR by rent growth and exit cap/)
+  assert.match(fullRoom, /Download PDF/)
+  assert.match(memo, /SOURCE APPENDIX/)
+  assert.match(memo, /Dealstash confidential/)
 })
 
 test('Agent visuals expose status and artifacts without pretending to show reasoning', () => {

@@ -60,6 +60,10 @@ export default function FullUnderwriteExecution({ dealId, preflightRun, initialR
   const completed = steps.filter((step) => step.status === 'completed').length
   const flagged = steps.filter((step) => step.status === 'needs_review' || step.status === 'failed').length
   const output = record(run?.output_snapshot ?? null)
+  const sensitivity = record((output.sensitivity ?? null) as Json | null)
+  const exitShifts = Array.isArray(sensitivity.exit_cap_shifts) ? sensitivity.exit_cap_shifts : []
+  const growthShifts = Array.isArray(sensitivity.rent_growth_shifts) ? sensitivity.rent_growth_shifts : []
+  const sensitivityValues = Array.isArray(sensitivity.levered_irr) ? sensitivity.levered_irr : []
 
   async function process(runId: string, startingSteps: UnderwritingStep[]) {
     setWorking(true)
@@ -204,6 +208,22 @@ export default function FullUnderwriteExecution({ dealId, preflightRun, initialR
               <div><span>Year 1 DSCR</span><strong>{multiple(output.yearOneDscr)}</strong></div>
               <div><span>Required equity</span><strong>{money(output.totalEquityInvested)}</strong></div>
               <div><span>Exit value</span><strong>{money(output.grossExitValue)}</strong></div>
+              {run?.status === 'completed' && <div><span>IC package</span><strong><a href={`/api/underwriting/${run.id}/memo`}>Download PDF</a></strong></div>}
+            </div>
+          )}
+          {exitShifts.length === 3 && growthShifts.length === 3 && (
+            <div className="app-sensitivity-panel">
+              <div><span>Sensitivity</span><h3>Levered IRR by rent growth and exit cap</h3></div>
+              <table>
+                <thead><tr><th>Growth \ Exit</th>{exitShifts.map((shift) => <th key={String(shift)}>{Number(shift) > 0 ? '+' : ''}{(Number(shift) * 100).toFixed(1)}%</th>)}</tr></thead>
+                <tbody>{growthShifts.map((growth, row) => (
+                  <tr key={String(growth)}><th>{Number(growth) > 0 ? '+' : ''}{(Number(growth) * 100).toFixed(1)}%</th>{exitShifts.map((_, column) => {
+                    const values = sensitivityValues[row]
+                    const value = Array.isArray(values) ? values[column] as Json : undefined
+                    return <td key={column} data-base={row === 1 && column === 1}>{percent(value)}</td>
+                  })}</tr>
+                ))}</tbody>
+              </table>
             </div>
           )}
         </>

@@ -289,9 +289,33 @@ async function buildResult(
     const currentIrr = Number(output.leveredIrr ?? output.levered_irr)
     const priorIrr = Number(priorOutput.leveredIrr)
     const variance = Number.isFinite(currentIrr) && Number.isFinite(priorIrr) ? currentIrr - priorIrr : null
+    const { data: approvedFacts } = await admin.from('underwriting_assumptions').select('assumption_key, value').eq('run_id', run.id).eq('approval_status', 'approved')
+    const approvedInput = modelInput && typeof modelInput === 'object' && !Array.isArray(modelInput)
+      ? applyApprovedFacts(modelInput as Record<string, Json>, approvedFacts ?? [])
+      : null
+    const exitCapShifts = [-0.005, 0, 0.005]
+    const rentGrowthShifts = [-0.01, 0, 0.01]
+    const sensitivity = approvedInput ? {
+      exit_cap_shifts: exitCapShifts,
+      rent_growth_shifts: rentGrowthShifts,
+      levered_irr: rentGrowthShifts.map((growthShift) => exitCapShifts.map((exitShift) => {
+        const stressed = {
+          ...approvedInput,
+          exitCapRate: Number(approvedInput.exitCapRate) + exitShift,
+          rentGrowthInPlace: Number(approvedInput.rentGrowthInPlace) + growthShift,
+          rentGrowthRenovated: Number(approvedInput.rentGrowthRenovated) + growthShift,
+        }
+        return runUnderwriting(stressed).leveredIrr
+      })),
+    } : null
+    const attribution = {
+      levered_irr_change: Number.isFinite(currentIrr) && Number.isFinite(priorIrr) ? currentIrr - priorIrr : null,
+      approved_document_facts: approvedFacts ?? [],
+    }
     return {
       summary: variance === null ? 'Prior scenario output unavailable' : `Locked baseline reconciled with ${(variance * 10000).toFixed(0)} bps IRR variance`,
-      artifact: { prior_levered_irr: priorIrr, current_levered_irr: currentIrr, variance },
+      artifact: { prior_levered_irr: priorIrr, current_levered_irr: currentIrr, variance, sensitivity, attribution },
+      output: { ...output, sensitivity, attribution },
       evidenceCount: variance === null ? 0 : 2,
       confidence: variance === null ? 0.3 : 1,
       needsReview: variance === null || Math.abs(variance) > 0.000001,
