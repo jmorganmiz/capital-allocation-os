@@ -7,7 +7,7 @@ import { extractUnderwritingFacts, type ExtractedUnderwritingFact, type Underwri
 import { createAdminClient, createClient } from '@/lib/supabase/server'
 import type { Json, UnderwritingAssumption, UnderwritingRun, UnderwritingStep } from '@/lib/types/database'
 
-const EXECUTION_VERSION = `full-underwrite-deterministic-${UNDERWRITING_MODEL_VERSION}`
+const EXECUTION_VERSION = `full-underwrite-billable-${UNDERWRITING_MODEL_VERSION}`
 
 const EXECUTION_STEPS = [
   ['document_evidence', 'Document evidence'],
@@ -95,58 +95,45 @@ export async function startFullUnderwrite(
     const { user, firmId } = context
     const admin = createAdminClient()
 
-    const [{ data: preflight }, { data: entitlement }] = await Promise.all([
-      admin.from('underwriting_runs').select('*').eq('id', preflightRunId).eq('deal_id', dealId).eq('firm_id', firmId).eq('run_type', 'preflight').single(),
-      admin.from('firm_entitlements').select('underwriting_enabled').eq('firm_id', firmId).single(),
-    ])
-    if (!entitlement?.underwriting_enabled) return { error: 'Underwriting Pro is not enabled.' }
+    const { data: preflight } = await admin.from('underwriting_runs').select('*').eq('id', preflightRunId).eq('deal_id', dealId).eq('firm_id', firmId).eq('run_type', 'preflight').single()
     if (!preflight?.approved_at || preflight.status !== 'completed') return { error: 'Approve and lock preflight before execution.' }
 
     const idempotencyKey = `${requestId}:full-underwrite`
-    const { data: existing } = await admin.from('underwriting_runs').select('*').eq('firm_id', firmId).eq('idempotency_key', idempotencyKey).maybeSingle()
-    if (existing) {
-      const { data: steps } = await admin.from('underwriting_steps').select('*').eq('run_id', existing.id).order('position')
-      return { run: existing, steps: steps ?? [] }
-    }
-
     const runId = randomUUID()
-    const now = new Date().toISOString()
-    const { data: run, error: runError } = await admin.from('underwriting_runs').insert({
-      id: runId,
-      firm_id: firmId,
-      deal_id: dealId,
-      parent_run_id: preflightRunId,
-      run_type: 'full_underwrite',
-      scenario_key: 'base',
-      status: 'queued',
-      assumption_status: 'approved',
-      model_version: EXECUTION_VERSION,
-      projection_start_date: preflight.projection_start_date,
-      input_snapshot: {
-        phase: 'deterministic_execution',
-        approved_preflight_run_id: preflightRunId,
-        locked_preflight: preflight.output_snapshot,
-      },
-      warnings: [],
-      credits_reserved: 0,
-      credits_settled: 0,
-      idempotency_key: idempotencyKey,
-      created_by: user.id,
-      started_at: now,
-    }).select('*').single()
-    if (runError || !run) throw runError ?? new Error('Could not create full underwrite.')
-
-    const { data: steps, error: stepsError } = await admin.from('underwriting_steps').insert(
-      EXECUTION_STEPS.map(([stepKey, label], position) => ({
-        firm_id: firmId,
-        run_id: runId,
-        step_key: stepKey,
-        label,
-        position,
-        status: 'queued' as const,
-      })),
-    ).select('*')
-    if (stepsError) throw stepsError
+    const inputSnapshot = {
+      phase: 'cited_full_underwrite',
+      approved_preflight_run_id: preflightRunId,
+      locked_preflight: preflight.output_snapshot,
+    } as Json
+    const stepDefinitions = EXECUTION_STEPS.map(([stepKey, label], position) => ({ step_key: stepKey, label, position })) as Json
+    const { data: reservedRunId, error: reserveError } = await admin.rpc('reserve_full_underwrite_run', {
+      p_run_id: runId,
+      p_firm_id: firmId,
+      p_deal_id: dealId,
+      p_preflight_run_id: preflightRunId,
+      p_user_id: user.id,
+      p_idempotency_key: idempotencyKey,
+      p_model_version: EXECUTION_VERSION,
+      p_projection_start_date: preflight.projection_start_date,
+      p_input_snapshot: inputSnapshot,
+      p_steps: stepDefinitions,
+    })
+    if (reserveError) {
+      const message = reserveError.message.includes('UNDERWRITE_ALLOWANCE_EXCEEDED')
+        ? 'Your firm has used its Full Underwrite allowance for this billing period.'
+        : reserveError.message.includes('REVISION_LIMIT_REACHED')
+          ? 'This approved preflight already used its two included revisions. Approve a new preflight package to continue.'
+          : reserveError.message.includes('UNDERWRITING_NOT_ENABLED')
+            ? 'Underwriting Pro is not enabled.'
+            : reserveError.message
+      return { error: message }
+    }
+    const effectiveRunId = reservedRunId ?? runId
+    const [{ data: run }, { data: steps }] = await Promise.all([
+      admin.from('underwriting_runs').select('*').eq('id', effectiveRunId).single(),
+      admin.from('underwriting_steps').select('*').eq('run_id', effectiveRunId).order('position'),
+    ])
+    if (!run) throw new Error('Could not load the reserved Full Underwrite run.')
     revalidatePath(`/deals/${dealId}`)
     return { run, steps: steps ?? [] }
   } catch (error) {
@@ -434,6 +421,7 @@ export async function processNextFullUnderwriteStep(
     const { data: updatedRun } = await admin.from('underwriting_runs').update({
       status,
       completed_at: queued ? null : new Date().toISOString(),
+      ...(status === 'completed' ? { credits_settled: run.credits_reserved } : {}),
       error_code: failed ? 'FULL_UNDERWRITE_STEP_FAILED' : null,
       error_message: failed ? 'One or more deterministic workstreams failed.' : null,
     }).eq('id', runId).select('*').single()
@@ -445,9 +433,14 @@ export async function processNextFullUnderwriteStep(
         underwriting_run_id: runId,
         event_type: 'full_underwrite',
         quantity: 1,
-        billable_credits: 0,
-        idempotency_key: `${runId}:deterministic-complete`,
-        metadata: { phase: 'deterministic_execution', model_version: EXECUTION_VERSION, customer_charge: false },
+        billable_credits: run.credits_reserved,
+        idempotency_key: `${runId}:full-underwrite-complete`,
+        metadata: {
+          phase: 'cited_full_underwrite',
+          model_version: EXECUTION_VERSION,
+          customer_charge: run.credits_reserved > 0,
+          included_revision: run.credits_reserved === 0,
+        },
       }, { onConflict: 'firm_id,idempotency_key', ignoreDuplicates: true })
     }
     revalidatePath(`/deals/${run.deal_id}`)

@@ -55,6 +55,7 @@ export default async function SettingsPage({ searchParams }: Props) {
     scoringResult,
     buyBoxResult,
     { data: firmMemories },
+    { data: underwritingEntitlement },
   ] = await Promise.all([
     supabase.from('deal_stages').select('*').order('position'),
     supabase.from('kill_reasons').select('*').order('position'),
@@ -69,7 +70,21 @@ export default async function SettingsPage({ searchParams }: Props) {
       .eq('firm_id', firmId)
       .in('feedback_type', ['saved', 'correction', 'firm_rule'])
       .order('updated_at', { ascending: false }),
+    supabase.from('firm_entitlements').select('*').eq('firm_id', firmId).maybeSingle(),
   ])
+  const underwritingPeriodStart = underwritingEntitlement?.current_period_start ?? new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
+  const underwritingPeriodEnd = underwritingEntitlement?.current_period_end ?? new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString()
+  const { data: underwritingUsageRuns } = underwritingEntitlement?.underwriting_enabled
+    ? await supabase.from('underwriting_runs')
+      .select('status, credits_reserved, credits_settled')
+      .eq('run_type', 'full_underwrite')
+      .like('model_version', 'full-underwrite-billable-%')
+      .gte('created_at', underwritingPeriodStart)
+      .lt('created_at', underwritingPeriodEnd)
+    : { data: [] }
+  const underwritingCreditsUsed = (underwritingUsageRuns ?? [])
+    .filter((item) => !(item.status === 'failed' || item.status === 'canceled') || item.credits_settled > 0)
+    .reduce((total, item) => total + Number(item.credits_reserved), 0)
 
   return (
     <div className="app-page">
@@ -109,6 +124,9 @@ export default async function SettingsPage({ searchParams }: Props) {
               isSubscribed={isSubscribed}
               cancelAtPeriodEnd={cancelAtPeriodEnd}
               currentPeriodEnd={currentPeriodEnd}
+              underwritingEnabled={Boolean(underwritingEntitlement?.underwriting_enabled)}
+              underwritingAllowance={underwritingEntitlement?.monthly_underwrite_allowance ?? 0}
+              underwritingCreditsUsed={underwritingCreditsUsed}
             />
           </section>
           <section id="team" className="app-section-anchor">

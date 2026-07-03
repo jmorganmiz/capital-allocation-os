@@ -5598,6 +5598,13 @@ body {
   background: rgba(245,158,11,0.1);
   color: #fbbf24;
 }
+.app-root .app-underwriting-usage { margin-top: 16px; padding: 15px; border: 1px solid rgba(82,102,235,.2); border-radius: 11px; background: rgba(82,102,235,.045); }
+.app-root .app-underwriting-usage > div:first-child { display: flex; align-items: baseline; gap: 10px; }
+.app-root .app-underwriting-usage p { color: #aeb6ff !important; font-size: 11px; font-weight: 650; }
+.app-root .app-underwriting-usage strong { margin-left: auto; color: #f0f0f3; font-size: 14px; }
+.app-root .app-underwriting-usage span, .app-root .app-underwriting-usage small { color: var(--app-faint); font-size: 9px; }
+.app-root .app-underwriting-usage-track { overflow: hidden; height: 5px; margin: 12px 0 9px; border-radius: 999px; background: rgba(82,102,235,.15); }
+.app-root .app-underwriting-usage-track span { display: block; height: 100%; background: #5266eb; }
 
 .app-root .app-settings-billing-action {
   margin-top: 16px;

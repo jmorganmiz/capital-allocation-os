@@ -19,6 +19,10 @@ const preflightMigration = fs.readFileSync(
   path.join(ROOT, 'supabase/migrations/022_preflight_run_type.sql'),
   'utf8',
 )
+const billingMigration = fs.readFileSync(
+  path.join(ROOT, 'supabase/migrations/023_atomic_underwrite_allowance.sql'),
+  'utf8',
+)
 const roomAction = fs.readFileSync(path.join(ROOT, 'lib/actions/underwriting-room.ts'), 'utf8')
 const room = fs.readFileSync(path.join(ROOT, 'components/deal/UnderwritingRoom.tsx'), 'utf8')
 const fullAction = fs.readFileSync(path.join(ROOT, 'lib/actions/full-underwrite.ts'), 'utf8')
@@ -139,20 +143,32 @@ test('Risk and final preflight approval remain explicit human gates', () => {
 test('Full Underwrite execution accepts only locked preflight packages', () => {
   assert.match(fullAction, /eq\('run_type', 'preflight'\)/)
   assert.match(fullAction, /preflight\?\.approved_at/)
-  assert.match(fullAction, /parent_run_id: preflightRunId/)
+  assert.match(fullAction, /p_preflight_run_id: preflightRunId/)
   assert.match(fullAction, /locked_preflight: preflight\.output_snapshot/)
   assert.match(fullAction, /runUnderwriting\(approvedInput\)/)
 })
 
-test('Deterministic execution is resumable and cannot consume customer credits', () => {
+test('Full Underwrite allowance reservation is atomic and revisions are bounded', () => {
   assert.match(fullAction, /eq\('status', 'queued'\)/)
   assert.match(fullAction, /eq\('status', 'queued'\)\.select/)
-  assert.match(fullAction, /credits_reserved: 0/)
-  assert.match(fullAction, /credits_settled: 0/)
-  assert.match(fullAction, /billable_credits: 0/)
-  assert.match(fullAction, /customer_charge: false/)
-  assert.match(fullRoom, /Document extraction and provider credits remain separate/)
-  assert.match(fullRoom, /0 credits/)
+  assert.match(fullAction, /reserve_full_underwrite_run/)
+  assert.match(billingMigration, /FOR UPDATE/)
+  assert.match(billingMigration, /UNDERWRITE_ALLOWANCE_EXCEEDED/)
+  assert.match(billingMigration, /REVISION_LIMIT_REACHED/)
+  assert.match(billingMigration, /v_revision_count >= 3/)
+  assert.match(billingMigration, /v_credit := CASE WHEN v_revision_count = 0 THEN 1 ELSE 0 END/)
+  assert.match(billingMigration, /SECURITY DEFINER/)
+  assert.match(billingMigration, /GRANT EXECUTE ON FUNCTION public\.reserve_full_underwrite_run.*service_role/s)
+})
+
+test('Completed work settles reserved credits while failed work releases capacity', () => {
+  assert.match(fullAction, /credits_settled: run\.credits_reserved/)
+  assert.match(fullAction, /billable_credits: run\.credits_reserved/)
+  assert.match(fullAction, /customer_charge: run\.credits_reserved > 0/)
+  assert.match(fullAction, /included_revision: run\.credits_reserved === 0/)
+  assert.match(billingMigration, /status IN \('failed', 'canceled'\) AND credits_settled = 0/)
+  assert.match(fullRoom, /remaining/)
+  assert.match(fullRoom, /included revision/)
 })
 
 test('Document extraction produces cited proposals and pauses before calculation', () => {

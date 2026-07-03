@@ -442,6 +442,14 @@ export interface Database {
     }
     Functions: {
       current_firm_id: { Args: Record<string, never>; Returns: string }
+      reserve_full_underwrite_run: {
+        Args: {
+          p_run_id: string; p_firm_id: string; p_deal_id: string; p_preflight_run_id: string
+          p_user_id: string; p_idempotency_key: string; p_model_version: string
+          p_projection_start_date: string; p_input_snapshot: Json; p_steps: Json
+        }
+        Returns: string
+      }
     }
   }
 }

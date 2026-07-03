@@ -6,9 +6,12 @@ interface Props {
   isSubscribed: boolean
   cancelAtPeriodEnd: boolean
   currentPeriodEnd: number | null
+  underwritingEnabled: boolean
+  underwritingAllowance: number
+  underwritingCreditsUsed: number
 }
 
-export default function BillingSettings({ isSubscribed, cancelAtPeriodEnd: initialCancelAtPeriodEnd, currentPeriodEnd: initialPeriodEnd }: Props) {
+export default function BillingSettings({ isSubscribed, cancelAtPeriodEnd: initialCancelAtPeriodEnd, currentPeriodEnd: initialPeriodEnd, underwritingEnabled, underwritingAllowance, underwritingCreditsUsed }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
@@ -67,6 +70,18 @@ export default function BillingSettings({ isSubscribed, cancelAtPeriodEnd: initi
           <p>Subscription</p>
           <h2>Billing</h2>
         </div>
+
+        {underwritingEnabled && (
+          <div className="app-underwriting-usage">
+            <div>
+              <p>Full Underwrite allowance</p>
+              <strong>{Math.max(0, underwritingAllowance - underwritingCreditsUsed)} remaining</strong>
+              <span>{underwritingCreditsUsed} of {underwritingAllowance} used or reserved this period</span>
+            </div>
+            <div className="app-underwriting-usage-track"><span style={{ width: `${underwritingAllowance ? Math.min(100, (underwritingCreditsUsed / underwritingAllowance) * 100) : 0}%` }} /></div>
+            <small>Each approved package includes one Full Underwrite and two revisions. Failed or canceled runs do not consume the allowance.</small>
+          </div>
+        )}
         <span>{isSubscribed ? (cancelAtPeriodEnd ? 'Canceling' : 'Active') : 'Beta'}</span>
       </div>
       <p className="app-settings-section-copy">

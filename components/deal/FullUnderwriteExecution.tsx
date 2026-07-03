@@ -10,6 +10,9 @@ type Props = {
   initialRun: UnderwritingRun | null
   initialSteps: UnderwritingStep[]
   initialAssumptions: UnderwritingAssumption[]
+  monthlyAllowance: number
+  usedCredits: number
+  revisionCount: number
 }
 
 function record(value: Json | null): Record<string, Json> {
@@ -48,13 +51,15 @@ const statusLabel: Record<UnderwritingStep['status'], string> = {
   queued: 'Queued', running: 'Running', needs_review: 'Review', completed: 'Complete', failed: 'Failed', canceled: 'Canceled',
 }
 
-export default function FullUnderwriteExecution({ dealId, preflightRun, initialRun, initialSteps, initialAssumptions }: Props) {
+export default function FullUnderwriteExecution({ dealId, preflightRun, initialRun, initialSteps, initialAssumptions, monthlyAllowance, usedCredits, revisionCount }: Props) {
   const [run, setRun] = useState(initialRun)
   const [steps, setSteps] = useState(initialSteps)
   const [assumptions, setAssumptions] = useState(initialAssumptions)
   const [working, setWorking] = useState(false)
   const [reviewingId, setReviewingId] = useState('')
   const [revisions, setRevisions] = useState<Record<string, string>>(() => Object.fromEntries(initialAssumptions.map((fact) => [fact.id, editFact(fact)])))
+  const [creditsUsed, setCreditsUsed] = useState(usedCredits)
+  const [versionsUsed, setVersionsUsed] = useState(revisionCount)
   const [error, setError] = useState('')
   const preflightApproved = Boolean(preflightRun?.approved_at && preflightRun.status === 'completed')
   const completed = steps.filter((step) => step.status === 'completed').length
@@ -99,6 +104,8 @@ export default function FullUnderwriteExecution({ dealId, preflightRun, initialR
     }
     const created = result.steps ?? []
     setRun(result.run)
+    if (result.run.credits_reserved > 0) setCreditsUsed((value) => value + result.run!.credits_reserved)
+    setVersionsUsed((value) => value + 1)
     setSteps(created)
     setWorking(false)
     await process(result.run.id, created)
@@ -145,8 +152,10 @@ export default function FullUnderwriteExecution({ dealId, preflightRun, initialR
           <small>Runs the versioned financial model from the approved package. Document extraction and provider credits remain separate.</small>
         </div>
         <div className="app-full-execution-action">
-          <span>0 credits</span>
-          <button type="button" onClick={start} disabled={!preflightApproved || working}>{working ? 'Executing…' : run ? 'Run new version' : 'Run approved package'}</button>
+          <span>{Math.max(0, monthlyAllowance - creditsUsed)} of {monthlyAllowance} remaining</span>
+          <button type="button" onClick={start} disabled={!preflightApproved || working || versionsUsed >= 3 || (versionsUsed === 0 && creditsUsed >= monthlyAllowance)}>
+            {working ? 'Executing…' : versionsUsed === 0 ? 'Run approved package · 1 credit' : versionsUsed < 3 ? `Run included revision · ${versionsUsed - 1}/2 used` : 'Revision limit reached'}
+          </button>
         </div>
       </header>
 

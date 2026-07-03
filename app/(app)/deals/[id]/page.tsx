@@ -89,6 +89,27 @@ export default async function DealPage({ params }: Props) {
   const dealStageId = deal?.stage_id ?? null
   const latestFullRun = fullUnderwritingRuns?.[0] ?? null
   const latestExecutionRun = fullExecutionRuns?.[0] ?? null
+  const billingPeriodStart = entitlement?.current_period_start ?? new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
+  const billingPeriodEnd = entitlement?.current_period_end ?? new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString()
+  const { data: allowanceRuns } = entitlement?.underwriting_enabled
+    ? await supabase.from('underwriting_runs')
+      .select('parent_run_id, status, credits_reserved, credits_settled, model_version')
+      .eq('run_type', 'full_underwrite')
+      .like('model_version', 'full-underwrite-billable-%')
+      .gte('created_at', billingPeriodStart)
+      .lt('created_at', billingPeriodEnd)
+    : { data: [] }
+  const usedUnderwriteCredits = (allowanceRuns ?? [])
+    .filter((item) => !(item.status === 'failed' || item.status === 'canceled') || item.credits_settled > 0)
+    .reduce((total, item) => total + Number(item.credits_reserved), 0)
+  const { count: currentRevisionCount } = latestFullRun && entitlement?.underwriting_enabled
+    ? await supabase.from('underwriting_runs')
+      .select('id', { count: 'exact', head: true })
+      .eq('parent_run_id', latestFullRun.id)
+      .eq('run_type', 'full_underwrite')
+      .like('model_version', 'full-underwrite-billable-%')
+      .not('status', 'in', '(failed,canceled)')
+    : { count: 0 }
   const [{ data: checklistItems }, { data: checklistProgress }] = await Promise.all([
     dealStageId
       ? supabase.from('stage_checklist_items').select('*').eq('stage_id', dealStageId).order('position')
@@ -234,6 +255,9 @@ export default async function DealPage({ params }: Props) {
                 initialRun={latestExecutionRun}
                 initialSteps={initialExecutionSteps ?? []}
                 initialAssumptions={initialExecutionAssumptions ?? []}
+                monthlyAllowance={entitlement.monthly_underwrite_allowance}
+                usedCredits={usedUnderwriteCredits}
+                revisionCount={currentRevisionCount ?? 0}
               />
             </section>
           )}
