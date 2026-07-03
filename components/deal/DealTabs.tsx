@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 const TABS = [
   { label: 'Financials', id: 'section-financials' },
+  { label: 'Underwriting', id: 'section-underwriting' },
   { label: 'Scoring', id: 'section-scoring' },
   { label: 'Notes', id: 'section-notes' },
   { label: 'Files', id: 'section-files' },
@@ -21,7 +22,11 @@ function findScrollContainer(el: Element | null): Element | null {
   return findScrollContainer(el.parentElement)
 }
 
-export default function DealTabs() {
+export default function DealTabs({ showUnderwriting = false }: { showUnderwriting?: boolean }) {
+  const tabs = useMemo(
+    () => showUnderwriting ? TABS : TABS.filter((tab) => tab.id !== 'section-underwriting'),
+    [showUnderwriting],
+  )
   const [active, setActive] = useState(TABS[0].id)
   const observerRef = useRef<IntersectionObserver | null>(null)
   const containerRef = useRef<Element | null>(null)
@@ -31,7 +36,7 @@ export default function DealTabs() {
     const container = findScrollContainer(firstEl ?? null)
     containerRef.current = container
 
-    const targets = TABS.map((tab) => document.getElementById(tab.id)).filter(Boolean) as HTMLElement[]
+    const targets = tabs.map((tab) => document.getElementById(tab.id)).filter(Boolean) as HTMLElement[]
 
     observerRef.current = new IntersectionObserver(
       (entries) => {
@@ -49,7 +54,7 @@ export default function DealTabs() {
 
     targets.forEach((el) => observerRef.current?.observe(el))
     return () => observerRef.current?.disconnect()
-  }, [])
+  }, [tabs])
 
   function scrollTo(id: string) {
     const el = document.getElementById(id)
@@ -69,7 +74,7 @@ export default function DealTabs() {
   return (
     <nav className="app-deal-tabs" aria-label="Deal sections">
       <div>
-        {TABS.map((tab) => (
+        {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => scrollTo(tab.id)}

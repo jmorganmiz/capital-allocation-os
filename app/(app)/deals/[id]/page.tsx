@@ -10,6 +10,7 @@ import DealInfo from '@/components/deal/DealInfo'
 import ContactsSection from '@/components/deal/ContactsSection'
 import ScoringSection from '@/components/deal/ScoringSection'
 import SimilarDeals from '@/components/deal/SimilarDeals'
+import QuickPencil from '@/components/deal/QuickPencil'
 import { getScoringCriteria, getDealScores } from '@/lib/actions/scoring'
 import { createClient } from '@/lib/supabase/server'
 
@@ -30,6 +31,8 @@ export default async function DealPage({ params }: Props) {
     { data: events },
     { data: snapshots },
     { data: dealContacts },
+    { data: underwritingRuns },
+    { data: entitlement },
   ] = await Promise.all([
     supabase.from('deals').select('*').eq('id', id).single(),
     supabase.from('deal_stages').select('*').order('position'),
@@ -52,6 +55,17 @@ export default async function DealPage({ params }: Props) {
       .from('deal_contacts')
       .select('*, contacts(*)')
       .eq('deal_id', id),
+    supabase
+      .from('underwriting_runs')
+      .select('*')
+      .eq('deal_id', id)
+      .eq('run_type', 'quick_pencil')
+      .order('created_at', { ascending: false })
+      .limit(3),
+    supabase
+      .from('firm_entitlements')
+      .select('*')
+      .maybeSingle(),
   ])
 
   const dealStageId = deal?.stage_id ?? null
@@ -120,6 +134,13 @@ export default async function DealPage({ params }: Props) {
   const currentStage = stages?.find((stage) => stage.id === deal.stage_id)
   const getNote = (section: string) => notes?.find((note) => note.section === section)?.content ?? ''
   const hasAnyNotes = (notes ?? []).some((note) => note.content?.trim().length > 0)
+  const latestSnapshot = snapshots?.[0]
+  const purchasePrice = Number(latestSnapshot?.purchase_price ?? deal.asking_price ?? 0)
+  const totalUnits = Number(latestSnapshot?.num_units ?? 0)
+  const statedNoi = Number(latestSnapshot?.noi ?? 0)
+  const estimatedCurrentRent = totalUnits > 0 && statedNoi > 0
+    ? Math.max(500, Math.round((statedNoi / 0.58 / 0.93) / totalUnits / 12))
+    : 1200
 
   return (
     <div className="app-page app-deal-page">
@@ -131,7 +152,7 @@ export default async function DealPage({ params }: Props) {
         firmUsers={firmUsers ?? []}
       />
 
-      <DealTabs />
+      <DealTabs showUnderwriting={Boolean(entitlement?.underwriting_enabled)} />
 
       <div className="app-workspace-grid app-deal-grid">
         <div className="app-deal-main">
@@ -149,6 +170,28 @@ export default async function DealPage({ params }: Props) {
           <section id="section-financials" className="app-deal-section">
             <FinancialSnapshot dealId={deal.id} firmId={deal.firm_id} snapshots={snapshots ?? []} />
           </section>
+
+          {entitlement?.underwriting_enabled && (
+            <section id="section-underwriting" className="app-deal-section">
+              <QuickPencil
+                dealId={deal.id}
+                entitlementLabel={entitlement.plan_key === 'underwriting_beta' ? 'Beta' : 'Active'}
+                monthlyAllowance={entitlement.monthly_underwrite_allowance}
+                initialRuns={underwritingRuns ?? []}
+                defaults={{
+                  purchasePrice,
+                  totalUnits,
+                  currentRent: estimatedCurrentRent,
+                  marketRent: Math.round(estimatedCurrentRent * 1.12),
+                  fixedOperatingExpenses: Math.round(Math.max(0, totalUnits * 1700)),
+                  propertyTaxes: Math.round(purchasePrice * 0.0185),
+                  insurance: Math.round(totalUnits * 300),
+                  ltv: Number(latestSnapshot?.ltv ?? 0.65),
+                  interestRate: Number(latestSnapshot?.debt_rate ?? 0.065),
+                }}
+              />
+            </section>
+          )}
 
           <section id="section-scoring" className="app-deal-section">
             <ScoringSection

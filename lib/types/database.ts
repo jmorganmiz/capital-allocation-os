@@ -246,6 +246,159 @@ export interface Database {
           updated_at?: string
         }
       }
+      firm_entitlements: {
+        Row: {
+          firm_id: string
+          plan_key: 'core' | 'underwriting_beta' | 'underwriting_pro' | 'scale'
+          underwriting_enabled: boolean
+          included_seats: number
+          monthly_underwrite_allowance: number
+          current_period_start: string | null
+          current_period_end: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          firm_id: string
+          plan_key?: 'core' | 'underwriting_beta' | 'underwriting_pro' | 'scale'
+          underwriting_enabled?: boolean
+          included_seats?: number
+          monthly_underwrite_allowance?: number
+          current_period_start?: string | null
+          current_period_end?: string | null
+        }
+        Update: {
+          plan_key?: 'core' | 'underwriting_beta' | 'underwriting_pro' | 'scale'
+          underwriting_enabled?: boolean
+          included_seats?: number
+          monthly_underwrite_allowance?: number
+          current_period_start?: string | null
+          current_period_end?: string | null
+        }
+      }
+      underwriting_runs: {
+        Row: {
+          id: string
+          firm_id: string
+          deal_id: string
+          parent_run_id: string | null
+          run_type: 'quick_pencil' | 'full_underwrite' | 'market_refresh' | 'ic_memo'
+          scenario_key: 'base' | 'downside' | 'upside' | 'custom'
+          status: 'queued' | 'running' | 'needs_review' | 'completed' | 'failed' | 'canceled'
+          assumption_status: 'draft' | 'needs_review' | 'approved' | 'rejected'
+          model_version: string
+          projection_start_date: string
+          input_snapshot: Json
+          output_snapshot: Json | null
+          warnings: Json
+          error_code: string | null
+          error_message: string | null
+          credits_reserved: number
+          credits_settled: number
+          idempotency_key: string | null
+          created_by: string
+          approved_by: string | null
+          approved_at: string | null
+          started_at: string | null
+          completed_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          firm_id: string
+          deal_id: string
+          parent_run_id?: string | null
+          run_type: 'quick_pencil' | 'full_underwrite' | 'market_refresh' | 'ic_memo'
+          scenario_key?: 'base' | 'downside' | 'upside' | 'custom'
+          status?: 'queued' | 'running' | 'needs_review' | 'completed' | 'failed' | 'canceled'
+          assumption_status?: 'draft' | 'needs_review' | 'approved' | 'rejected'
+          model_version: string
+          projection_start_date: string
+          input_snapshot?: Json
+          output_snapshot?: Json | null
+          warnings?: Json
+          error_code?: string | null
+          error_message?: string | null
+          credits_reserved?: number
+          credits_settled?: number
+          idempotency_key?: string | null
+          created_by: string
+          approved_by?: string | null
+          approved_at?: string | null
+          started_at?: string | null
+          completed_at?: string | null
+        }
+        Update: {
+          status?: 'queued' | 'running' | 'needs_review' | 'completed' | 'failed' | 'canceled'
+          assumption_status?: 'draft' | 'needs_review' | 'approved' | 'rejected'
+          output_snapshot?: Json | null
+          warnings?: Json
+          error_code?: string | null
+          error_message?: string | null
+          credits_reserved?: number
+          credits_settled?: number
+          approved_by?: string | null
+          approved_at?: string | null
+          started_at?: string | null
+          completed_at?: string | null
+        }
+      }
+      underwriting_assumptions: {
+        Row: {
+          id: string; firm_id: string; run_id: string; assumption_key: string; label: string
+          category: string; value: Json; unit: string | null; source_type: string
+          source_reference: string | null; source_excerpt: string | null
+          source_effective_at: string | null; confidence: number | null
+          approval_status: 'needs_review' | 'approved' | 'rejected'
+          created_by: string; approved_by: string | null; approved_at: string | null
+          created_at: string; updated_at: string
+        }
+        Insert: {
+          id?: string; firm_id: string; run_id: string; assumption_key: string; label: string
+          category: string; value: Json; unit?: string | null; source_type: string
+          source_reference?: string | null; source_excerpt?: string | null
+          source_effective_at?: string | null; confidence?: number | null
+          approval_status?: 'needs_review' | 'approved' | 'rejected'
+          created_by: string; approved_by?: string | null; approved_at?: string | null
+        }
+        Update: {
+          value?: Json; approval_status?: 'needs_review' | 'approved' | 'rejected'
+          approved_by?: string | null; approved_at?: string | null
+        }
+      }
+      underwriting_approvals: {
+        Row: {
+          id: string; firm_id: string; run_id: string; assumption_id: string | null
+          decision: 'approved' | 'rejected' | 'changes_requested'; notes: string | null
+          decided_by: string; created_at: string
+        }
+        Insert: {
+          id?: string; firm_id: string; run_id: string; assumption_id?: string | null
+          decision: 'approved' | 'rejected' | 'changes_requested'; notes?: string | null
+          decided_by: string
+        }
+        Update: never
+      }
+      usage_events: {
+        Row: {
+          id: string; firm_id: string; user_id: string; underwriting_run_id: string | null
+          event_type: string; quantity: number; billable_credits: number
+          provider: string | null; model: string | null; input_tokens: number | null
+          output_tokens: number | null; search_requests: number | null
+          estimated_cost_usd: number | null; idempotency_key: string
+          metadata: Json; created_at: string
+        }
+        Insert: {
+          id?: string; firm_id: string; user_id: string; underwriting_run_id?: string | null
+          event_type: string; quantity?: number; billable_credits?: number
+          provider?: string | null; model?: string | null; input_tokens?: number | null
+          output_tokens?: number | null; search_requests?: number | null
+          estimated_cost_usd?: number | null; idempotency_key: string
+          metadata?: Json
+        }
+        Update: never
+      }
     }
     Functions: {
       current_firm_id: { Args: Record<string, never>; Returns: string }
@@ -269,3 +422,8 @@ export type DealScore = Database['public']['Tables']['deal_scores']['Row']
 export type StageChecklistItem = Database['public']['Tables']['stage_checklist_items']['Row']
 export type DealChecklistProgress = Database['public']['Tables']['deal_checklist_progress']['Row']
 export type FirmMemory = Database['public']['Tables']['firm_memories']['Row']
+export type FirmEntitlement = Database['public']['Tables']['firm_entitlements']['Row']
+export type UnderwritingRun = Database['public']['Tables']['underwriting_runs']['Row']
+export type UnderwritingAssumption = Database['public']['Tables']['underwriting_assumptions']['Row']
+export type UnderwritingApproval = Database['public']['Tables']['underwriting_approvals']['Row']
+export type UsageEvent = Database['public']['Tables']['usage_events']['Row']
