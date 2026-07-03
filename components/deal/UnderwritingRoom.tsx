@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { approveUnderwritingPreflight, approveUnderwritingRiskReview, prepareUnderwritingAssumptionReview, processNextUnderwritingStep, reviewUnderwritingAssumption, startUnderwritingPreflight } from '@/lib/actions/underwriting-room'
 import type { UnderwritingAssumption, UnderwritingRun, UnderwritingStep } from '@/lib/types/database'
 
@@ -61,6 +62,7 @@ function artifactRecord(step: UnderwritingStep | undefined): Record<string, unkn
 }
 
 export default function UnderwritingRoom({ dealId, initialRun, initialSteps, initialAssumptions }: Props) {
+  const router = useRouter()
   const [run, setRun] = useState(initialRun)
   const [steps, setSteps] = useState(initialSteps)
   const [assumptions, setAssumptions] = useState(initialAssumptions)
@@ -201,6 +203,7 @@ export default function UnderwritingRoom({ dealId, initialRun, initialSteps, ini
     if (result.error) setError(result.error)
     if (result.run) setRun(result.run)
     if (result.steps) setSteps(result.steps)
+    if (result.run?.approved_at) router.refresh()
     setWorking(false)
   }
 

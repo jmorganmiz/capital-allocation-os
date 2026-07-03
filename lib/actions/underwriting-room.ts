@@ -118,7 +118,7 @@ export async function startUnderwritingPreflight(
         id: runId,
         firm_id: firmId,
         deal_id: dealId,
-        run_type: 'full_underwrite',
+        run_type: 'preflight',
         scenario_key: 'base',
         status: 'queued',
         assumption_status: 'needs_review',

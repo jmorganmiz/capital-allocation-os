@@ -282,7 +282,7 @@ export interface Database {
           firm_id: string
           deal_id: string
           parent_run_id: string | null
-          run_type: 'quick_pencil' | 'full_underwrite' | 'market_refresh' | 'ic_memo'
+          run_type: 'quick_pencil' | 'preflight' | 'full_underwrite' | 'market_refresh' | 'ic_memo'
           scenario_key: 'base' | 'downside' | 'upside' | 'custom'
           status: 'queued' | 'running' | 'needs_review' | 'completed' | 'failed' | 'canceled'
           assumption_status: 'draft' | 'needs_review' | 'approved' | 'rejected'
@@ -309,7 +309,7 @@ export interface Database {
           firm_id: string
           deal_id: string
           parent_run_id?: string | null
-          run_type: 'quick_pencil' | 'full_underwrite' | 'market_refresh' | 'ic_memo'
+          run_type: 'quick_pencil' | 'preflight' | 'full_underwrite' | 'market_refresh' | 'ic_memo'
           scenario_key?: 'base' | 'downside' | 'upside' | 'custom'
           status?: 'queued' | 'running' | 'needs_review' | 'completed' | 'failed' | 'canceled'
           assumption_status?: 'draft' | 'needs_review' | 'approved' | 'rejected'

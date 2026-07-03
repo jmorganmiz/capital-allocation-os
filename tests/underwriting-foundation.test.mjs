@@ -15,8 +15,14 @@ const roomMigration = fs.readFileSync(
   path.join(ROOT, 'supabase/migrations/021_underwriting_room.sql'),
   'utf8',
 )
+const preflightMigration = fs.readFileSync(
+  path.join(ROOT, 'supabase/migrations/022_preflight_run_type.sql'),
+  'utf8',
+)
 const roomAction = fs.readFileSync(path.join(ROOT, 'lib/actions/underwriting-room.ts'), 'utf8')
 const room = fs.readFileSync(path.join(ROOT, 'components/deal/UnderwritingRoom.tsx'), 'utf8')
+const fullAction = fs.readFileSync(path.join(ROOT, 'lib/actions/full-underwrite.ts'), 'utf8')
+const fullRoom = fs.readFileSync(path.join(ROOT, 'components/deal/FullUnderwriteExecution.tsx'), 'utf8')
 
 test('underwriting records and usage are tenant scoped', () => {
   for (const table of [
@@ -84,6 +90,12 @@ test('Underwriting Room workstreams are persisted, tenant scoped, and client rea
   assert.match(roomMigration, /attempts integer NOT NULL DEFAULT 0/)
 })
 
+test('Preflight approvals and full executions have distinct version histories', () => {
+  assert.match(preflightMigration, /SET run_type = 'preflight'/)
+  assert.match(preflightMigration, /'preflight', 'full_underwrite'/)
+  assert.match(roomAction, /run_type: 'preflight'/)
+})
+
 test('Underwriting Room claims one resumable step and persists structured artifacts', () => {
   assert.match(roomAction, /\.eq\('status', 'queued'\)/)
   assert.match(roomAction, /\.lt\('attempts', 3\)/)
@@ -120,6 +132,25 @@ test('Risk and final preflight approval remain explicit human gates', () => {
   assert.match(room, /Save & approve risk review/)
   assert.match(room, /Approve & lock package/)
   assert.match(room, /Deal documents.*section-files/s)
+})
+
+test('Full Underwrite execution accepts only locked preflight packages', () => {
+  assert.match(fullAction, /eq\('run_type', 'preflight'\)/)
+  assert.match(fullAction, /preflight\?\.approved_at/)
+  assert.match(fullAction, /parent_run_id: preflightRunId/)
+  assert.match(fullAction, /locked_preflight: preflight\.output_snapshot/)
+  assert.match(fullAction, /runUnderwriting\(modelInput\)/)
+})
+
+test('Deterministic execution is resumable and cannot consume customer credits', () => {
+  assert.match(fullAction, /eq\('status', 'queued'\)/)
+  assert.match(fullAction, /eq\('status', 'queued'\)\.select/)
+  assert.match(fullAction, /credits_reserved: 0/)
+  assert.match(fullAction, /credits_settled: 0/)
+  assert.match(fullAction, /billable_credits: 0/)
+  assert.match(fullAction, /customer_charge: false/)
+  assert.match(fullRoom, /Document extraction and provider credits remain separate/)
+  assert.match(fullRoom, /0 credits/)
 })
 
 test('Agent visuals expose status and artifacts without pretending to show reasoning', () => {

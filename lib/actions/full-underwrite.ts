@@ -1,0 +1,307 @@
+'use server'
+
+import { randomUUID } from 'node:crypto'
+import { revalidatePath } from 'next/cache'
+import { runUnderwriting, UNDERWRITING_MODEL_VERSION } from '@/lib/underwriting-model.mjs'
+import { createAdminClient, createClient } from '@/lib/supabase/server'
+import type { Json, UnderwritingRun, UnderwritingStep } from '@/lib/types/database'
+
+const EXECUTION_VERSION = `full-underwrite-deterministic-${UNDERWRITING_MODEL_VERSION}`
+
+const EXECUTION_STEPS = [
+  ['document_evidence', 'Document evidence'],
+  ['approved_inputs', 'Approved inputs'],
+  ['model_execution', 'Model execution'],
+  ['scenario_reconciliation', 'Scenario reconciliation'],
+  ['source_coverage', 'Source coverage'],
+  ['exception_review', 'Exception review'],
+  ['ic_outputs', 'IC outputs'],
+  ['execution_complete', 'Execution complete'],
+] as const
+
+type StepResult = {
+  summary: string
+  artifact: Json
+  evidenceCount: number
+  confidence: number
+  needsReview?: boolean
+  output?: Json
+}
+
+async function membership() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated.' as const }
+  const { data: profile } = await supabase.from('profiles').select('firm_id').eq('id', user.id).single()
+  if (!profile) return { error: 'Profile not found.' as const }
+  return { user, firmId: profile.firm_id }
+}
+
+function record(value: Json | null): Record<string, Json> {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, Json> : {}
+}
+
+export async function startFullUnderwrite(
+  dealId: string,
+  preflightRunId: string,
+  requestId: string,
+): Promise<{ run?: UnderwritingRun; steps?: UnderwritingStep[]; error?: string }> {
+  try {
+    if (!dealId || !preflightRunId || !requestId || requestId.length > 200) return { error: 'Invalid request.' }
+    const context = await membership()
+    if ('error' in context) return context
+    const { user, firmId } = context
+    const admin = createAdminClient()
+
+    const [{ data: preflight }, { data: entitlement }] = await Promise.all([
+      admin.from('underwriting_runs').select('*').eq('id', preflightRunId).eq('deal_id', dealId).eq('firm_id', firmId).eq('run_type', 'preflight').single(),
+      admin.from('firm_entitlements').select('underwriting_enabled').eq('firm_id', firmId).single(),
+    ])
+    if (!entitlement?.underwriting_enabled) return { error: 'Underwriting Pro is not enabled.' }
+    if (!preflight?.approved_at || preflight.status !== 'completed') return { error: 'Approve and lock preflight before execution.' }
+
+    const idempotencyKey = `${requestId}:full-underwrite`
+    const { data: existing } = await admin.from('underwriting_runs').select('*').eq('firm_id', firmId).eq('idempotency_key', idempotencyKey).maybeSingle()
+    if (existing) {
+      const { data: steps } = await admin.from('underwriting_steps').select('*').eq('run_id', existing.id).order('position')
+      return { run: existing, steps: steps ?? [] }
+    }
+
+    const runId = randomUUID()
+    const now = new Date().toISOString()
+    const { data: run, error: runError } = await admin.from('underwriting_runs').insert({
+      id: runId,
+      firm_id: firmId,
+      deal_id: dealId,
+      parent_run_id: preflightRunId,
+      run_type: 'full_underwrite',
+      scenario_key: 'base',
+      status: 'queued',
+      assumption_status: 'approved',
+      model_version: EXECUTION_VERSION,
+      projection_start_date: preflight.projection_start_date,
+      input_snapshot: {
+        phase: 'deterministic_execution',
+        approved_preflight_run_id: preflightRunId,
+        locked_preflight: preflight.output_snapshot,
+      },
+      warnings: [],
+      credits_reserved: 0,
+      credits_settled: 0,
+      idempotency_key: idempotencyKey,
+      created_by: user.id,
+      started_at: now,
+    }).select('*').single()
+    if (runError || !run) throw runError ?? new Error('Could not create full underwrite.')
+
+    const { data: steps, error: stepsError } = await admin.from('underwriting_steps').insert(
+      EXECUTION_STEPS.map(([stepKey, label], position) => ({
+        firm_id: firmId,
+        run_id: runId,
+        step_key: stepKey,
+        label,
+        position,
+        status: 'queued' as const,
+      })),
+    ).select('*')
+    if (stepsError) throw stepsError
+    revalidatePath(`/deals/${dealId}`)
+    return { run, steps: steps ?? [] }
+  } catch (error) {
+    console.error('[full-underwrite] start failed:', error instanceof Error ? error.message : 'unknown error')
+    return { error: error instanceof Error ? error.message : 'Could not start full underwrite.' }
+  }
+}
+
+async function buildResult(
+  admin: ReturnType<typeof createAdminClient>,
+  run: UnderwritingRun,
+  step: UnderwritingStep,
+): Promise<StepResult> {
+  const runInput = record(run.input_snapshot)
+  const locked = record((runInput.locked_preflight ?? null) as Json | null)
+  const quick = record((locked.quick_pencil ?? null) as Json | null)
+  const modelInput = (quick.input_snapshot ?? null) as Json | null
+
+  if (step.step_key === 'document_evidence') {
+    const { data: files } = await admin.from('deal_files').select('id, filename, mime_type, size_bytes, created_at').eq('deal_id', run.deal_id).eq('firm_id', run.firm_id).order('created_at')
+    return {
+      summary: files?.length ? `${files.length} deal document${files.length === 1 ? '' : 's'} linked` : 'No source documents linked',
+      artifact: { documents: files ?? [], extraction_status: 'not_started', citations_available: false },
+      evidenceCount: files?.length ?? 0,
+      confidence: files?.length ? 0.8 : 0.1,
+      needsReview: !files?.length,
+    }
+  }
+
+  if (step.step_key === 'approved_inputs') {
+    const assumptions = Array.isArray(locked.assumptions) ? locked.assumptions : []
+    return {
+      summary: `${assumptions.length} locked assumptions loaded`,
+      artifact: { assumptions, approved_at: locked.approved_at ?? null, approved_by: locked.approved_by ?? null },
+      evidenceCount: assumptions.length,
+      confidence: assumptions.length ? 1 : 0,
+      needsReview: assumptions.length === 0,
+    }
+  }
+
+  if (step.step_key === 'model_execution') {
+    if (!modelInput || typeof modelInput !== 'object' || Array.isArray(modelInput)) throw new Error('Locked Quick Pencil model input is missing.')
+    const output = runUnderwriting(modelInput)
+    return {
+      summary: 'Deterministic model completed from locked inputs',
+      artifact: {
+        model_version: output.modelVersion,
+        levered_irr: output.leveredIrr,
+        equity_multiple: output.equityMultiple,
+        year_one_dscr: output.yearOneDscr,
+        required_equity: output.totalEquityInvested,
+        exit_value: output.grossExitValue,
+      },
+      output: output as Json,
+      evidenceCount: 1,
+      confidence: 1,
+    }
+  }
+
+  const { data: modelStep } = await admin.from('underwriting_steps').select('artifact').eq('run_id', run.id).eq('step_key', 'model_execution').single()
+  const output = record((run.output_snapshot ?? modelStep?.artifact ?? null) as Json | null)
+
+  if (step.step_key === 'scenario_reconciliation') {
+    const priorOutput = record((quick.output_snapshot ?? null) as Json | null)
+    const currentIrr = Number(output.leveredIrr ?? output.levered_irr)
+    const priorIrr = Number(priorOutput.leveredIrr)
+    const variance = Number.isFinite(currentIrr) && Number.isFinite(priorIrr) ? currentIrr - priorIrr : null
+    return {
+      summary: variance === null ? 'Prior scenario output unavailable' : `Locked baseline reconciled with ${(variance * 10000).toFixed(0)} bps IRR variance`,
+      artifact: { prior_levered_irr: priorIrr, current_levered_irr: currentIrr, variance },
+      evidenceCount: variance === null ? 0 : 2,
+      confidence: variance === null ? 0.3 : 1,
+      needsReview: variance === null || Math.abs(variance) > 0.000001,
+    }
+  }
+
+  if (step.step_key === 'source_coverage') {
+    const assumptions = Array.isArray(locked.assumptions) ? locked.assumptions as Array<Record<string, Json>> : []
+    const sourced = assumptions.filter((item) => item.source_reference).length
+    return {
+      summary: `${sourced} of ${assumptions.length} material assumptions carry source references`,
+      artifact: { sourced, total: assumptions.length, coverage: assumptions.length ? sourced / assumptions.length : 0 },
+      evidenceCount: sourced,
+      confidence: assumptions.length ? sourced / assumptions.length : 0,
+      needsReview: sourced < assumptions.length,
+    }
+  }
+
+  if (step.step_key === 'exception_review') {
+    const warnings = Array.isArray(output.warnings) ? output.warnings : []
+    return {
+      summary: `${warnings.length} disclosed model limitation${warnings.length === 1 ? '' : 's'}`,
+      artifact: { warnings, blocking_exceptions: [] },
+      evidenceCount: warnings.length,
+      confidence: 1,
+    }
+  }
+
+  if (step.step_key === 'ic_outputs') {
+    return {
+      summary: 'Core return and debt outputs prepared for IC',
+      artifact: {
+        levered_irr: output.leveredIrr,
+        unlevered_irr: output.unleveredIrr,
+        equity_multiple: output.equityMultiple,
+        average_cash_on_cash: output.averageCashOnCash,
+        year_one_dscr: output.yearOneDscr,
+        required_equity: output.totalEquityInvested,
+        exit_value: output.grossExitValue,
+      },
+      evidenceCount: 7,
+      confidence: 1,
+    }
+  }
+
+  const { data: priorSteps } = await admin.from('underwriting_steps').select('label, status').eq('run_id', run.id).lt('position', step.position)
+  const blockers = (priorSteps ?? []).filter((item) => item.status === 'needs_review' || item.status === 'failed').map((item) => item.label)
+  return {
+    summary: blockers.length ? `${blockers.length} workstream${blockers.length === 1 ? '' : 's'} require review` : 'Deterministic execution package complete',
+    artifact: { ready: blockers.length === 0, blockers, billable_credits: 0, next_phase: 'cited_document_extraction' },
+    evidenceCount: EXECUTION_STEPS.length - 1 - blockers.length,
+    confidence: blockers.length ? 0.7 : 1,
+    needsReview: blockers.length > 0,
+  }
+}
+
+export async function processNextFullUnderwriteStep(
+  runId: string,
+): Promise<{ run?: UnderwritingRun; steps?: UnderwritingStep[]; error?: string }> {
+  try {
+    const context = await membership()
+    if ('error' in context) return context
+    const { user, firmId } = context
+    const admin = createAdminClient()
+    const { data: run } = await admin.from('underwriting_runs').select('*').eq('id', runId).eq('firm_id', firmId).eq('run_type', 'full_underwrite').single()
+    if (!run) return { error: 'Full underwrite not found.' }
+
+    const { data: step } = await admin.from('underwriting_steps').select('*').eq('run_id', runId).eq('status', 'queued').order('position').limit(1).maybeSingle()
+    if (!step) {
+      const { data: steps } = await admin.from('underwriting_steps').select('*').eq('run_id', runId).order('position')
+      return { run, steps: steps ?? [] }
+    }
+
+    const now = new Date().toISOString()
+    const { data: claimed } = await admin.from('underwriting_steps').update({ status: 'running', attempts: step.attempts + 1, started_at: now }).eq('id', step.id).eq('status', 'queued').select('*').maybeSingle()
+    if (!claimed) return { error: 'This workstream was claimed by another worker.' }
+    await admin.from('underwriting_runs').update({ status: 'running' }).eq('id', runId)
+
+    try {
+      const result = await buildResult(admin, run, claimed)
+      if (result.output) await admin.from('underwriting_runs').update({ output_snapshot: result.output }).eq('id', runId)
+      await admin.from('underwriting_steps').update({
+        status: result.needsReview ? 'needs_review' : 'completed',
+        artifact_summary: result.summary,
+        artifact: result.artifact,
+        evidence_count: result.evidenceCount,
+        confidence: result.confidence,
+        completed_at: new Date().toISOString(),
+      }).eq('id', claimed.id)
+    } catch (error) {
+      await admin.from('underwriting_steps').update({
+        status: 'failed',
+        error_code: 'EXECUTION_STEP_FAILED',
+        error_message: error instanceof Error ? error.message.slice(0, 500) : 'Unknown execution error',
+        completed_at: new Date().toISOString(),
+      }).eq('id', claimed.id)
+    }
+
+    const { data: steps } = await admin.from('underwriting_steps').select('*').eq('run_id', runId).order('position')
+    const queued = (steps ?? []).some((item) => item.status === 'queued' || item.status === 'running')
+    const failed = (steps ?? []).some((item) => item.status === 'failed')
+    const review = (steps ?? []).some((item) => item.status === 'needs_review')
+    const status = failed ? 'failed' : queued ? 'running' : review ? 'needs_review' : 'completed'
+    const { data: updatedRun } = await admin.from('underwriting_runs').update({
+      status,
+      completed_at: queued ? null : new Date().toISOString(),
+      error_code: failed ? 'FULL_UNDERWRITE_STEP_FAILED' : null,
+      error_message: failed ? 'One or more deterministic workstreams failed.' : null,
+    }).eq('id', runId).select('*').single()
+
+    if (status === 'completed') {
+      await admin.from('usage_events').upsert({
+        firm_id: firmId,
+        user_id: user.id,
+        underwriting_run_id: runId,
+        event_type: 'full_underwrite',
+        quantity: 1,
+        billable_credits: 0,
+        idempotency_key: `${runId}:deterministic-complete`,
+        metadata: { phase: 'deterministic_execution', model_version: EXECUTION_VERSION, customer_charge: false },
+      }, { onConflict: 'firm_id,idempotency_key', ignoreDuplicates: true })
+    }
+    revalidatePath(`/deals/${run.deal_id}`)
+    return { run: updatedRun ?? run, steps: steps ?? [] }
+  } catch (error) {
+    console.error('[full-underwrite] process failed:', error instanceof Error ? error.message : 'unknown error')
+    return { error: error instanceof Error ? error.message : 'Could not process full underwrite.' }
+  }
+}
+

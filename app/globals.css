@@ -958,9 +958,129 @@
 }
 .app-root .app-agent-room-footer p { margin: 0; }
 
+.app-root .app-full-execution {
+  overflow: hidden;
+  border: 1px solid rgba(112, 112, 125, 0.2);
+  border-radius: 14px;
+  background: linear-gradient(145deg, rgba(32, 32, 45, 0.96), rgba(17, 17, 26, 0.98));
+}
+.app-root .app-full-execution[data-locked="true"] { opacity: 0.82; }
+.app-root .app-full-execution-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px 28px;
+}
+.app-root .app-full-execution-header p {
+  margin: 0 0 10px;
+  color: #7f8eff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.app-root .app-full-execution-header p span { margin-left: 7px; color: #8a8a99; }
+.app-root .app-full-execution-header h2 { margin: 0 0 7px; color: #f2f2f5; font-size: 24px; letter-spacing: -0.035em; }
+.app-root .app-full-execution-header small { display: block; max-width: 650px; color: #858596; font-size: 11px; line-height: 1.5; }
+.app-root .app-full-execution-action { display: flex; flex: 0 0 auto; align-items: center; gap: 10px; }
+.app-root .app-full-execution-action > span {
+  padding: 5px 8px;
+  border: 1px solid rgba(53, 212, 125, 0.2);
+  border-radius: 999px;
+  color: #57bf82;
+  font-size: 8px;
+  text-transform: uppercase;
+}
+.app-root .app-full-execution-action button {
+  min-width: 170px;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #5266eb;
+  color: #fff;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.app-root .app-full-execution-action button:disabled { cursor: default; opacity: 0.45; }
+.app-root .app-full-execution-gate,
+.app-root .app-full-execution-empty {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 28px 26px;
+  padding: 18px;
+  border: 1px solid rgba(112, 112, 125, 0.16);
+  border-radius: 11px;
+  background: #14141e;
+}
+.app-root .app-full-execution-gate > span,
+.app-root .app-full-execution-empty > span {
+  padding: 5px 8px;
+  border: 1px solid rgba(255, 184, 0, 0.22);
+  border-radius: 999px;
+  color: #d6a32e;
+  font-size: 8px;
+  text-transform: uppercase;
+}
+.app-root .app-full-execution-gate strong,
+.app-root .app-full-execution-empty strong { display: block; color: #dcdce3; font-size: 11px; }
+.app-root .app-full-execution-gate p,
+.app-root .app-full-execution-empty p { margin: 4px 0 0; color: #737384; font-size: 9px; line-height: 1.45; }
+.app-root .app-full-execution-empty { display: block; }
+.app-root .app-full-execution-empty > span { display: inline-block; margin-bottom: 10px; border-color: rgba(53, 212, 125, 0.22); color: #57bf82; }
+.app-root .app-full-execution-progress {
+  display: grid;
+  grid-template-columns: auto minmax(180px, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 13px 28px;
+  border-top: 1px solid rgba(112, 112, 125, 0.13);
+  border-bottom: 1px solid rgba(112, 112, 125, 0.13);
+  background: rgba(82, 102, 235, 0.035);
+}
+.app-root .app-full-execution-progress strong { color: #d7d7de; font-size: 10px; }
+.app-root .app-full-execution-progress small { color: #79798a; font-size: 9px; }
+.app-root .app-full-execution-progress > div { overflow: hidden; height: 4px; border-radius: 999px; background: rgba(82, 102, 235, 0.14); }
+.app-root .app-full-execution-progress > div span { display: block; height: 100%; background: linear-gradient(90deg, #5266eb, #7f8eff); transition: width 300ms ease; }
+.app-root .app-full-execution-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; padding: 22px 28px; }
+.app-root .app-full-execution-grid article {
+  min-height: 112px;
+  padding: 13px;
+  border: 1px solid rgba(112, 112, 125, 0.16);
+  border-radius: 10px;
+  background: #14141e;
+}
+.app-root .app-full-execution-grid article[data-status="needs_review"] { border-color: rgba(255, 184, 0, 0.28); }
+.app-root .app-full-execution-grid article[data-status="failed"] { border-color: rgba(255, 88, 96, 0.3); }
+.app-root .app-full-execution-grid article > div { display: flex; justify-content: space-between; gap: 8px; }
+.app-root .app-full-execution-grid article > div span { color: #6f79cc; font-size: 8px; font-weight: 700; }
+.app-root .app-full-execution-grid article > div em { color: #666677; font-size: 7px; font-style: normal; text-transform: uppercase; }
+.app-root .app-full-execution-grid article[data-status="completed"] > div em { color: #4bd787; }
+.app-root .app-full-execution-grid article[data-status="needs_review"] > div em { color: #d6a32e; }
+.app-root .app-full-execution-grid article > strong { display: block; margin-top: 16px; color: #dedee5; font-size: 10px; }
+.app-root .app-full-execution-grid article > p { margin: 6px 0 0; color: #707081; font-size: 8px; line-height: 1.45; }
+.app-root .app-full-execution-results {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0 28px 26px;
+  overflow: hidden;
+  border: 1px solid rgba(112, 112, 125, 0.16);
+  border-radius: 10px;
+  background: rgba(112, 112, 125, 0.12);
+}
+.app-root .app-full-execution-results > div { padding: 14px; background: #171721; }
+.app-root .app-full-execution-results span { display: block; color: #747485; font-size: 8px; text-transform: uppercase; }
+.app-root .app-full-execution-results strong { display: block; margin-top: 7px; color: #f0f0f3; font-size: 15px; }
+
 @media (max-width: 1100px) {
   .app-root .app-uw-form-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .app-root .app-agent-room-body { grid-template-columns: 1fr; }
+  .app-root .app-full-execution-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .app-root .app-full-execution-results { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 @media (max-width: 760px) {
@@ -977,6 +1097,11 @@
   .app-root .app-agent-progress { grid-template-columns: 1fr auto; }
   .app-root .app-agent-progress-track { grid-column: 1 / -1; grid-row: 2; }
   .app-root .app-agent-room-header .btn-primary { width: 100%; }
+  .app-root .app-full-execution-header { flex-direction: column; }
+  .app-root .app-full-execution-action { width: 100%; justify-content: space-between; }
+  .app-root .app-full-execution-progress { grid-template-columns: 1fr; }
+  .app-root .app-full-execution-grid,
+  .app-root .app-full-execution-results { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 480px) {

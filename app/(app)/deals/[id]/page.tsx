@@ -12,6 +12,7 @@ import ScoringSection from '@/components/deal/ScoringSection'
 import SimilarDeals from '@/components/deal/SimilarDeals'
 import QuickPencil from '@/components/deal/QuickPencil'
 import UnderwritingRoom from '@/components/deal/UnderwritingRoom'
+import FullUnderwriteExecution from '@/components/deal/FullUnderwriteExecution'
 import { getScoringCriteria, getDealScores } from '@/lib/actions/scoring'
 import { createClient } from '@/lib/supabase/server'
 
@@ -35,6 +36,7 @@ export default async function DealPage({ params }: Props) {
     { data: underwritingRuns },
     { data: entitlement },
     { data: fullUnderwritingRuns },
+    { data: fullExecutionRuns },
   ] = await Promise.all([
     supabase.from('deals').select('*').eq('id', id).single(),
     supabase.from('deal_stages').select('*').order('position'),
@@ -72,6 +74,13 @@ export default async function DealPage({ params }: Props) {
       .from('underwriting_runs')
       .select('*')
       .eq('deal_id', id)
+      .eq('run_type', 'preflight')
+      .order('created_at', { ascending: false })
+      .limit(1),
+    supabase
+      .from('underwriting_runs')
+      .select('*')
+      .eq('deal_id', id)
       .eq('run_type', 'full_underwrite')
       .order('created_at', { ascending: false })
       .limit(1),
@@ -79,6 +88,7 @@ export default async function DealPage({ params }: Props) {
 
   const dealStageId = deal?.stage_id ?? null
   const latestFullRun = fullUnderwritingRuns?.[0] ?? null
+  const latestExecutionRun = fullExecutionRuns?.[0] ?? null
   const [{ data: checklistItems }, { data: checklistProgress }] = await Promise.all([
     dealStageId
       ? supabase.from('stage_checklist_items').select('*').eq('stage_id', dealStageId).order('position')
@@ -90,6 +100,9 @@ export default async function DealPage({ params }: Props) {
     : { data: [] }
   const { data: initialUnderwritingAssumptions } = latestFullRun
     ? await supabase.from('underwriting_assumptions').select('*').eq('run_id', latestFullRun.id).order('created_at')
+    : { data: [] }
+  const { data: initialExecutionSteps } = latestExecutionRun
+    ? await supabase.from('underwriting_steps').select('*').eq('run_id', latestExecutionRun.id).order('position')
     : { data: [] }
 
   const [scoringCriteriaResult, dealScoresResult] = await Promise.all([
@@ -211,6 +224,12 @@ export default async function DealPage({ params }: Props) {
                 initialRun={latestFullRun}
                 initialSteps={initialUnderwritingSteps ?? []}
                 initialAssumptions={initialUnderwritingAssumptions ?? []}
+              />
+              <FullUnderwriteExecution
+                dealId={deal.id}
+                preflightRun={latestFullRun}
+                initialRun={latestExecutionRun}
+                initialSteps={initialExecutionSteps ?? []}
               />
             </section>
           )}
