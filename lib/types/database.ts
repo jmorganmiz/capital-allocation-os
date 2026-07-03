@@ -399,6 +399,44 @@ export interface Database {
         }
         Update: never
       }
+      underwriting_steps: {
+        Row: {
+          id: string; firm_id: string; run_id: string; step_key: string; label: string
+          position: number; status: 'queued' | 'running' | 'needs_review' | 'completed' | 'failed' | 'canceled'
+          artifact_summary: string | null; artifact: Json | null; evidence_count: number
+          confidence: number | null; attempts: number; error_code: string | null
+          error_message: string | null; started_at: string | null; completed_at: string | null
+          created_at: string; updated_at: string
+        }
+        Insert: {
+          id?: string; firm_id: string; run_id: string; step_key: string; label: string
+          position: number; status?: 'queued' | 'running' | 'needs_review' | 'completed' | 'failed' | 'canceled'
+          artifact_summary?: string | null; artifact?: Json | null; evidence_count?: number
+          confidence?: number | null; attempts?: number; error_code?: string | null
+          error_message?: string | null; started_at?: string | null; completed_at?: string | null
+        }
+        Update: {
+          status?: 'queued' | 'running' | 'needs_review' | 'completed' | 'failed' | 'canceled'
+          artifact_summary?: string | null; artifact?: Json | null; evidence_count?: number
+          confidence?: number | null; attempts?: number; error_code?: string | null
+          error_message?: string | null; started_at?: string | null; completed_at?: string | null
+        }
+      }
+      underwriting_sources: {
+        Row: {
+          id: string; firm_id: string; run_id: string; step_id: string | null
+          deal_file_id: string | null; source_type: string; title: string
+          source_url: string | null; locator: string | null; excerpt: string | null
+          effective_at: string | null; confidence: number | null; created_at: string
+        }
+        Insert: {
+          id?: string; firm_id: string; run_id: string; step_id?: string | null
+          deal_file_id?: string | null; source_type: string; title: string
+          source_url?: string | null; locator?: string | null; excerpt?: string | null
+          effective_at?: string | null; confidence?: number | null
+        }
+        Update: never
+      }
     }
     Functions: {
       current_firm_id: { Args: Record<string, never>; Returns: string }
@@ -427,3 +465,5 @@ export type UnderwritingRun = Database['public']['Tables']['underwriting_runs'][
 export type UnderwritingAssumption = Database['public']['Tables']['underwriting_assumptions']['Row']
 export type UnderwritingApproval = Database['public']['Tables']['underwriting_approvals']['Row']
 export type UsageEvent = Database['public']['Tables']['usage_events']['Row']
+export type UnderwritingStep = Database['public']['Tables']['underwriting_steps']['Row']
+export type UnderwritingSource = Database['public']['Tables']['underwriting_sources']['Row']

@@ -11,6 +11,7 @@ import ContactsSection from '@/components/deal/ContactsSection'
 import ScoringSection from '@/components/deal/ScoringSection'
 import SimilarDeals from '@/components/deal/SimilarDeals'
 import QuickPencil from '@/components/deal/QuickPencil'
+import UnderwritingRoom from '@/components/deal/UnderwritingRoom'
 import { getScoringCriteria, getDealScores } from '@/lib/actions/scoring'
 import { createClient } from '@/lib/supabase/server'
 
@@ -33,6 +34,7 @@ export default async function DealPage({ params }: Props) {
     { data: dealContacts },
     { data: underwritingRuns },
     { data: entitlement },
+    { data: fullUnderwritingRuns },
   ] = await Promise.all([
     supabase.from('deals').select('*').eq('id', id).single(),
     supabase.from('deal_stages').select('*').order('position'),
@@ -66,15 +68,26 @@ export default async function DealPage({ params }: Props) {
       .from('firm_entitlements')
       .select('*')
       .maybeSingle(),
+    supabase
+      .from('underwriting_runs')
+      .select('*')
+      .eq('deal_id', id)
+      .eq('run_type', 'full_underwrite')
+      .order('created_at', { ascending: false })
+      .limit(1),
   ])
 
   const dealStageId = deal?.stage_id ?? null
+  const latestFullRun = fullUnderwritingRuns?.[0] ?? null
   const [{ data: checklistItems }, { data: checklistProgress }] = await Promise.all([
     dealStageId
       ? supabase.from('stage_checklist_items').select('*').eq('stage_id', dealStageId).order('position')
       : Promise.resolve({ data: [] }),
     supabase.from('deal_checklist_progress').select('checklist_item_id').eq('deal_id', id),
   ])
+  const { data: initialUnderwritingSteps } = latestFullRun
+    ? await supabase.from('underwriting_steps').select('*').eq('run_id', latestFullRun.id).order('position')
+    : { data: [] }
 
   const [scoringCriteriaResult, dealScoresResult] = await Promise.all([
     getScoringCriteria(),
@@ -172,7 +185,7 @@ export default async function DealPage({ params }: Props) {
           </section>
 
           {entitlement?.underwriting_enabled && (
-            <section id="section-underwriting" className="app-underwriting-section">
+            <section id="section-underwriting" className="app-underwriting-section app-underwriting-stack">
               <QuickPencil
                 dealId={deal.id}
                 entitlementLabel={entitlement.plan_key === 'underwriting_beta' ? 'Beta' : 'Active'}
@@ -189,6 +202,11 @@ export default async function DealPage({ params }: Props) {
                   ltv: Number(latestSnapshot?.ltv ?? 0.65),
                   interestRate: Number(latestSnapshot?.debt_rate ?? 0.065),
                 }}
+              />
+              <UnderwritingRoom
+                dealId={deal.id}
+                initialRun={latestFullRun}
+                initialSteps={initialUnderwritingSteps ?? []}
               />
             </section>
           )}

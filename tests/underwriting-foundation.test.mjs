@@ -11,6 +11,12 @@ const migration = fs.readFileSync(
 )
 const action = fs.readFileSync(path.join(ROOT, 'lib/actions/underwriting.ts'), 'utf8')
 const quickPencil = fs.readFileSync(path.join(ROOT, 'components/deal/QuickPencil.tsx'), 'utf8')
+const roomMigration = fs.readFileSync(
+  path.join(ROOT, 'supabase/migrations/021_underwriting_room.sql'),
+  'utf8',
+)
+const roomAction = fs.readFileSync(path.join(ROOT, 'lib/actions/underwriting-room.ts'), 'utf8')
+const room = fs.readFileSync(path.join(ROOT, 'components/deal/UnderwritingRoom.tsx'), 'utf8')
 
 test('underwriting records and usage are tenant scoped', () => {
   for (const table of [
@@ -66,4 +72,31 @@ test('Quick Pencil visibly distinguishes assumptions from approved underwriting'
   assert.match(action, /interestRate: 0\.0075/)
   assert.match(action, /operatingCosts: 1\.1/)
   assert.match(action, /marketRent: 0\.95/)
+})
+
+test('Underwriting Room workstreams are persisted, tenant scoped, and client read-only', () => {
+  for (const table of ['underwriting_steps', 'underwriting_sources']) {
+    assert.match(roomMigration, new RegExp(`ALTER TABLE public\\.${table} ENABLE ROW LEVEL SECURITY`, 'i'))
+    assert.match(roomMigration, new RegExp(`CREATE POLICY ${table}_select`, 'i'))
+    assert.doesNotMatch(roomMigration, new RegExp(`CREATE POLICY ${table}_insert`, 'i'))
+  }
+  assert.match(roomMigration, /UNIQUE \(run_id, step_key\)/)
+  assert.match(roomMigration, /attempts integer NOT NULL DEFAULT 0/)
+})
+
+test('Underwriting Room claims one resumable step and persists structured artifacts', () => {
+  assert.match(roomAction, /\.eq\('status', 'queued'\)/)
+  assert.match(roomAction, /\.lt\('attempts', 3\)/)
+  assert.match(roomAction, /\.eq\('status', next\.status\)/)
+  assert.match(roomAction, /artifact_summary: result\.summary/)
+  assert.match(roomAction, /underwriting_sources/)
+  assert.match(roomAction, /credits_reserved: 0/)
+})
+
+test('Agent visuals expose status and artifacts without pretending to show reasoning', () => {
+  assert.match(room, /Truthful progress only/)
+  assert.match(room, /Live artifact/)
+  assert.match(room, /evidence item/)
+  assert.match(room, /confidence/)
+  assert.doesNotMatch(room, /chain.of.thought/i)
 })
