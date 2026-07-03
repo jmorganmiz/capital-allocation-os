@@ -22,7 +22,17 @@ const statusCopy: Record<UnderwritingStep['status'], string> = {
 function artifactEntries(step: UnderwritingStep | undefined): Array<[string, string]> {
   if (!step?.artifact || typeof step.artifact !== 'object' || Array.isArray(step.artifact)) return []
   return Object.entries(step.artifact).slice(0, 5).map(([key, value]) => {
-    if (Array.isArray(value)) return [key, `${value.length} item${value.length === 1 ? '' : 's'}`]
+    if (Array.isArray(value)) {
+      if (!value.length) return [key, 'None']
+      const labels = value.slice(0, 5).map((item) => {
+        if (item && typeof item === 'object' && !Array.isArray(item)) {
+          const record = item as Record<string, unknown>
+          return String(record.label ?? record.title ?? record.name ?? record.key ?? 'Structured item')
+        }
+        return String(item)
+      })
+      return [key, `${labels.join(', ')}${value.length > 5 ? ` +${value.length - 5}` : ''}`]
+    }
     if (value && typeof value === 'object') return [key, 'Structured record']
     if (typeof value === 'boolean') return [key, value ? 'Yes' : 'No']
     return [key, value === null ? 'Missing' : String(value)]
@@ -36,8 +46,11 @@ export default function UnderwritingRoom({ dealId, initialRun, initialSteps }: P
   const [error, setError] = useState('')
   const [selectedId, setSelectedId] = useState(initialSteps[0]?.id ?? '')
 
-  const completedCount = steps.filter((step) => step.status === 'completed' || step.status === 'needs_review').length
-  const progress = steps.length ? Math.round((completedCount / steps.length) * 100) : 0
+  const completedCount = steps.filter((step) => step.status === 'completed').length
+  const reviewCount = steps.filter((step) => step.status === 'needs_review').length
+  const finishedCount = completedCount + reviewCount
+  const clearProgress = steps.length ? Math.round((completedCount / steps.length) * 100) : 0
+  const reviewProgress = steps.length ? Math.round((reviewCount / steps.length) * 100) : 0
   const selected = useMemo(
     () => steps.find((step) => step.id === selectedId) ?? steps.find((step) => step.status === 'running') ?? steps[0],
     [selectedId, steps],
@@ -87,7 +100,22 @@ export default function UnderwritingRoom({ dealId, initialRun, initialSteps }: P
     await processRun(run.id, steps)
   }
 
+  function focusReview() {
+    const firstReview = steps.find((step) => step.status === 'needs_review')
+    if (firstReview) setSelectedId(firstReview.id)
+  }
+
   const canResume = Boolean(run && steps.some((step) => step.status === 'queued' || (step.status === 'failed' && step.attempts < 3)))
+  const primaryAction = canResume ? resume : reviewCount ? focusReview : start
+  const primaryLabel = working
+    ? 'Workstreams running…'
+    : canResume
+      ? 'Resume preflight'
+      : reviewCount
+        ? `Review ${reviewCount} item${reviewCount === 1 ? '' : 's'}`
+        : run
+          ? 'Run fresh preflight'
+          : 'Start preflight'
 
   return (
     <section className="app-agent-room">
@@ -97,18 +125,24 @@ export default function UnderwritingRoom({ dealId, initialRun, initialSteps }: P
           <h2>Underwriting Room</h2>
           <small>Inspectable workstreams prepare the deal for document extraction, market verification, and analyst approval.</small>
         </div>
-        <button className="btn-primary" onClick={canResume ? resume : start} disabled={working}>
-          {working ? 'Workstreams running…' : canResume ? 'Resume preflight' : run ? 'Run new preflight' : 'Start preflight'}
-        </button>
+        <div className="app-agent-room-actions">
+          <button className="btn-primary" onClick={primaryAction} disabled={working}>{primaryLabel}</button>
+          {run && reviewCount > 0 && !canResume && (
+            <button className="app-agent-rerun" onClick={start} disabled={working}>Run fresh preflight</button>
+          )}
+        </div>
       </div>
 
       <div className="app-agent-progress">
         <div className="app-agent-progress-copy">
-          <strong>{steps.length ? `${completedCount} of ${steps.length}` : 'Not started'}</strong>
-          <span>{run?.status === 'needs_review' ? 'Analyst review required' : working ? 'Preparing the underwriting package' : 'No credits consumed during preflight'}</span>
+          <strong>{steps.length ? `${completedCount} complete · ${reviewCount} review` : 'Not started'}</strong>
+          <span>{run?.status === 'needs_review' ? 'Preflight finished — analyst action required' : working ? `${finishedCount} of ${steps.length} workstreams finished` : 'No credits consumed during preflight'}</span>
         </div>
-        <div className="app-agent-progress-track"><span style={{ width: `${progress}%` }} /></div>
-        <strong>{progress}%</strong>
+        <div className="app-agent-progress-track">
+          <span className="clear" style={{ width: `${clearProgress}%` }} />
+          <span className="review" style={{ width: `${reviewProgress}%` }} />
+        </div>
+        <strong>{reviewCount ? `${reviewCount} flagged` : `${clearProgress}%`}</strong>
       </div>
 
       {error && <p className="app-uw-error" role="alert">{error}</p>}
@@ -180,4 +214,3 @@ export default function UnderwritingRoom({ dealId, initialRun, initialSteps }: P
     </section>
   )
 }
-
