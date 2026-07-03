@@ -7,6 +7,7 @@ export function Nav() {
       <ul className="nav-links">
         <li><a href="#how">Workflow</a></li>
         <li><a href="#demo">Product demo</a></li>
+        <li><a href="#underwriting">Underwriting</a></li>
         <li><a href="#features">Features</a></li>
         <li><a href="#pricing">Pricing</a></li>
         <li><a href="#faq">FAQ</a></li>

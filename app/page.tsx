@@ -6,6 +6,7 @@ import { Hero } from '@/components/Hero'
 import { SocialProof } from '@/components/SocialProof'
 import { HowItWorks } from '@/components/HowItWorks'
 import { ProductDemo } from '@/components/ProductDemo'
+import { UnderwritingShowcase } from '@/components/UnderwritingShowcase'
 import { Features } from '@/components/Features'
 import { Pricing } from '@/components/Pricing'
 import { TrustBar } from '@/components/TrustBar'
@@ -43,6 +44,8 @@ export default function HomePage() {
       <HowItWorks />
       <hr className="divider" />
       <ProductDemo />
+      <hr className="divider" />
+      <UnderwritingShowcase />
       <hr className="divider" />
       <Features />
       <hr className="divider" />

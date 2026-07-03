@@ -8,14 +8,14 @@ export function Hero() {
         <div className="hero-overlay" aria-hidden="true" />
 
         <div className="hero-content">
-          <div className="hero-eyebrow">Built for CRE acquisition teams</div>
+          <div className="hero-eyebrow">Deal memory + underwriting for CRE teams</div>
           <h1 id="hero-title">Your firm&apos;s deal memory,<br /><strong>finally organized.</strong></h1>
-          <p className="hero-sub">Broker sends an OM — it&apos;s parsed, scored, and in your pipeline automatically. Every deal your firm has ever touched, searchable in seconds.</p>
+          <p className="hero-sub">From broker OM to reviewed assumptions and an IC-ready decision. Every deal your firm touches becomes searchable, comparable institutional memory.</p>
           <div className="hero-ctas">
             <Link className="btn-primary" href="/signup">Start free — no credit card</Link>
             <a className="btn-ghost" href="#demo">Explore interactive demo</a>
           </div>
-          <p className="hero-proof">$149 / mo · Unlimited users · Cancel anytime</p>
+          <p className="hero-proof">Deal Memory from $149 / mo · Underwriting Pro in private beta</p>
         </div>
 
         <div className="scroll-hint" aria-hidden="true">

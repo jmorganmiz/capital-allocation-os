@@ -23,8 +23,8 @@ export function HowItWorks() {
     },
     {
       num: '03',
-      label: 'Buy Box Scored',
-      desc: 'AI scores against your criteria, not generic benchmarks',
+      label: 'Quick Pencil',
+      desc: 'Deterministic downside, base, and upside cases run instantly',
       icon: (
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#ededf3" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="9" cy="9" r="7" />
@@ -35,8 +35,8 @@ export function HowItWorks() {
     },
     {
       num: '04',
-      label: 'Pipeline Added',
-      desc: 'Deal card created, stages tracked, team notified',
+      label: 'Evidence Reviewed',
+      desc: 'Document facts are cited, reconciled, and approved by your team',
       icon: (
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#ededf3" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <rect x="2" y="2" width="4" height="14" rx="1" />
@@ -47,8 +47,8 @@ export function HowItWorks() {
     },
     {
       num: '05',
-      label: 'Comps Surfaced',
-      desc: 'Similar past deals surface automatically',
+      label: 'IC Package',
+      desc: 'Sensitivity tables, risks, and a sourced memo stay together',
       icon: (
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#ededf3" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="7.5" cy="7.5" r="5" />
@@ -58,8 +58,8 @@ export function HowItWorks() {
     },
     {
       num: '06',
-      label: 'Decision Logged',
-      desc: 'Advance or kill. Reason recorded forever.',
+      label: 'Firm Learns',
+      desc: 'Decisions and corrections improve the next deal review',
       icon: (
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#ededf3" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="9" cy="9" r="7" />
@@ -72,8 +72,8 @@ export function HowItWorks() {
   return (
     <section className="section reveal" id="how">
       <div className="sec-eye">How it works</div>
-      <h2 className="sec-title">From broker email to firm memory <strong>in seconds.</strong></h2>
-      <p className="sec-sub">One automated flow from inbox to institutional knowledge. No manual entry, no spreadsheet toggling.</p>
+      <h2 className="sec-title">From broker email to IC decision. <strong>One continuous record.</strong></h2>
+      <p className="sec-sub">The model, evidence, approvals, and outcome stay connected—so the next deal starts with everything your firm already knows.</p>
 
       <div className="workflow reveal-stagger">
         {steps.map(({ num, label, desc, icon }) => (

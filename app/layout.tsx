@@ -12,10 +12,10 @@ const manrope = Manrope({
 export const metadata: Metadata = {
   metadataBase: new URL("https://getdealstash.com"),
   title: "Dealstash | Deal Memory for CRE Acquisition Teams",
-  description: "Dealstash turns broker OMs into a searchable CRE deal pipeline with AI scoring, similar deal recall, and a permanent decision log for acquisition teams.",
+  description: "Dealstash turns CRE deal flow into permanent firm memory, then connects cited document evidence, deterministic underwriting, and IC decisions in one reviewable workflow.",
   openGraph: {
     title: "Dealstash | Deal Memory for CRE Acquisition Teams",
-    description: "AI-powered deal pipeline, OM parsing, buy-box scoring, and firm memory for CRE acquisition teams.",
+    description: "Deal memory, cited underwriting, buy-box scoring, and reviewable IC decisions for CRE acquisition teams.",
     url: "https://getdealstash.com",
     siteName: "Dealstash",
     images: [{ url: "/hero.png", width: 1200, height: 630, alt: "Dealstash product preview" }],
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Dealstash | Deal Memory for CRE Acquisition Teams",
-    description: "OM parsing, AI scoring, similar deal recall, and pipeline memory for CRE acquisition teams.",
+    description: "OM parsing, deal memory, cited underwriting, and reviewable IC decisions for CRE acquisition teams.",
     images: ["/hero.png"],
   },
   alternates: { canonical: "https://getdealstash.com" },
@@ -38,7 +38,7 @@ const jsonLd = {
   applicationCategory: "BusinessApplication",
   operatingSystem: "Web",
   url: "https://getdealstash.com",
-  description: "Deal pipeline and firm memory software for CRE acquisition teams.",
+  description: "Deal memory and evidence-backed underwriting software for CRE acquisition teams.",
   offers: {
     "@type": "Offer",
     price: "149",

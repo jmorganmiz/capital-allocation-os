@@ -58,6 +58,24 @@ export function Features() {
             <div className="mini-deal"><span style={{ color: 'var(--silver)' }}>Oak Cliff 12-Unit</span><span className="tag tg">Advanced</span></div>
           </div>
         </div>
+
+        <div className="bc wide memory-loop-card">
+          <div className="bc-icon">↻</div>
+          <div className="bc-title">Learning Loops</div>
+          <div className="bc-desc">Approved corrections, partner decisions, and firm rules become context for the next review—without silently rewriting historical records.</div>
+          <div className="memory-loop-flow">
+            <span>Analyst correction</span><i>→</i><span>Partner approval</span><i>→</i><span>Firm memory</span><i>→</i><span>Next deal</span>
+          </div>
+        </div>
+
+        <div className="bc decision-graph-card">
+          <div className="bc-icon">⌁</div>
+          <div className="bc-title">Decision Graph</div>
+          <div className="bc-desc">Connect every property, broker, source, assumption, underwrite, and outcome into one firm-scoped record.</div>
+          <div className="decision-nodes" aria-hidden="true">
+            <span>Broker</span><span>Deal</span><span>Evidence</span><span>Decision</span>
+          </div>
+        </div>
       </div>
     </section>
   )

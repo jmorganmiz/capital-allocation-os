@@ -25,7 +25,15 @@ const FAQS = [
   },
   {
     q: 'How many users are included?',
-    a: 'Unlimited. The $149/month price covers your entire team — analysts, associates, principals, and partners. No per-seat charges.',
+    a: 'Deal Memory is priced per firm rather than by AI tokens. Underwriting Pro is currently offered through a private beta while we validate team size, completed-underwrite allowances, and workflow fit with design partners.',
+  },
+  {
+    q: 'Does AI calculate the underwriting returns?',
+    a: 'No. AI helps extract and organize document facts, but a deterministic, versioned financial model calculates returns. Material assumptions remain cited and require explicit analyst approval before they become part of the locked underwriting package.',
+  },
+  {
+    q: 'What counts as a Full Underwrite?',
+    a: 'A completed Full Underwrite includes the initial approved run, two included revisions, and an IC memo package. Failed or canceled runs do not consume the monthly allowance, and we do not expose provider tokens as a billing unit.',
   },
   {
     q: 'Can I cancel anytime?',
