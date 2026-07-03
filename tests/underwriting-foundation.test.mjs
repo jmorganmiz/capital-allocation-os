@@ -163,6 +163,8 @@ test('Document extraction produces cited proposals and pauses before calculation
   assert.match(fullAction, /input_tokens: result\.inputTokens/)
   assert.match(fullAction, /lt\('position', step\.position\).*needs_review/s)
   assert.match(fullRoom, /Approve cited document facts/)
+  assert.match(extraction, /offering_memorandum, rent_roll, t12, debt_quote, other/)
+  assert.match(extraction, /fixedOperatingExpenses/)
 })
 
 test('Analysts can reject unsupported extraction without silently changing the model', () => {
@@ -171,6 +173,8 @@ test('Analysts can reject unsupported extraction without silently changing the m
   assert.match(fullAction, /eq\('approval_status', 'approved'\)/)
   assert.match(fullAction, /continueWithLockedUnderwritingInputs/)
   assert.match(fullAction, /FACT_RANGES/)
+  assert.match(fullAction, /assumption_key\.split\('::'\)/)
+  assert.match(fullAction, /conflicting .* is already approved/)
   assert.match(fullRoom, /Continue with locked inputs/)
 })
 

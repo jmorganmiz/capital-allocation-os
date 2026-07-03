@@ -12,6 +12,11 @@ const FIELD_DEFINITIONS = {
   renovationCostPerUnit: { label: 'Renovation cost per unit', category: 'renovation', unit: '$/unit' },
   propertyTaxes: { label: 'Property taxes', category: 'operations', unit: '$/year' },
   insurance: { label: 'Insurance', category: 'operations', unit: '$/year' },
+  fixedOperatingExpenses: { label: 'Other operating expenses', category: 'operations', unit: '$/year' },
+  ltv: { label: 'Loan-to-value', category: 'debt', unit: '%' },
+  interestRate: { label: 'Interest rate', category: 'debt', unit: '%' },
+  amortizationYears: { label: 'Amortization', category: 'debt', unit: 'years' },
+  interestOnlyMonths: { label: 'Interest-only period', category: 'debt', unit: 'months' },
 } as const
 
 type FieldKey = keyof typeof FIELD_DEFINITIONS
@@ -28,10 +33,13 @@ export type ExtractedUnderwritingFact = {
   citationVerified: boolean
 }
 
+export type UnderwritingDocumentType = 'offering_memorandum' | 'rent_roll' | 't12' | 'debt_quote' | 'other'
+
 type RawFact = { key?: string; value?: unknown; confidence?: unknown; evidence_quote?: unknown; page?: unknown }
 
-const PROMPT = `Extract only explicitly stated multifamily underwriting facts from this document.
-Return one JSON object with a "facts" array. Each fact must contain:
+const PROMPT = `Classify this document as exactly one of: offering_memorandum, rent_roll, t12, debt_quote, other.
+Then extract only explicitly stated multifamily underwriting facts.
+Return one JSON object with "document_type" and a "facts" array. Each fact must contain:
 key, value, confidence, evidence_quote, page.
 
 Allowed keys only:
@@ -43,6 +51,11 @@ Allowed keys only:
 - renovationCostPerUnit: dollars per unit
 - propertyTaxes: annual dollars
 - insurance: annual dollars
+- fixedOperatingExpenses: annual operating expenses excluding property taxes, insurance, management fees, and replacement reserves
+- ltv: decimal loan-to-value
+- interestRate: decimal annual interest rate
+- amortizationYears: years
+- interestOnlyMonths: months
 
 Rules:
 - Never estimate or infer a missing value.
@@ -52,10 +65,10 @@ Rules:
 - Omit unsupported facts.
 - Output valid JSON only.`
 
-function extractJson(text: string): { facts?: RawFact[] } | null {
+function extractJson(text: string): { document_type?: string; facts?: RawFact[] } | null {
   const match = text.match(/\{[\s\S]*\}/)
   if (!match) return null
-  try { return JSON.parse(match[0]) as { facts?: RawFact[] } } catch { return null }
+  try { return JSON.parse(match[0]) as { document_type?: string; facts?: RawFact[] } } catch { return null }
 }
 
 export async function extractUnderwritingFacts(buffer: Buffer, filename: string) {
@@ -84,6 +97,10 @@ export async function extractUnderwritingFacts(buffer: Buffer, filename: string)
   const parsed = extractJson(blocks.map((block) => block.text).join('\n'))
   if (!parsed?.facts) throw new Error(`No structured facts could be extracted from ${filename}.`)
   const citations = blocks.flatMap((block) => block.citations ?? [])
+  const documentTypes: UnderwritingDocumentType[] = ['offering_memorandum', 'rent_roll', 't12', 'debt_quote', 'other']
+  const documentType = documentTypes.includes(parsed.document_type as UnderwritingDocumentType)
+    ? parsed.document_type as UnderwritingDocumentType
+    : 'other'
 
   const facts = parsed.facts.flatMap((raw): ExtractedUnderwritingFact[] => {
     if (!raw.key || !(raw.key in FIELD_DEFINITIONS)) return []
@@ -123,10 +140,10 @@ export async function extractUnderwritingFacts(buffer: Buffer, filename: string)
 
   return {
     facts,
+    documentType,
     provider: 'anthropic',
     model: MODEL,
     inputTokens: message.usage.input_tokens,
     outputTokens: message.usage.output_tokens,
   }
 }
-

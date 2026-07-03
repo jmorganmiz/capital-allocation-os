@@ -3,7 +3,7 @@
 import { randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import { runUnderwriting, UNDERWRITING_MODEL_VERSION } from '@/lib/underwriting-model.mjs'
-import { extractUnderwritingFacts } from '@/lib/underwriting-extraction'
+import { extractUnderwritingFacts, type ExtractedUnderwritingFact, type UnderwritingDocumentType } from '@/lib/underwriting-extraction'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
 import type { Json, UnderwritingAssumption, UnderwritingRun, UnderwritingStep } from '@/lib/types/database'
 
@@ -11,7 +11,7 @@ const EXECUTION_VERSION = `full-underwrite-deterministic-${UNDERWRITING_MODEL_VE
 
 const EXECUTION_STEPS = [
   ['document_evidence', 'Document evidence'],
-  ['approved_inputs', 'Approved inputs'],
+  ['approved_inputs', 'Document reconciliation'],
   ['model_execution', 'Model execution'],
   ['scenario_reconciliation', 'Scenario reconciliation'],
   ['source_coverage', 'Source coverage'],
@@ -29,6 +29,11 @@ const FACT_RANGES: Record<string, [number, number]> = {
   renovationCostPerUnit: [0, 1_000_000],
   propertyTaxes: [0, 1_000_000_000],
   insurance: [0, 1_000_000_000],
+  fixedOperatingExpenses: [0, 1_000_000_000],
+  ltv: [0, 1],
+  interestRate: [0, 0.3],
+  amortizationYears: [0, 50],
+  interestOnlyMonths: [0, 180],
 }
 
 type StepResult = {
@@ -56,9 +61,10 @@ function record(value: Json | null): Record<string, Json> {
 function applyApprovedFacts(base: Record<string, Json>, facts: Array<{ assumption_key: string; value: Json }>) {
   const input = structuredClone(base)
   for (const fact of facts) {
+    const key = fact.assumption_key.split('::')[0]
     const value = Number(fact.value)
     if (!Number.isFinite(value)) continue
-    if (fact.assumption_key === 'totalUnits') {
+    if (key === 'totalUnits') {
       input.totalUnits = Math.round(value)
       if (Array.isArray(input.unitMix) && input.unitMix.length === 1 && typeof input.unitMix[0] === 'object' && input.unitMix[0]) {
         input.unitMix = [{ ...input.unitMix[0] as Record<string, Json>, units: Math.round(value), unitsToRenovate: Math.round(value) }]
@@ -67,12 +73,12 @@ function applyApprovedFacts(base: Record<string, Json>, facts: Array<{ assumptio
       if (Number.isFinite(unitsPerYear)) input.unitsRenovatedPerYear = Math.min(Math.round(value), unitsPerYear)
       continue
     }
-    if ((fact.assumption_key === 'currentRent' || fact.assumption_key === 'marketRent')
+    if ((key === 'currentRent' || key === 'marketRent')
       && Array.isArray(input.unitMix) && input.unitMix.length === 1 && typeof input.unitMix[0] === 'object' && input.unitMix[0]) {
-      input.unitMix = [{ ...input.unitMix[0] as Record<string, Json>, [fact.assumption_key]: value }]
+      input.unitMix = [{ ...input.unitMix[0] as Record<string, Json>, [key]: value }]
       continue
     }
-    input[fact.assumption_key] = value
+    input[key === 'fixedOperatingExpenses' ? 'payroll' : key] = value
   }
   return input
 }
@@ -162,12 +168,16 @@ async function buildResult(
   if (step.step_key === 'document_evidence') {
     const { data: files } = await admin.from('deal_files').select('id, filename, mime_type, size_bytes, storage_path, created_at').eq('deal_id', run.deal_id).eq('firm_id', run.firm_id).order('created_at')
     const pdfs = (files ?? []).filter((file) => file.mime_type === 'application/pdf' || file.filename.toLowerCase().endsWith('.pdf')).slice(0, 2)
-    const extracted = []
+    const extracted: Array<ExtractedUnderwritingFact & {
+      file_id: string
+      filename: string
+      document_type: UnderwritingDocumentType
+    }> = []
     for (const file of pdfs) {
       const { data: blob, error: downloadError } = await admin.storage.from('deal-files').download(file.storage_path)
       if (downloadError || !blob) throw downloadError ?? new Error(`Could not download ${file.filename}.`)
       const result = await extractUnderwritingFacts(Buffer.from(await blob.arrayBuffer()), file.filename)
-      extracted.push(...result.facts.map((fact) => ({ ...fact, file_id: file.id, filename: file.filename })))
+      extracted.push(...result.facts.map((fact) => ({ ...fact, file_id: file.id, filename: file.filename, document_type: result.documentType })))
       await admin.from('usage_events').upsert({
         firm_id: run.firm_id,
         user_id: run.created_by,
@@ -180,20 +190,20 @@ async function buildResult(
         input_tokens: result.inputTokens,
         output_tokens: result.outputTokens,
         idempotency_key: `${run.id}:${file.id}:cited-extraction`,
-        metadata: { filename: file.filename, facts: result.facts.length, customer_charge: false },
+        metadata: { filename: file.filename, document_type: result.documentType, facts: result.facts.length, customer_charge: false },
       }, { onConflict: 'firm_id,idempotency_key', ignoreDuplicates: true })
     }
     if (extracted.length) {
       const { error: assumptionError } = await admin.from('underwriting_assumptions').upsert(extracted.map((fact) => ({
         firm_id: run.firm_id,
         run_id: run.id,
-        assumption_key: fact.key,
+        assumption_key: `${fact.key}::${fact.file_id}`,
         label: fact.label,
         category: fact.category,
         value: fact.value,
         unit: fact.unit,
         source_type: 'om_stated',
-        source_reference: `${fact.filename}${fact.locator ? ` · ${fact.locator}` : ''}`,
+        source_reference: `${fact.filename} · ${fact.document_type.replaceAll('_', ' ')}${fact.locator ? ` · ${fact.locator}` : ''}`,
         source_excerpt: fact.excerpt,
         confidence: fact.confidence,
         approval_status: 'needs_review',
@@ -214,7 +224,14 @@ async function buildResult(
     }
     return {
       summary: extracted.length ? `${extracted.length} cited fact${extracted.length === 1 ? '' : 's'} await analyst review` : pdfs.length ? 'No supported facts extracted' : 'No PDF source documents linked',
-      artifact: { documents: files ?? [], extracted_facts: extracted, citation_verified: extracted.filter((fact) => fact.citationVerified).length },
+      artifact: {
+        documents: (files ?? []).map((file) => ({
+          ...file,
+          document_type: extracted.find((fact) => fact.file_id === file.id)?.document_type ?? 'unsupported_or_unclassified',
+        })),
+        extracted_facts: extracted,
+        citation_verified: extracted.filter((fact) => fact.citationVerified).length,
+      },
       evidenceCount: extracted.filter((fact) => fact.citationVerified).length,
       confidence: extracted.length ? extracted.filter((fact) => fact.citationVerified).length / extracted.length : 0.1,
       needsReview: true,
@@ -223,10 +240,20 @@ async function buildResult(
 
   if (step.step_key === 'approved_inputs') {
     const assumptions = Array.isArray(locked.assumptions) ? locked.assumptions : []
+    const { data: documentFacts } = await admin.from('underwriting_assumptions').select('assumption_key, label, value, approval_status, source_reference').eq('run_id', run.id)
+    const groups = new Map<string, typeof documentFacts>()
+    for (const fact of documentFacts ?? []) {
+      const key = fact.assumption_key.split('::')[0]
+      groups.set(key, [...(groups.get(key) ?? []), fact])
+    }
+    const conflicts = [...groups.entries()].flatMap(([key, candidates]) => {
+      const distinct = new Set((candidates ?? []).map((fact) => JSON.stringify(fact.value)))
+      return distinct.size > 1 ? [{ key, candidates }] : []
+    })
     return {
-      summary: `${assumptions.length} locked assumptions loaded`,
-      artifact: { assumptions, approved_at: locked.approved_at ?? null, approved_by: locked.approved_by ?? null },
-      evidenceCount: assumptions.length,
+      summary: conflicts.length ? `${conflicts.length} document conflict${conflicts.length === 1 ? '' : 's'} resolved by analyst decisions` : `${assumptions.length} locked assumptions and ${documentFacts?.length ?? 0} document facts reconciled`,
+      artifact: { assumptions, document_facts: documentFacts ?? [], conflicts, approved_at: locked.approved_at ?? null, approved_by: locked.approved_by ?? null },
+      evidenceCount: assumptions.length + (documentFacts?.length ?? 0),
       confidence: assumptions.length ? 1 : 0,
       needsReview: assumptions.length === 0,
     }
@@ -426,9 +453,20 @@ export async function reviewExtractedUnderwritingFact(
     if (!assumption) return { error: 'Extracted fact not found.' }
 
     const effectiveValue = decision === 'revised' ? Number(revisedValue) : Number(assumption.value)
-    const range = FACT_RANGES[assumption.assumption_key]
+    const canonicalKey = assumption.assumption_key.split('::')[0]
+    const range = FACT_RANGES[canonicalKey]
     if (decision !== 'rejected' && (!Number.isFinite(effectiveValue) || !range || effectiveValue < range[0] || effectiveValue > range[1])) {
       return { error: `${assumption.label} is outside the supported model range.` }
+    }
+    if (decision !== 'rejected') {
+      const { data: conflictingApproved } = await admin.from('underwriting_assumptions')
+        .select('id, label, value, source_reference')
+        .eq('run_id', runId)
+        .eq('approval_status', 'approved')
+        .like('assumption_key', `${canonicalKey}::%`)
+        .neq('id', assumptionId)
+      const conflict = (conflictingApproved ?? []).find((item) => Number(item.value) !== effectiveValue)
+      if (conflict) return { error: `A conflicting ${assumption.label.toLowerCase()} is already approved from ${conflict.source_reference ?? 'another document'}. Reject it before approving this value.` }
     }
 
     const approved = decision !== 'rejected'
