@@ -104,7 +104,8 @@ test('Assumption review is tenant scoped, auditable, and drives IC readiness', (
   assert.match(roomAction, /assumption_status: allApproved \? 'approved'/)
   assert.match(roomAction, /step_key', 'ic_readiness'/)
   assert.match(room, /Save revision/)
-  assert.match(room, /raw model value/)
+  assert.match(room, /Edit in/)
+  assert.match(room, /enteredValue \/ 100/)
 })
 
 test('Agent visuals expose status and artifacts without pretending to show reasoning', () => {

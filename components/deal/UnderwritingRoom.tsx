@@ -48,6 +48,12 @@ function assumptionValue(assumption: UnderwritingAssumption) {
   return `${value}${assumption.unit ? ` ${assumption.unit}` : ''}`
 }
 
+function assumptionInputValue(assumption: UnderwritingAssumption) {
+  const value = Number(assumption.value)
+  if (!Number.isFinite(value)) return ''
+  return String(assumption.unit === '%' ? value * 100 : value)
+}
+
 export default function UnderwritingRoom({ dealId, initialRun, initialSteps, initialAssumptions }: Props) {
   const [run, setRun] = useState(initialRun)
   const [steps, setSteps] = useState(initialSteps)
@@ -57,7 +63,7 @@ export default function UnderwritingRoom({ dealId, initialRun, initialSteps, ini
   const [error, setError] = useState('')
   const [selectedId, setSelectedId] = useState(initialSteps[0]?.id ?? '')
   const [revisions, setRevisions] = useState<Record<string, string>>(() => Object.fromEntries(
-    initialAssumptions.map((assumption) => [assumption.id, String(assumption.value ?? '')]),
+    initialAssumptions.map((assumption) => [assumption.id, assumptionInputValue(assumption)]),
   ))
 
   const completedCount = steps.filter((step) => step.status === 'completed').length
@@ -91,7 +97,7 @@ export default function UnderwritingRoom({ dealId, initialRun, initialSteps, ini
       if (result.assumptions) {
         setAssumptions(result.assumptions)
         setRevisions((current) => ({
-          ...Object.fromEntries(result.assumptions!.map((assumption) => [assumption.id, String(assumption.value ?? '')])),
+          ...Object.fromEntries(result.assumptions!.map((assumption) => [assumption.id, assumptionInputValue(assumption)])),
           ...current,
         }))
       }
@@ -133,7 +139,7 @@ export default function UnderwritingRoom({ dealId, initialRun, initialSteps, ini
       setAssumptions(result.assumptions)
       setRevisions((current) => ({
         ...current,
-        ...Object.fromEntries(result.assumptions!.map((item) => [item.id, String(item.value ?? '')])),
+        ...Object.fromEntries(result.assumptions!.map((item) => [item.id, assumptionInputValue(item)])),
       }))
     }
     if (result.step) setSteps((current) => current.map((item) => item.id === result.step!.id ? result.step! : item))
@@ -150,7 +156,10 @@ export default function UnderwritingRoom({ dealId, initialRun, initialSteps, ini
     if (!run || reviewingId) return
     setReviewingId(assumption.id)
     setError('')
-    const revisedValue = decision === 'revised' ? Number(revisions[assumption.id]) : undefined
+    const enteredValue = Number(revisions[assumption.id])
+    const revisedValue = decision === 'revised'
+      ? assumption.unit === '%' ? enteredValue / 100 : enteredValue
+      : undefined
     const result = await reviewUnderwritingAssumption(run.id, assumption.id, decision, revisedValue)
     if (result.error) setError(result.error)
     if (result.run) setRun(result.run)
@@ -159,7 +168,7 @@ export default function UnderwritingRoom({ dealId, initialRun, initialSteps, ini
       setAssumptions(result.assumptions)
       setRevisions((current) => ({
         ...current,
-        ...Object.fromEntries(result.assumptions!.map((item) => [item.id, String(item.value ?? '')])),
+        ...Object.fromEntries(result.assumptions!.map((item) => [item.id, assumptionInputValue(item)])),
       }))
     }
     setReviewingId('')
@@ -172,7 +181,7 @@ export default function UnderwritingRoom({ dealId, initialRun, initialSteps, ini
     : canResume
       ? 'Resume preflight'
       : reviewCount
-        ? `Review ${reviewCount} item${reviewCount === 1 ? '' : 's'}`
+        ? `Review ${reviewCount} workstream${reviewCount === 1 ? '' : 's'}`
         : run
           ? 'Run fresh preflight'
           : 'Start preflight'
@@ -277,7 +286,7 @@ export default function UnderwritingRoom({ dealId, initialRun, initialSteps, ini
                           value={revisions[assumption.id] ?? ''}
                           onChange={(event) => setRevisions((current) => ({ ...current, [assumption.id]: event.target.value }))}
                         />
-                        <small>raw model value</small>
+                        <small>Edit in {assumption.unit === '%' ? 'percent' : assumption.unit ?? 'model units'}</small>
                       </div>
                     </div>
                     <div className="app-assumption-actions">
