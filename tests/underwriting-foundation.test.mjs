@@ -23,6 +23,7 @@ const roomAction = fs.readFileSync(path.join(ROOT, 'lib/actions/underwriting-roo
 const room = fs.readFileSync(path.join(ROOT, 'components/deal/UnderwritingRoom.tsx'), 'utf8')
 const fullAction = fs.readFileSync(path.join(ROOT, 'lib/actions/full-underwrite.ts'), 'utf8')
 const fullRoom = fs.readFileSync(path.join(ROOT, 'components/deal/FullUnderwriteExecution.tsx'), 'utf8')
+const extraction = fs.readFileSync(path.join(ROOT, 'lib/underwriting-extraction.ts'), 'utf8')
 
 test('underwriting records and usage are tenant scoped', () => {
   for (const table of [
@@ -139,7 +140,7 @@ test('Full Underwrite execution accepts only locked preflight packages', () => {
   assert.match(fullAction, /preflight\?\.approved_at/)
   assert.match(fullAction, /parent_run_id: preflightRunId/)
   assert.match(fullAction, /locked_preflight: preflight\.output_snapshot/)
-  assert.match(fullAction, /runUnderwriting\(modelInput\)/)
+  assert.match(fullAction, /runUnderwriting\(approvedInput\)/)
 })
 
 test('Deterministic execution is resumable and cannot consume customer credits', () => {
@@ -151,6 +152,26 @@ test('Deterministic execution is resumable and cannot consume customer credits',
   assert.match(fullAction, /customer_charge: false/)
   assert.match(fullRoom, /Document extraction and provider credits remain separate/)
   assert.match(fullRoom, /0 credits/)
+})
+
+test('Document extraction produces cited proposals and pauses before calculation', () => {
+  assert.match(extraction, /citations: \{ enabled: true \}/)
+  assert.match(extraction, /citationVerified/)
+  assert.match(extraction, /Never estimate or infer a missing value/)
+  assert.match(fullAction, /extractUnderwritingFacts/)
+  assert.match(fullAction, /approval_status: 'needs_review'/)
+  assert.match(fullAction, /input_tokens: result\.inputTokens/)
+  assert.match(fullAction, /lt\('position', step\.position\).*needs_review/s)
+  assert.match(fullRoom, /Approve cited document facts/)
+})
+
+test('Analysts can reject unsupported extraction without silently changing the model', () => {
+  assert.match(fullAction, /reviewExtractedUnderwritingFact/)
+  assert.match(fullAction, /applyApprovedFacts/)
+  assert.match(fullAction, /eq\('approval_status', 'approved'\)/)
+  assert.match(fullAction, /continueWithLockedUnderwritingInputs/)
+  assert.match(fullAction, /FACT_RANGES/)
+  assert.match(fullRoom, /Continue with locked inputs/)
 })
 
 test('Agent visuals expose status and artifacts without pretending to show reasoning', () => {

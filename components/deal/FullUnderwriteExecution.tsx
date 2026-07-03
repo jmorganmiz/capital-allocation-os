@@ -1,14 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { processNextFullUnderwriteStep, startFullUnderwrite } from '@/lib/actions/full-underwrite'
-import type { Json, UnderwritingRun, UnderwritingStep } from '@/lib/types/database'
+import { continueWithLockedUnderwritingInputs, processNextFullUnderwriteStep, reviewExtractedUnderwritingFact, startFullUnderwrite } from '@/lib/actions/full-underwrite'
+import type { Json, UnderwritingAssumption, UnderwritingRun, UnderwritingStep } from '@/lib/types/database'
 
 type Props = {
   dealId: string
   preflightRun: UnderwritingRun | null
   initialRun: UnderwritingRun | null
   initialSteps: UnderwritingStep[]
+  initialAssumptions: UnderwritingAssumption[]
 }
 
 function record(value: Json | null): Record<string, Json> {
@@ -30,14 +31,30 @@ function money(value: Json | undefined) {
   return Number.isFinite(number) ? `$${Math.round(number).toLocaleString()}` : '—'
 }
 
+function displayFact(fact: UnderwritingAssumption) {
+  const value = Number(fact.value)
+  if (!Number.isFinite(value)) return 'Missing'
+  if (fact.unit === '%') return `${(value * 100).toFixed(2).replace(/\.00$/, '')}%`
+  if (fact.unit?.startsWith('$')) return `$${value.toLocaleString()}${fact.unit === '$' ? '' : ` ${fact.unit.replace('$', '')}`}`
+  return `${value.toLocaleString()} ${fact.unit ?? ''}`.trim()
+}
+
+function editFact(fact: UnderwritingAssumption) {
+  const value = Number(fact.value)
+  return Number.isFinite(value) ? String(fact.unit === '%' ? value * 100 : value) : ''
+}
+
 const statusLabel: Record<UnderwritingStep['status'], string> = {
   queued: 'Queued', running: 'Running', needs_review: 'Review', completed: 'Complete', failed: 'Failed', canceled: 'Canceled',
 }
 
-export default function FullUnderwriteExecution({ dealId, preflightRun, initialRun, initialSteps }: Props) {
+export default function FullUnderwriteExecution({ dealId, preflightRun, initialRun, initialSteps, initialAssumptions }: Props) {
   const [run, setRun] = useState(initialRun)
   const [steps, setSteps] = useState(initialSteps)
+  const [assumptions, setAssumptions] = useState(initialAssumptions)
   const [working, setWorking] = useState(false)
+  const [reviewingId, setReviewingId] = useState('')
+  const [revisions, setRevisions] = useState<Record<string, string>>(() => Object.fromEntries(initialAssumptions.map((fact) => [fact.id, editFact(fact)])))
   const [error, setError] = useState('')
   const preflightApproved = Boolean(preflightRun?.approved_at && preflightRun.status === 'completed')
   const completed = steps.filter((step) => step.status === 'completed').length
@@ -57,6 +74,11 @@ export default function FullUnderwriteExecution({ dealId, preflightRun, initialR
       if (result.run) setRun(result.run)
       current = result.steps ?? current
       setSteps(current)
+      if (result.assumptions) {
+        setAssumptions(result.assumptions)
+        setRevisions((values) => ({ ...values, ...Object.fromEntries(result.assumptions!.map((fact) => [fact.id, editFact(fact)])) }))
+      }
+      if (current.some((step) => step.status === 'needs_review' || step.status === 'failed')) break
     }
     setWorking(false)
   }
@@ -76,6 +98,38 @@ export default function FullUnderwriteExecution({ dealId, preflightRun, initialR
     setSteps(created)
     setWorking(false)
     await process(result.run.id, created)
+  }
+
+  async function reviewFact(fact: UnderwritingAssumption, decision: 'approved' | 'rejected' | 'revised') {
+    if (!run || reviewingId) return
+    setReviewingId(fact.id)
+    setError('')
+    const entered = Number(revisions[fact.id])
+    const revised = decision === 'revised' ? fact.unit === '%' ? entered / 100 : entered : undefined
+    const result = await reviewExtractedUnderwritingFact(run.id, fact.id, decision, revised)
+    if (result.error) setError(result.error)
+    if (result.run) setRun(result.run)
+    if (result.steps) setSteps(result.steps)
+    if (result.assumptions) {
+      setAssumptions(result.assumptions)
+      setRevisions((values) => ({ ...values, ...Object.fromEntries(result.assumptions!.map((item) => [item.id, editFact(item)])) }))
+    }
+    setReviewingId('')
+    if (!result.error && result.steps && !result.assumptions?.some((item) => item.approval_status === 'needs_review')) {
+      await process(run.id, result.steps)
+    }
+  }
+
+  async function continueLocked() {
+    if (!run || working) return
+    setWorking(true)
+    setError('')
+    const result = await continueWithLockedUnderwritingInputs(run.id)
+    if (result.error) setError(result.error)
+    if (result.run) setRun(result.run)
+    if (result.steps) setSteps(result.steps)
+    setWorking(false)
+    if (!result.error && result.steps) await process(run.id, result.steps)
   }
 
   return (
@@ -113,6 +167,36 @@ export default function FullUnderwriteExecution({ dealId, preflightRun, initialR
               </article>
             ))}
           </div>
+          {assumptions.length > 0 && assumptions.some((fact) => fact.approval_status === 'needs_review') && (
+            <div className="app-extraction-review">
+              <div className="app-extraction-review-header">
+                <div><span>Evidence review</span><h3>Approve cited document facts</h3></div>
+                <strong>{assumptions.filter((fact) => fact.approval_status === 'needs_review').length} pending</strong>
+              </div>
+              <div className="app-extraction-facts">
+                {assumptions.map((fact) => (
+                  <article key={fact.id} data-status={fact.approval_status}>
+                    <div className="app-extraction-fact-title"><strong>{fact.label}</strong><span>{fact.approval_status.replace('_', ' ')}</span></div>
+                    <b>{displayFact(fact)}</b>
+                    <p>{fact.source_excerpt || 'No verified excerpt returned.'}</p>
+                    <small>{fact.source_reference ?? 'Unlocated source'} · {Math.round((fact.confidence ?? 0) * 100)}% confidence</small>
+                    <div className="app-extraction-fact-actions">
+                      <input aria-label={`Revise ${fact.label}`} value={revisions[fact.id] ?? ''} onChange={(event) => setRevisions((values) => ({ ...values, [fact.id]: event.target.value }))} />
+                      <button type="button" onClick={() => reviewFact(fact, 'approved')} disabled={reviewingId === fact.id}>Approve</button>
+                      <button type="button" onClick={() => reviewFact(fact, 'revised')} disabled={reviewingId === fact.id}>Revise</button>
+                      <button type="button" className="danger" onClick={() => reviewFact(fact, 'rejected')} disabled={reviewingId === fact.id}>Reject</button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+          )}
+          {assumptions.length === 0 && steps.some((step) => step.step_key === 'document_evidence' && step.status === 'needs_review') && (
+            <div className="app-extraction-empty-review">
+              <div><span>Evidence exception</span><strong>No supported cited facts were available.</strong><p>Continue with the already approved preflight inputs, or upload a clearer PDF and run a new version.</p></div>
+              <button type="button" onClick={continueLocked} disabled={working}>Continue with locked inputs</button>
+            </div>
+          )}
           {Object.keys(output).length > 0 && (
             <div className="app-full-execution-results">
               <div><span>Levered IRR</span><strong>{percent(output.leveredIrr)}</strong></div>
@@ -134,4 +218,3 @@ export default function FullUnderwriteExecution({ dealId, preflightRun, initialR
     </section>
   )
 }
-

@@ -3,8 +3,9 @@
 import { randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import { runUnderwriting, UNDERWRITING_MODEL_VERSION } from '@/lib/underwriting-model.mjs'
+import { extractUnderwritingFacts } from '@/lib/underwriting-extraction'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
-import type { Json, UnderwritingRun, UnderwritingStep } from '@/lib/types/database'
+import type { Json, UnderwritingAssumption, UnderwritingRun, UnderwritingStep } from '@/lib/types/database'
 
 const EXECUTION_VERSION = `full-underwrite-deterministic-${UNDERWRITING_MODEL_VERSION}`
 
@@ -18,6 +19,17 @@ const EXECUTION_STEPS = [
   ['ic_outputs', 'IC outputs'],
   ['execution_complete', 'Execution complete'],
 ] as const
+
+const FACT_RANGES: Record<string, [number, number]> = {
+  purchasePrice: [1, 10_000_000_000],
+  totalUnits: [1, 100_000],
+  currentRent: [1, 100_000],
+  marketRent: [1, 100_000],
+  vacancyPct: [0, 0.5],
+  renovationCostPerUnit: [0, 1_000_000],
+  propertyTaxes: [0, 1_000_000_000],
+  insurance: [0, 1_000_000_000],
+}
 
 type StepResult = {
   summary: string
@@ -39,6 +51,30 @@ async function membership() {
 
 function record(value: Json | null): Record<string, Json> {
   return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, Json> : {}
+}
+
+function applyApprovedFacts(base: Record<string, Json>, facts: Array<{ assumption_key: string; value: Json }>) {
+  const input = structuredClone(base)
+  for (const fact of facts) {
+    const value = Number(fact.value)
+    if (!Number.isFinite(value)) continue
+    if (fact.assumption_key === 'totalUnits') {
+      input.totalUnits = Math.round(value)
+      if (Array.isArray(input.unitMix) && input.unitMix.length === 1 && typeof input.unitMix[0] === 'object' && input.unitMix[0]) {
+        input.unitMix = [{ ...input.unitMix[0] as Record<string, Json>, units: Math.round(value), unitsToRenovate: Math.round(value) }]
+      }
+      const unitsPerYear = Number(input.unitsRenovatedPerYear)
+      if (Number.isFinite(unitsPerYear)) input.unitsRenovatedPerYear = Math.min(Math.round(value), unitsPerYear)
+      continue
+    }
+    if ((fact.assumption_key === 'currentRent' || fact.assumption_key === 'marketRent')
+      && Array.isArray(input.unitMix) && input.unitMix.length === 1 && typeof input.unitMix[0] === 'object' && input.unitMix[0]) {
+      input.unitMix = [{ ...input.unitMix[0] as Record<string, Json>, [fact.assumption_key]: value }]
+      continue
+    }
+    input[fact.assumption_key] = value
+  }
+  return input
 }
 
 export async function startFullUnderwrite(
@@ -124,13 +160,64 @@ async function buildResult(
   const modelInput = (quick.input_snapshot ?? null) as Json | null
 
   if (step.step_key === 'document_evidence') {
-    const { data: files } = await admin.from('deal_files').select('id, filename, mime_type, size_bytes, created_at').eq('deal_id', run.deal_id).eq('firm_id', run.firm_id).order('created_at')
+    const { data: files } = await admin.from('deal_files').select('id, filename, mime_type, size_bytes, storage_path, created_at').eq('deal_id', run.deal_id).eq('firm_id', run.firm_id).order('created_at')
+    const pdfs = (files ?? []).filter((file) => file.mime_type === 'application/pdf' || file.filename.toLowerCase().endsWith('.pdf')).slice(0, 2)
+    const extracted = []
+    for (const file of pdfs) {
+      const { data: blob, error: downloadError } = await admin.storage.from('deal-files').download(file.storage_path)
+      if (downloadError || !blob) throw downloadError ?? new Error(`Could not download ${file.filename}.`)
+      const result = await extractUnderwritingFacts(Buffer.from(await blob.arrayBuffer()), file.filename)
+      extracted.push(...result.facts.map((fact) => ({ ...fact, file_id: file.id, filename: file.filename })))
+      await admin.from('usage_events').upsert({
+        firm_id: run.firm_id,
+        user_id: run.created_by,
+        underwriting_run_id: run.id,
+        event_type: 'agent_step',
+        quantity: 1,
+        billable_credits: 0,
+        provider: result.provider,
+        model: result.model,
+        input_tokens: result.inputTokens,
+        output_tokens: result.outputTokens,
+        idempotency_key: `${run.id}:${file.id}:cited-extraction`,
+        metadata: { filename: file.filename, facts: result.facts.length, customer_charge: false },
+      }, { onConflict: 'firm_id,idempotency_key', ignoreDuplicates: true })
+    }
+    if (extracted.length) {
+      const { error: assumptionError } = await admin.from('underwriting_assumptions').upsert(extracted.map((fact) => ({
+        firm_id: run.firm_id,
+        run_id: run.id,
+        assumption_key: fact.key,
+        label: fact.label,
+        category: fact.category,
+        value: fact.value,
+        unit: fact.unit,
+        source_type: 'om_stated',
+        source_reference: `${fact.filename}${fact.locator ? ` · ${fact.locator}` : ''}`,
+        source_excerpt: fact.excerpt,
+        confidence: fact.confidence,
+        approval_status: 'needs_review',
+        created_by: run.created_by,
+      })), { onConflict: 'run_id,assumption_key', ignoreDuplicates: true })
+      if (assumptionError) throw assumptionError
+      await admin.from('underwriting_sources').insert(extracted.map((fact) => ({
+        firm_id: run.firm_id,
+        run_id: run.id,
+        step_id: step.id,
+        deal_file_id: fact.file_id,
+        source_type: 'deal_file',
+        title: fact.filename,
+        locator: fact.locator,
+        excerpt: fact.excerpt,
+        confidence: fact.confidence,
+      })))
+    }
     return {
-      summary: files?.length ? `${files.length} deal document${files.length === 1 ? '' : 's'} linked` : 'No source documents linked',
-      artifact: { documents: files ?? [], extraction_status: 'not_started', citations_available: false },
-      evidenceCount: files?.length ?? 0,
-      confidence: files?.length ? 0.8 : 0.1,
-      needsReview: !files?.length,
+      summary: extracted.length ? `${extracted.length} cited fact${extracted.length === 1 ? '' : 's'} await analyst review` : pdfs.length ? 'No supported facts extracted' : 'No PDF source documents linked',
+      artifact: { documents: files ?? [], extracted_facts: extracted, citation_verified: extracted.filter((fact) => fact.citationVerified).length },
+      evidenceCount: extracted.filter((fact) => fact.citationVerified).length,
+      confidence: extracted.length ? extracted.filter((fact) => fact.citationVerified).length / extracted.length : 0.1,
+      needsReview: true,
     }
   }
 
@@ -147,11 +234,14 @@ async function buildResult(
 
   if (step.step_key === 'model_execution') {
     if (!modelInput || typeof modelInput !== 'object' || Array.isArray(modelInput)) throw new Error('Locked Quick Pencil model input is missing.')
-    const output = runUnderwriting(modelInput)
+    const { data: approvedFacts } = await admin.from('underwriting_assumptions').select('assumption_key, value').eq('run_id', run.id).eq('approval_status', 'approved')
+    const approvedInput = applyApprovedFacts(modelInput as Record<string, Json>, approvedFacts ?? [])
+    const output = runUnderwriting(approvedInput)
     return {
-      summary: 'Deterministic model completed from locked inputs',
+      summary: `Deterministic model completed with ${approvedFacts?.length ?? 0} approved document fact${approvedFacts?.length === 1 ? '' : 's'}`,
       artifact: {
         model_version: output.modelVersion,
+        approved_document_facts: approvedFacts ?? [],
         levered_irr: output.leveredIrr,
         equity_multiple: output.equityMultiple,
         year_one_dscr: output.yearOneDscr,
@@ -233,7 +323,7 @@ async function buildResult(
 
 export async function processNextFullUnderwriteStep(
   runId: string,
-): Promise<{ run?: UnderwritingRun; steps?: UnderwritingStep[]; error?: string }> {
+): Promise<{ run?: UnderwritingRun; steps?: UnderwritingStep[]; assumptions?: UnderwritingAssumption[]; error?: string }> {
   try {
     const context = await membership()
     if ('error' in context) return context
@@ -244,8 +334,20 @@ export async function processNextFullUnderwriteStep(
 
     const { data: step } = await admin.from('underwriting_steps').select('*').eq('run_id', runId).eq('status', 'queued').order('position').limit(1).maybeSingle()
     if (!step) {
-      const { data: steps } = await admin.from('underwriting_steps').select('*').eq('run_id', runId).order('position')
-      return { run, steps: steps ?? [] }
+      const [{ data: steps }, { data: assumptions }] = await Promise.all([
+        admin.from('underwriting_steps').select('*').eq('run_id', runId).order('position'),
+        admin.from('underwriting_assumptions').select('*').eq('run_id', runId).order('created_at'),
+      ])
+      return { run, steps: steps ?? [], assumptions: assumptions ?? [] }
+    }
+
+    const { data: blocker } = await admin.from('underwriting_steps').select('id').eq('run_id', runId).lt('position', step.position).in('status', ['needs_review', 'failed']).limit(1).maybeSingle()
+    if (blocker) {
+      const [{ data: steps }, { data: assumptions }] = await Promise.all([
+        admin.from('underwriting_steps').select('*').eq('run_id', runId).order('position'),
+        admin.from('underwriting_assumptions').select('*').eq('run_id', runId).order('created_at'),
+      ])
+      return { run: { ...run, status: 'needs_review' }, steps: steps ?? [], assumptions: assumptions ?? [] }
     }
 
     const now = new Date().toISOString()
@@ -298,10 +400,115 @@ export async function processNextFullUnderwriteStep(
       }, { onConflict: 'firm_id,idempotency_key', ignoreDuplicates: true })
     }
     revalidatePath(`/deals/${run.deal_id}`)
-    return { run: updatedRun ?? run, steps: steps ?? [] }
+    const { data: assumptions } = await admin.from('underwriting_assumptions').select('*').eq('run_id', runId).order('created_at')
+    return { run: updatedRun ?? run, steps: steps ?? [], assumptions: assumptions ?? [] }
   } catch (error) {
     console.error('[full-underwrite] process failed:', error instanceof Error ? error.message : 'unknown error')
     return { error: error instanceof Error ? error.message : 'Could not process full underwrite.' }
   }
 }
 
+export async function reviewExtractedUnderwritingFact(
+  runId: string,
+  assumptionId: string,
+  decision: 'approved' | 'rejected' | 'revised',
+  revisedValue?: number,
+): Promise<{ run?: UnderwritingRun; steps?: UnderwritingStep[]; assumptions?: UnderwritingAssumption[]; error?: string }> {
+  try {
+    if (decision === 'revised' && (!Number.isFinite(revisedValue) || revisedValue === undefined)) return { error: 'Enter a valid revised value.' }
+    const context = await membership()
+    if ('error' in context) return context
+    const { user, firmId } = context
+    const admin = createAdminClient()
+    const { data: run } = await admin.from('underwriting_runs').select('*').eq('id', runId).eq('firm_id', firmId).eq('run_type', 'full_underwrite').single()
+    if (!run || run.status === 'completed') return { error: 'This execution is not open for review.' }
+    const { data: assumption } = await admin.from('underwriting_assumptions').select('*').eq('id', assumptionId).eq('run_id', runId).eq('firm_id', firmId).single()
+    if (!assumption) return { error: 'Extracted fact not found.' }
+
+    const effectiveValue = decision === 'revised' ? Number(revisedValue) : Number(assumption.value)
+    const range = FACT_RANGES[assumption.assumption_key]
+    if (decision !== 'rejected' && (!Number.isFinite(effectiveValue) || !range || effectiveValue < range[0] || effectiveValue > range[1])) {
+      return { error: `${assumption.label} is outside the supported model range.` }
+    }
+
+    const approved = decision !== 'rejected'
+    const now = new Date().toISOString()
+    const { error: updateError } = await admin.from('underwriting_assumptions').update({
+      ...(decision === 'revised' ? {
+        value: revisedValue as Json,
+        source_type: 'analyst_override',
+        source_reference: `Analyst revision of ${assumption.source_reference ?? assumption.label}`,
+        confidence: 1,
+      } : {}),
+      approval_status: approved ? 'approved' : 'rejected',
+      approved_by: approved ? user.id : null,
+      approved_at: approved ? now : null,
+    }).eq('id', assumptionId)
+    if (updateError) throw updateError
+    await admin.from('underwriting_approvals').insert({
+      firm_id: firmId,
+      run_id: runId,
+      assumption_id: assumptionId,
+      decision: decision === 'rejected' ? 'rejected' : 'approved',
+      notes: decision === 'revised' ? `Document fact revised from ${String(assumption.value)} to ${String(revisedValue)}.` : null,
+      decided_by: user.id,
+    })
+
+    const { data: assumptions } = await admin.from('underwriting_assumptions').select('*').eq('run_id', runId).order('created_at')
+    const pending = (assumptions ?? []).filter((item) => item.approval_status === 'needs_review').length
+    if (pending === 0) {
+      const approvedCount = (assumptions ?? []).filter((item) => item.approval_status === 'approved').length
+      const rejectedCount = (assumptions ?? []).filter((item) => item.approval_status === 'rejected').length
+      await admin.from('underwriting_steps').update({
+        status: 'completed',
+        artifact_summary: `${approvedCount} document facts approved · ${rejectedCount} rejected`,
+        confidence: approvedCount ? 1 : 0.5,
+        completed_at: now,
+      }).eq('run_id', runId).eq('step_key', 'document_evidence')
+    }
+    const { data: steps } = await admin.from('underwriting_steps').select('*').eq('run_id', runId).order('position')
+    const { data: updatedRun } = await admin.from('underwriting_runs').update({ status: pending ? 'needs_review' : 'running' }).eq('id', runId).select('*').single()
+    revalidatePath(`/deals/${run.deal_id}`)
+    return { run: updatedRun ?? run, steps: steps ?? [], assumptions: assumptions ?? [] }
+  } catch (error) {
+    console.error('[full-underwrite] fact review failed:', error instanceof Error ? error.message : 'unknown error')
+    return { error: error instanceof Error ? error.message : 'Could not review extracted fact.' }
+  }
+}
+
+export async function continueWithLockedUnderwritingInputs(
+  runId: string,
+): Promise<{ run?: UnderwritingRun; steps?: UnderwritingStep[]; error?: string }> {
+  try {
+    const context = await membership()
+    if ('error' in context) return context
+    const { user, firmId } = context
+    const admin = createAdminClient()
+    const { data: run } = await admin.from('underwriting_runs').select('*').eq('id', runId).eq('firm_id', firmId).eq('run_type', 'full_underwrite').single()
+    if (!run || run.status === 'completed') return { error: 'This execution is not open for review.' }
+    const { count } = await admin.from('underwriting_assumptions').select('id', { count: 'exact', head: true }).eq('run_id', runId).eq('approval_status', 'needs_review')
+    if (count) return { error: 'Review the extracted document facts first.' }
+    const now = new Date().toISOString()
+    await admin.from('underwriting_steps').update({
+      status: 'completed',
+      artifact_summary: 'No supported facts applied · locked inputs retained',
+      confidence: 0.5,
+      completed_at: now,
+    }).eq('run_id', runId).eq('step_key', 'document_evidence')
+    await admin.from('underwriting_approvals').insert({
+      firm_id: firmId,
+      run_id: runId,
+      assumption_id: null,
+      decision: 'approved',
+      notes: 'Analyst continued with locked preflight inputs because no supported document facts were available.',
+      decided_by: user.id,
+    })
+    const { data: steps } = await admin.from('underwriting_steps').select('*').eq('run_id', runId).order('position')
+    const { data: updatedRun } = await admin.from('underwriting_runs').update({ status: 'running' }).eq('id', runId).select('*').single()
+    revalidatePath(`/deals/${run.deal_id}`)
+    return { run: updatedRun ?? run, steps: steps ?? [] }
+  } catch (error) {
+    console.error('[full-underwrite] locked-input continuation failed:', error instanceof Error ? error.message : 'unknown error')
+    return { error: error instanceof Error ? error.message : 'Could not continue execution.' }
+  }
+}
