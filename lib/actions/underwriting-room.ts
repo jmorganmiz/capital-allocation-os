@@ -3,7 +3,7 @@
 import { randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
-import type { Json, UnderwritingRun, UnderwritingStep } from '@/lib/types/database'
+import type { Json, UnderwritingAssumption, UnderwritingRun, UnderwritingStep } from '@/lib/types/database'
 
 const PREFLIGHT_VERSION = 'underwriting-preflight-0.1.0'
 
@@ -16,6 +16,14 @@ const STEP_DEFINITIONS = [
   ['risk_review', 'Risk review'],
   ['scenario_summary', 'Scenario summary'],
   ['ic_readiness', 'IC readiness'],
+] as const
+
+const TRACKED_ASSUMPTIONS = [
+  { key: 'vacancyPct', label: 'Vacancy', category: 'operations', unit: '%', confidence: 0.7 },
+  { key: 'rentGrowthInPlace', label: 'Annual rent growth', category: 'operations', unit: '%', confidence: 0.7 },
+  { key: 'exitCapRate', label: 'Exit cap rate', category: 'exit', unit: '%', confidence: 0.7 },
+  { key: 'interestRate', label: 'Interest rate', category: 'debt', unit: '%', confidence: 0.7 },
+  { key: 'renovationCostPerUnit', label: 'Renovation cost per unit', category: 'renovation', unit: '$/unit', confidence: 0.7 },
 ] as const
 
 type StepResult = {
@@ -61,7 +69,7 @@ async function getMembership(dealId?: string) {
 export async function startUnderwritingPreflight(
   dealId: string,
   requestId: string,
-): Promise<{ run?: UnderwritingRun; steps?: UnderwritingStep[]; error?: string }> {
+): Promise<{ run?: UnderwritingRun; steps?: UnderwritingStep[]; assumptions?: UnderwritingAssumption[]; error?: string }> {
   try {
     if (!dealId || !requestId || requestId.length > 200) return { error: 'Invalid request.' }
     const membership = await getMembership(dealId)
@@ -84,12 +92,11 @@ export async function startUnderwritingPreflight(
       .eq('idempotency_key', idempotencyKey)
       .maybeSingle()
     if (existing) {
-      const { data: existingSteps } = await admin
-        .from('underwriting_steps')
-        .select('*')
-        .eq('run_id', existing.id)
-        .order('position')
-      return { run: existing, steps: existingSteps ?? [] }
+      const [{ data: existingSteps }, { data: existingAssumptions }] = await Promise.all([
+        admin.from('underwriting_steps').select('*').eq('run_id', existing.id).order('position'),
+        admin.from('underwriting_assumptions').select('*').eq('run_id', existing.id).order('created_at'),
+      ])
+      return { run: existing, steps: existingSteps ?? [], assumptions: existingAssumptions ?? [] }
     }
 
     const { data: latestBase } = await admin
@@ -258,8 +265,35 @@ async function buildStepResult(
     const input = base?.input_snapshot && typeof base.input_snapshot === 'object' && !Array.isArray(base.input_snapshot)
       ? base.input_snapshot as Record<string, Json>
       : {}
-    const tracked = ['vacancyPct', 'rentGrowthInPlace', 'exitCapRate', 'interestRate', 'renovationCostPerUnit']
-    const assumptions = tracked.map((key) => ({ key, value: input[key] ?? null, source: 'screening_input', approval: 'needs_review' }))
+    const assumptionRecords = TRACKED_ASSUMPTIONS.map((definition) => ({
+      firm_id: run.firm_id,
+      run_id: run.id,
+      assumption_key: definition.key,
+      label: definition.label,
+      category: definition.category,
+      value: input[definition.key] ?? null,
+      unit: definition.unit,
+      source_type: 'analyst_override' as const,
+      source_reference: base ? 'Quick Pencil base case' : 'Preflight',
+      source_excerpt: 'Entered during screening and awaiting analyst confirmation.',
+      confidence: definition.confidence,
+      approval_status: 'needs_review' as const,
+      created_by: run.created_by,
+    }))
+    const { data: persisted, error: assumptionError } = await admin
+      .from('underwriting_assumptions')
+      .upsert(assumptionRecords, { onConflict: 'run_id,assumption_key', ignoreDuplicates: true })
+      .select('*')
+    if (assumptionError) throw assumptionError
+    const assumptions = (persisted ?? assumptionRecords).map((item) => ({
+      id: 'id' in item ? item.id : null,
+      key: item.assumption_key,
+      label: item.label,
+      value: item.value,
+      unit: item.unit,
+      source: item.source_reference,
+      approval: item.approval_status,
+    }))
     const missing = assumptions.filter((item) => item.value === null).map((item) => item.key)
     return {
       summary: missing.length ? `${missing.length} key assumption${missing.length === 1 ? '' : 's'} missing` : 'Five screening assumptions await approval',
@@ -305,30 +339,33 @@ async function buildStepResult(
     }
   }
 
-  const [{ data: files }, { data: notes }, { data: quick }] = await Promise.all([
+  const [{ data: files }, { data: notes }, { data: quick }, { data: assumptions }] = await Promise.all([
     admin.from('deal_files').select('id').eq('deal_id', run.deal_id),
     admin.from('deal_notes').select('section, content').eq('deal_id', run.deal_id),
     admin.from('underwriting_runs').select('id').eq('deal_id', run.deal_id).eq('run_type', 'quick_pencil').limit(1),
+    admin.from('underwriting_assumptions').select('approval_status').eq('run_id', run.id),
   ])
+  const unresolvedAssumptions = (assumptions ?? []).filter((assumption) => assumption.approval_status !== 'approved').length
   const completedNoteSections = new Set((notes ?? []).filter((note) => note.content?.trim()).map((note) => note.section))
   const missing = [
     ...(files?.length ? [] : ['Deal documents']),
     ...(quick?.length ? [] : ['Quick Pencil']),
     ...(completedNoteSections.has('overview') ? [] : ['Investment thesis']),
     ...(completedNoteSections.has('risks') ? [] : ['Risk narrative']),
+    ...(unresolvedAssumptions ? [`${unresolvedAssumptions} underwriting assumptions`] : []),
   ]
   return {
     summary: missing.length ? `${missing.length} item${missing.length === 1 ? '' : 's'} block IC readiness` : 'Preflight package is ready for analyst approval',
     artifact: { ready: missing.length === 0, missing },
-    evidenceCount: 4 - missing.length,
+    evidenceCount: Math.max(0, 5 - missing.length),
     confidence: missing.length ? 0.55 : 0.9,
-    needsReview: true,
+    needsReview: missing.length > 0,
   }
 }
 
 export async function processNextUnderwritingStep(
   runId: string,
-): Promise<{ run?: UnderwritingRun; steps?: UnderwritingStep[]; error?: string }> {
+): Promise<{ run?: UnderwritingRun; steps?: UnderwritingStep[]; assumptions?: UnderwritingAssumption[]; error?: string }> {
   const membership = await getMembership()
   if ('error' in membership) return membership
   const { user, firmId } = membership
@@ -362,8 +399,11 @@ export async function processNextUnderwritingStep(
   const next = queued ?? retryable
 
   if (!next) {
-    const { data: steps } = await admin.from('underwriting_steps').select('*').eq('run_id', runId).order('position')
-    return { run, steps: steps ?? [] }
+    const [{ data: steps }, { data: assumptions }] = await Promise.all([
+      admin.from('underwriting_steps').select('*').eq('run_id', runId).order('position'),
+      admin.from('underwriting_assumptions').select('*').eq('run_id', runId).order('created_at'),
+    ])
+    return { run, steps: steps ?? [], assumptions: assumptions ?? [] }
   }
 
   const startedAt = new Date().toISOString()
@@ -430,7 +470,8 @@ export async function processNextUnderwritingStep(
     .order('position')
   const hasQueued = (steps ?? []).some((step) => step.status === 'queued' || step.status === 'running')
   const hasFailed = (steps ?? []).some((step) => step.status === 'failed')
-  const runStatus = hasFailed ? 'failed' : hasQueued ? 'running' : 'needs_review'
+  const hasReview = (steps ?? []).some((step) => step.status === 'needs_review')
+  const runStatus = hasFailed ? 'failed' : hasQueued ? 'running' : hasReview ? 'needs_review' : 'completed'
   const { data: updatedRun } = await admin
     .from('underwriting_runs')
     .update({
@@ -443,8 +484,163 @@ export async function processNextUnderwritingStep(
     .select('*')
     .single()
 
+  const { data: assumptions } = await admin.from('underwriting_assumptions').select('*').eq('run_id', runId).order('created_at')
   revalidatePath(`/deals/${run.deal_id}`)
   void user
-  return { run: updatedRun ?? run, steps: steps ?? [] }
+  return { run: updatedRun ?? run, steps: steps ?? [], assumptions: assumptions ?? [] }
 }
 
+export async function prepareUnderwritingAssumptionReview(
+  runId: string,
+): Promise<{ assumptions?: UnderwritingAssumption[]; step?: UnderwritingStep; error?: string }> {
+  try {
+    const membership = await getMembership()
+    if ('error' in membership) return membership
+    const { firmId } = membership
+    const admin = createAdminClient()
+    const [{ data: run }, { data: step }, { data: existing }] = await Promise.all([
+      admin.from('underwriting_runs').select('*').eq('id', runId).eq('firm_id', firmId).single(),
+      admin.from('underwriting_steps').select('*').eq('run_id', runId).eq('firm_id', firmId).eq('step_key', 'assumption_review').single(),
+      admin.from('underwriting_assumptions').select('*').eq('run_id', runId).eq('firm_id', firmId).order('created_at'),
+    ])
+    if (!run || !step) return { error: 'Assumption review is unavailable.' }
+    if (existing?.length) return { assumptions: existing, step }
+
+    const result = await buildStepResult(admin, run, step)
+    const { data: updatedStep, error: stepError } = await admin.from('underwriting_steps').update({
+      status: 'needs_review',
+      artifact_summary: result.summary,
+      artifact: result.artifact,
+      evidence_count: result.evidenceCount,
+      confidence: result.confidence,
+      completed_at: new Date().toISOString(),
+    }).eq('id', step.id).select('*').single()
+    if (stepError) throw stepError
+    const { data: assumptions } = await admin
+      .from('underwriting_assumptions')
+      .select('*')
+      .eq('run_id', runId)
+      .eq('firm_id', firmId)
+      .order('created_at')
+    revalidatePath(`/deals/${run.deal_id}`)
+    return { assumptions: assumptions ?? [], step: updatedStep ?? step }
+  } catch (error) {
+    console.error('[underwriting-room] assumption preparation failed:', error instanceof Error ? error.message : 'unknown error')
+    return { error: error instanceof Error ? error.message : 'Could not prepare assumption review.' }
+  }
+}
+
+export async function reviewUnderwritingAssumption(
+  runId: string,
+  assumptionId: string,
+  decision: 'approved' | 'rejected' | 'revised',
+  revisedValue?: number,
+): Promise<{ run?: UnderwritingRun; steps?: UnderwritingStep[]; assumptions?: UnderwritingAssumption[]; error?: string }> {
+  try {
+    if (!runId || !assumptionId) return { error: 'Invalid review request.' }
+    if (decision === 'revised' && (!Number.isFinite(revisedValue) || revisedValue === undefined)) {
+      return { error: 'Enter a valid revised value.' }
+    }
+
+    const membership = await getMembership()
+    if ('error' in membership) return membership
+    const { user, firmId } = membership
+    const admin = createAdminClient()
+
+    const { data: run } = await admin.from('underwriting_runs').select('*').eq('id', runId).eq('firm_id', firmId).single()
+    if (!run) return { error: 'Underwriting run not found.' }
+    const { data: assumption } = await admin
+      .from('underwriting_assumptions')
+      .select('*')
+      .eq('id', assumptionId)
+      .eq('run_id', runId)
+      .eq('firm_id', firmId)
+      .single()
+    if (!assumption) return { error: 'Assumption not found.' }
+
+    const approved = decision !== 'rejected'
+    const now = new Date().toISOString()
+    const update = {
+      ...(decision === 'revised' ? {
+        value: revisedValue as Json,
+        source_type: 'analyst_override',
+        source_reference: 'Analyst revision',
+        source_excerpt: 'Revised and approved in the Underwriting Room.',
+        confidence: 1,
+      } : {}),
+      approval_status: approved ? 'approved' as const : 'rejected' as const,
+      approved_by: approved ? user.id : null,
+      approved_at: approved ? now : null,
+    }
+    const { error: updateError } = await admin.from('underwriting_assumptions').update(update).eq('id', assumptionId)
+    if (updateError) throw updateError
+
+    const { error: approvalError } = await admin.from('underwriting_approvals').insert({
+      firm_id: firmId,
+      run_id: runId,
+      assumption_id: assumptionId,
+      decision: decision === 'rejected' ? 'rejected' : 'approved',
+      notes: decision === 'revised' ? `Revised from ${String(assumption.value)} to ${String(revisedValue)}.` : null,
+      decided_by: user.id,
+    })
+    if (approvalError) throw approvalError
+
+    const { data: assumptions } = await admin
+      .from('underwriting_assumptions')
+      .select('*')
+      .eq('run_id', runId)
+      .order('category')
+      .order('label')
+    const pending = (assumptions ?? []).filter((item) => item.approval_status === 'needs_review').length
+    const rejected = (assumptions ?? []).filter((item) => item.approval_status === 'rejected').length
+    const allApproved = Boolean(assumptions?.length) && pending === 0 && rejected === 0
+
+    await admin.from('underwriting_steps').update({
+      status: allApproved ? 'completed' : 'needs_review',
+      artifact_summary: allApproved
+        ? `${assumptions?.length ?? 0} underwriting assumptions approved`
+        : rejected
+          ? `${rejected} assumption${rejected === 1 ? '' : 's'} rejected`
+          : `${pending} assumption${pending === 1 ? '' : 's'} await approval`,
+      artifact: {
+        assumptions: (assumptions ?? []).map((item) => ({
+          id: item.id, label: item.label, value: item.value, unit: item.unit, approval: item.approval_status,
+        })),
+        pending,
+        rejected,
+      },
+      confidence: allApproved ? 1 : 0.7,
+    }).eq('run_id', runId).eq('step_key', 'assumption_review')
+
+    const { data: icStep } = await admin.from('underwriting_steps').select('*').eq('run_id', runId).eq('step_key', 'ic_readiness').maybeSingle()
+    if (icStep?.artifact && typeof icStep.artifact === 'object' && !Array.isArray(icStep.artifact)) {
+      const artifact = icStep.artifact as Record<string, Json>
+      const priorMissing = Array.isArray(artifact.missing)
+        ? artifact.missing.filter((item) => typeof item !== 'string' || !item.includes('underwriting assumption'))
+        : []
+      const missing = [...priorMissing, ...(!allApproved ? [`${pending + rejected} underwriting assumptions`] : [])]
+      await admin.from('underwriting_steps').update({
+        status: missing.length ? 'needs_review' : 'completed',
+        artifact_summary: missing.length ? `${missing.length} item${missing.length === 1 ? '' : 's'} block IC readiness` : 'Preflight package is ready for analyst approval',
+        artifact: { ...artifact, ready: missing.length === 0, missing },
+        evidence_count: Math.max(0, 5 - missing.length),
+        confidence: missing.length ? 0.55 : 0.9,
+      }).eq('id', icStep.id)
+    }
+
+    const { data: steps } = await admin.from('underwriting_steps').select('*').eq('run_id', runId).order('position')
+    const hasReview = (steps ?? []).some((step) => step.status === 'needs_review')
+    const { data: updatedRun } = await admin.from('underwriting_runs').update({
+      assumption_status: allApproved ? 'approved' : rejected ? 'rejected' : 'needs_review',
+      status: hasReview ? 'needs_review' : 'completed',
+      approved_by: allApproved ? user.id : null,
+      approved_at: allApproved ? now : null,
+    }).eq('id', runId).select('*').single()
+
+    revalidatePath(`/deals/${run.deal_id}`)
+    return { run: updatedRun ?? run, steps: steps ?? [], assumptions: assumptions ?? [] }
+  } catch (error) {
+    console.error('[underwriting-room] review failed:', error instanceof Error ? error.message : 'unknown error')
+    return { error: error instanceof Error ? error.message : 'Could not save assumption review.' }
+  }
+}

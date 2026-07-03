@@ -363,7 +363,9 @@ export interface Database {
           created_by: string; approved_by?: string | null; approved_at?: string | null
         }
         Update: {
-          value?: Json; approval_status?: 'needs_review' | 'approved' | 'rejected'
+          value?: Json; source_type?: string; source_reference?: string | null
+          source_excerpt?: string | null; confidence?: number | null
+          approval_status?: 'needs_review' | 'approved' | 'rejected'
           approved_by?: string | null; approved_at?: string | null
         }
       }

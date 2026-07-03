@@ -88,6 +88,9 @@ export default async function DealPage({ params }: Props) {
   const { data: initialUnderwritingSteps } = latestFullRun
     ? await supabase.from('underwriting_steps').select('*').eq('run_id', latestFullRun.id).order('position')
     : { data: [] }
+  const { data: initialUnderwritingAssumptions } = latestFullRun
+    ? await supabase.from('underwriting_assumptions').select('*').eq('run_id', latestFullRun.id).order('created_at')
+    : { data: [] }
 
   const [scoringCriteriaResult, dealScoresResult] = await Promise.all([
     getScoringCriteria(),
@@ -207,6 +210,7 @@ export default async function DealPage({ params }: Props) {
                 dealId={deal.id}
                 initialRun={latestFullRun}
                 initialSteps={initialUnderwritingSteps ?? []}
+                initialAssumptions={initialUnderwritingAssumptions ?? []}
               />
             </section>
           )}

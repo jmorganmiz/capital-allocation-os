@@ -1,13 +1,14 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { processNextUnderwritingStep, startUnderwritingPreflight } from '@/lib/actions/underwriting-room'
-import type { UnderwritingRun, UnderwritingStep } from '@/lib/types/database'
+import { prepareUnderwritingAssumptionReview, processNextUnderwritingStep, reviewUnderwritingAssumption, startUnderwritingPreflight } from '@/lib/actions/underwriting-room'
+import type { UnderwritingAssumption, UnderwritingRun, UnderwritingStep } from '@/lib/types/database'
 
 type Props = {
   dealId: string
   initialRun: UnderwritingRun | null
   initialSteps: UnderwritingStep[]
+  initialAssumptions: UnderwritingAssumption[]
 }
 
 const statusCopy: Record<UnderwritingStep['status'], string> = {
@@ -39,12 +40,25 @@ function artifactEntries(step: UnderwritingStep | undefined): Array<[string, str
   })
 }
 
-export default function UnderwritingRoom({ dealId, initialRun, initialSteps }: Props) {
+function assumptionValue(assumption: UnderwritingAssumption) {
+  const value = Number(assumption.value)
+  if (!Number.isFinite(value)) return 'Missing'
+  if (assumption.unit === '%') return `${(value * 100).toFixed(2).replace(/\.00$/, '')}%`
+  if (assumption.unit === '$/unit') return `$${value.toLocaleString()}/unit`
+  return `${value}${assumption.unit ? ` ${assumption.unit}` : ''}`
+}
+
+export default function UnderwritingRoom({ dealId, initialRun, initialSteps, initialAssumptions }: Props) {
   const [run, setRun] = useState(initialRun)
   const [steps, setSteps] = useState(initialSteps)
+  const [assumptions, setAssumptions] = useState(initialAssumptions)
   const [working, setWorking] = useState(false)
+  const [reviewingId, setReviewingId] = useState('')
   const [error, setError] = useState('')
   const [selectedId, setSelectedId] = useState(initialSteps[0]?.id ?? '')
+  const [revisions, setRevisions] = useState<Record<string, string>>(() => Object.fromEntries(
+    initialAssumptions.map((assumption) => [assumption.id, String(assumption.value ?? '')]),
+  ))
 
   const completedCount = steps.filter((step) => step.status === 'completed').length
   const reviewCount = steps.filter((step) => step.status === 'needs_review').length
@@ -74,6 +88,13 @@ export default function UnderwritingRoom({ dealId, initialRun, initialSteps }: P
         break
       }
       if (result.run) setRun(result.run)
+      if (result.assumptions) {
+        setAssumptions(result.assumptions)
+        setRevisions((current) => ({
+          ...Object.fromEntries(result.assumptions!.map((assumption) => [assumption.id, String(assumption.value ?? '')])),
+          ...current,
+        }))
+      }
       current = result.steps ?? current
       setSteps(current)
     }
@@ -91,6 +112,7 @@ export default function UnderwritingRoom({ dealId, initialRun, initialSteps }: P
     const createdSteps = result.steps ?? []
     setRun(result.run)
     setSteps(createdSteps)
+    setAssumptions(result.assumptions ?? [])
     setSelectedId(createdSteps[0]?.id ?? '')
     await processRun(result.run.id, createdSteps)
   }
@@ -100,9 +122,47 @@ export default function UnderwritingRoom({ dealId, initialRun, initialSteps }: P
     await processRun(run.id, steps)
   }
 
+  async function openStep(step: UnderwritingStep) {
+    setSelectedId(step.id)
+    if (step.step_key !== 'assumption_review' || assumptions.length || !run || reviewingId) return
+    setReviewingId('loading')
+    setError('')
+    const result = await prepareUnderwritingAssumptionReview(run.id)
+    if (result.error) setError(result.error)
+    if (result.assumptions) {
+      setAssumptions(result.assumptions)
+      setRevisions((current) => ({
+        ...current,
+        ...Object.fromEntries(result.assumptions!.map((item) => [item.id, String(item.value ?? '')])),
+      }))
+    }
+    if (result.step) setSteps((current) => current.map((item) => item.id === result.step!.id ? result.step! : item))
+    setReviewingId('')
+  }
+
   function focusReview() {
-    const firstReview = steps.find((step) => step.status === 'needs_review')
-    if (firstReview) setSelectedId(firstReview.id)
+    const firstReview = steps.find((step) => step.step_key === 'assumption_review' && step.status === 'needs_review')
+      ?? steps.find((step) => step.status === 'needs_review')
+    if (firstReview) void openStep(firstReview)
+  }
+
+  async function decideAssumption(assumption: UnderwritingAssumption, decision: 'approved' | 'rejected' | 'revised') {
+    if (!run || reviewingId) return
+    setReviewingId(assumption.id)
+    setError('')
+    const revisedValue = decision === 'revised' ? Number(revisions[assumption.id]) : undefined
+    const result = await reviewUnderwritingAssumption(run.id, assumption.id, decision, revisedValue)
+    if (result.error) setError(result.error)
+    if (result.run) setRun(result.run)
+    if (result.steps) setSteps(result.steps)
+    if (result.assumptions) {
+      setAssumptions(result.assumptions)
+      setRevisions((current) => ({
+        ...current,
+        ...Object.fromEntries(result.assumptions!.map((item) => [item.id, String(item.value ?? '')])),
+      }))
+    }
+    setReviewingId('')
   }
 
   const canResume = Boolean(run && steps.some((step) => step.status === 'queued' || (step.status === 'failed' && step.attempts < 3)))
@@ -156,7 +216,7 @@ export default function UnderwritingRoom({ dealId, initialRun, initialSteps }: P
               className="app-agent-step"
               data-status={step.status}
               data-selected={selected?.id === step.id}
-              onClick={() => setSelectedId(step.id)}
+              onClick={() => void openStep(step)}
             >
               <span className="app-agent-step-index">{String(step.position + 1).padStart(2, '0')}</span>
               <div>
@@ -187,7 +247,49 @@ export default function UnderwritingRoom({ dealId, initialRun, initialSteps }: P
             <p>Live artifact</p>
             <span>{selected ? statusCopy[selected.status] : 'Waiting'}</span>
           </div>
-          {selected ? (
+          {selected?.step_key === 'assumption_review' && reviewingId === 'loading' ? (
+            <div className="app-agent-inspector-placeholder">
+              <span />
+              <p>Preparing the durable assumption review…</p>
+            </div>
+          ) : selected?.step_key === 'assumption_review' && assumptions.length ? (
+            <div className="app-assumption-review">
+              <div className="app-assumption-review-summary">
+                <h3>Screening assumptions</h3>
+                <p>{assumptions.filter((item) => item.approval_status !== 'approved').length} require a decision before IC readiness.</p>
+              </div>
+              <div className="app-assumption-list">
+                {assumptions.map((assumption) => (
+                  <div className="app-assumption-item" data-status={assumption.approval_status} key={assumption.id}>
+                    <div className="app-assumption-item-heading">
+                      <div>
+                        <strong>{assumption.label}</strong>
+                        <small>{assumption.source_reference ?? 'No source'} · {Math.round((assumption.confidence ?? 0) * 100)}% confidence</small>
+                      </div>
+                      <span>{assumption.approval_status.replace('_', ' ')}</span>
+                    </div>
+                    <div className="app-assumption-value">
+                      <span>{assumptionValue(assumption)}</span>
+                      <div>
+                        <input
+                          aria-label={`Revised ${assumption.label}`}
+                          inputMode="decimal"
+                          value={revisions[assumption.id] ?? ''}
+                          onChange={(event) => setRevisions((current) => ({ ...current, [assumption.id]: event.target.value }))}
+                        />
+                        <small>raw model value</small>
+                      </div>
+                    </div>
+                    <div className="app-assumption-actions">
+                      <button type="button" onClick={() => decideAssumption(assumption, 'approved')} disabled={reviewingId === assumption.id}>Approve</button>
+                      <button type="button" onClick={() => decideAssumption(assumption, 'revised')} disabled={reviewingId === assumption.id}>Save revision</button>
+                      <button type="button" className="danger" onClick={() => decideAssumption(assumption, 'rejected')} disabled={reviewingId === assumption.id}>Reject</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : selected ? (
             <>
               <h3>{selected.label}</h3>
               <p>{selected.artifact_summary ?? 'This artifact will appear as soon as the workstream completes.'}</p>

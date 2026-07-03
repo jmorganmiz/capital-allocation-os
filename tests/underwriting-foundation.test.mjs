@@ -93,6 +93,20 @@ test('Underwriting Room claims one resumable step and persists structured artifa
   assert.match(roomAction, /credits_reserved: 0/)
 })
 
+test('Assumption review is tenant scoped, auditable, and drives IC readiness', () => {
+  assert.match(roomAction, /reviewUnderwritingAssumption/)
+  assert.match(roomAction, /prepareUnderwritingAssumptionReview/)
+  assert.match(roomAction, /if \(existing\?\.length\) return/)
+  assert.match(roomAction, /\.eq\('firm_id', firmId\)/)
+  assert.match(roomAction, /underwriting_approvals/)
+  assert.match(roomAction, /decision === 'revised'/)
+  assert.match(roomAction, /source_reference: 'Analyst revision'/)
+  assert.match(roomAction, /assumption_status: allApproved \? 'approved'/)
+  assert.match(roomAction, /step_key', 'ic_readiness'/)
+  assert.match(room, /Save revision/)
+  assert.match(room, /raw model value/)
+})
+
 test('Agent visuals expose status and artifacts without pretending to show reasoning', () => {
   assert.match(room, /Truthful progress only/)
   assert.match(room, /Live artifact/)

@@ -753,6 +753,87 @@
 .app-root .app-agent-inspector dt { color: #666677; font-size: 9px; text-transform: capitalize; }
 .app-root .app-agent-inspector dd { margin: 0; color: #b8b8c2; font-size: 9px; text-align: right; }
 .app-root .app-agent-inspector-error { margin-top: 14px; color: #ff747b; font-size: 9px; }
+
+.app-root .app-assumption-review-summary h3 { margin-bottom: 5px; }
+.app-root .app-assumption-review-summary p {
+  margin: 0 0 14px;
+  color: #777788;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.app-root .app-assumption-list {
+  display: grid;
+  gap: 8px;
+}
+
+.app-root .app-assumption-item {
+  padding: 11px;
+  border: 1px solid rgba(255, 184, 0, 0.18);
+  border-radius: 9px;
+  background: #14141e;
+}
+
+.app-root .app-assumption-item[data-status="approved"] { border-color: rgba(53, 212, 125, 0.22); }
+.app-root .app-assumption-item[data-status="rejected"] { border-color: rgba(255, 88, 96, 0.28); }
+
+.app-root .app-assumption-item-heading,
+.app-root .app-assumption-value,
+.app-root .app-assumption-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.app-root .app-assumption-item-heading strong { display: block; color: #dedee5; font-size: 10px; }
+.app-root .app-assumption-item-heading small { display: block; margin-top: 3px; color: #616172; font-size: 7px; }
+.app-root .app-assumption-item-heading > span {
+  color: #d6a32e;
+  font-size: 7px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.app-root .app-assumption-item[data-status="approved"] .app-assumption-item-heading > span { color: #4bd787; }
+.app-root .app-assumption-item[data-status="rejected"] .app-assumption-item-heading > span { color: #ff6d75; }
+
+.app-root .app-assumption-value {
+  margin: 10px 0;
+  padding: 8px 0;
+  border-top: 1px solid rgba(112, 112, 125, 0.1);
+  border-bottom: 1px solid rgba(112, 112, 125, 0.1);
+}
+.app-root .app-assumption-value > span { color: #f0f0f3; font-size: 14px; font-weight: 600; }
+.app-root .app-assumption-value > div { text-align: right; }
+.app-root .app-assumption-value input {
+  width: 74px;
+  padding: 5px 7px;
+  border: 1px solid rgba(112, 112, 125, 0.22);
+  border-radius: 6px;
+  outline: none;
+  background: #101018;
+  color: #d8d8df;
+  font: inherit;
+  font-size: 9px;
+  text-align: right;
+}
+.app-root .app-assumption-value input:focus { border-color: rgba(82, 102, 235, 0.7); }
+.app-root .app-assumption-value small { display: block; margin-top: 3px; color: #565667; font-size: 7px; }
+
+.app-root .app-assumption-actions { justify-content: flex-end; }
+.app-root .app-assumption-actions button {
+  padding: 5px 7px;
+  border: 1px solid rgba(82, 102, 235, 0.26);
+  border-radius: 999px;
+  background: rgba(82, 102, 235, 0.07);
+  color: #aeb6ff;
+  font: inherit;
+  font-size: 7px;
+  cursor: pointer;
+}
+.app-root .app-assumption-actions button:hover { border-color: rgba(82, 102, 235, 0.55); color: #d3d7ff; }
+.app-root .app-assumption-actions button.danger { border-color: rgba(255, 88, 96, 0.22); background: rgba(255, 88, 96, 0.05); color: #ff858b; }
+.app-root .app-assumption-actions button:disabled { cursor: wait; opacity: 0.45; }
 .app-root .app-agent-inspector-placeholder {
   display: grid;
   min-height: 220px;
