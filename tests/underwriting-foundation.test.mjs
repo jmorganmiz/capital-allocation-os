@@ -9,6 +9,8 @@ const migration = fs.readFileSync(
   path.join(ROOT, 'supabase/migrations/020_underwriting_foundation.sql'),
   'utf8',
 )
+const action = fs.readFileSync(path.join(ROOT, 'lib/actions/underwriting.ts'), 'utf8')
+const quickPencil = fs.readFileSync(path.join(ROOT, 'components/deal/QuickPencil.tsx'), 'utf8')
 
 test('underwriting records and usage are tenant scoped', () => {
   for (const table of [
@@ -46,3 +48,18 @@ test('AI and market assumptions require explicit review states', () => {
   assert.match(migration, /decision IN \('approved', 'rejected', 'changes_requested'\)/)
 })
 
+test('Quick Pencil is recalculated authoritatively and does not consume credits', () => {
+  assert.match(action, /runUnderwriting\(modelInput\)/)
+  assert.match(action, /profile\.firm_id !== deal\.firm_id/)
+  assert.match(action, /createAdminClient\(\)/)
+  assert.match(action, /billable_credits: 0/)
+  assert.match(action, /credits_settled: 0/)
+  assert.match(action, /idempotency_key: `\$\{requestId\}:\$\{scenario\}`/)
+})
+
+test('Quick Pencil visibly distinguishes assumptions from approved underwriting', () => {
+  assert.match(quickPencil, /No AI assumptions and no credits consumed/)
+  assert.match(quickPencil, /Saved outputs remain marked “needs review.”/)
+  assert.match(quickPencil, /Needs review/)
+  assert.match(quickPencil, /Downside stresses vacancy, rent growth, renovation cost, and exit cap/)
+})
