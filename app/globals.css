@@ -142,18 +142,21 @@
 }
 
 .app-root .app-underwriting-allowance {
-  min-width: 150px;
-  padding: 13px 15px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  min-width: auto;
+  padding: 9px 13px;
   border: 1px solid rgba(82, 102, 235, 0.3);
   border-radius: 12px;
   background: rgba(82, 102, 235, 0.08);
-  text-align: right;
+  white-space: nowrap;
 }
 
 .app-root .app-underwriting-allowance strong {
-  display: block;
+  display: inline;
   color: #f5f5f7;
-  font-size: 24px;
+  font-size: 18px;
   line-height: 1;
 }
 
@@ -171,11 +174,65 @@
 .app-root .app-uw-assumption-note strong { color: #ffc23d; }
 .app-root .app-uw-assumption-note span { color: #aaa9b5; }
 
+.app-root .app-underwriting-section {
+  min-width: 0;
+  scroll-margin-top: 96px;
+}
+
+.app-root .app-uw-form-sections {
+  display: grid;
+  gap: 24px;
+  padding: 24px 26px 28px;
+}
+
+.app-root .app-uw-form-section + .app-uw-form-section {
+  padding-top: 24px;
+  border-top: 1px solid rgba(112, 112, 125, 0.13);
+}
+
+.app-root .app-uw-form-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.app-root .app-uw-form-heading > span {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  place-items: center;
+  border: 1px solid rgba(82, 102, 235, 0.32);
+  border-radius: 7px;
+  background: rgba(82, 102, 235, 0.08);
+  color: #8290f4;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.app-root .app-uw-form-heading strong {
+  display: block;
+  margin-bottom: 2px;
+  color: #dddde4;
+  font-size: 12px;
+}
+
+.app-root .app-uw-form-heading small {
+  display: block;
+  color: #717181;
+  font-size: 10px;
+}
+
 .app-root .app-uw-form-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
-  padding: 20px 26px 24px;
+  padding: 0;
+}
+
+.app-root .app-uw-form-grid.three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .app-root .app-uw-field {
@@ -391,15 +448,17 @@
 @media (max-width: 760px) {
   .app-root .app-underwriting-header,
   .app-root .app-uw-run-row { align-items: stretch; flex-direction: column; }
-  .app-root .app-underwriting-allowance { text-align: left; }
+  .app-root .app-underwriting-allowance { align-self: flex-start; }
   .app-root .app-uw-assumption-note { flex-direction: column; }
-  .app-root .app-uw-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .app-root .app-uw-form-grid,
+  .app-root .app-uw-form-grid.three { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .app-root .app-uw-results { grid-template-columns: 1fr; }
   .app-root .app-uw-run-row .btn-primary { width: 100%; }
 }
 
 @media (max-width: 480px) {
-  .app-root .app-uw-form-grid { grid-template-columns: 1fr; }
+  .app-root .app-uw-form-grid,
+  .app-root .app-uw-form-grid.three { grid-template-columns: 1fr; }
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }

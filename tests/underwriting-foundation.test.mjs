@@ -59,7 +59,7 @@ test('Quick Pencil is recalculated authoritatively and does not consume credits'
 
 test('Quick Pencil visibly distinguishes assumptions from approved underwriting', () => {
   assert.match(quickPencil, /No AI assumptions and no credits consumed/)
-  assert.match(quickPencil, /Saved outputs remain marked “needs review.”/)
+  assert.match(quickPencil, /saved outputs remain “needs review.”/)
   assert.match(quickPencil, /Needs review/)
   assert.match(quickPencil, /Downside stresses vacancy, rent growth, renovation cost, and exit cap/)
 })

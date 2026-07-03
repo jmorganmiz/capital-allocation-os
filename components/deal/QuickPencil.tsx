@@ -65,6 +65,7 @@ function InputField({
   suffix,
   step = '1',
   min = '0',
+  format = 'number',
 }: {
   label: string
   value: string
@@ -72,17 +73,31 @@ function InputField({
   suffix?: string
   step?: string
   min?: string
+  format?: 'currency' | 'number' | 'decimal'
 }) {
+  const [focused, setFocused] = useState(false)
+  const numeric = asNumber(value)
+  const displayed = focused || !Number.isFinite(numeric)
+    ? value
+    : format === 'currency'
+      ? numeric.toLocaleString('en-US', { maximumFractionDigits: 0 })
+      : format === 'decimal'
+        ? numeric.toLocaleString('en-US', { maximumFractionDigits: 2 })
+        : numeric.toLocaleString('en-US', { maximumFractionDigits: 0 })
+
   return (
     <label className="app-uw-field">
       <span>{label}</span>
       <div>
         <input
-          type="number"
+          type="text"
+          inputMode="decimal"
           min={min}
           step={step}
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
+          value={displayed}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          onChange={(event) => onChange(event.target.value.replace(/[^0-9.-]/g, ''))}
         />
         {suffix && <small>{suffix}</small>}
       </div>
@@ -165,33 +180,59 @@ export default function QuickPencil({ dealId, entitlementLabel, monthlyAllowance
         </div>
         <div className="app-underwriting-allowance">
           <strong>{monthlyAllowance}</strong>
-          <span>full underwrites / month</span>
+          <span>full runs available</span>
         </div>
       </div>
 
       <div className="app-uw-assumption-note">
         <strong>Screening assumptions</strong>
-        <span>Review the prefilled values before running. Saved outputs remain marked “needs review.”</span>
+        <span>Prefilled from the latest deal snapshot where possible. Review before running; saved outputs remain “needs review.”</span>
       </div>
 
-      <div className="app-uw-form-grid">
-        <InputField label="Purchase price" value={form.purchasePrice} onChange={(value) => update('purchasePrice', value)} suffix="$" />
-        <InputField label="Units" value={form.totalUnits} onChange={(value) => update('totalUnits', value)} />
-        <InputField label="Current avg. rent" value={form.currentRent} onChange={(value) => update('currentRent', value)} suffix="$/mo" />
-        <InputField label="Renovated rent" value={form.marketRent} onChange={(value) => update('marketRent', value)} suffix="$/mo" />
-        <InputField label="Fixed operating expenses" value={form.fixedOperatingExpenses} onChange={(value) => update('fixedOperatingExpenses', value)} suffix="$/yr" />
-        <InputField label="Property taxes" value={form.propertyTaxes} onChange={(value) => update('propertyTaxes', value)} suffix="$/yr" />
-        <InputField label="Insurance" value={form.insurance} onChange={(value) => update('insurance', value)} suffix="$/yr" />
-        <InputField label="Vacancy" value={form.vacancyPct} onChange={(value) => update('vacancyPct', value)} suffix="%" step="0.1" />
-        <InputField label="Renovation cost" value={form.renovationCostPerUnit} onChange={(value) => update('renovationCostPerUnit', value)} suffix="$/unit" />
-        <InputField label="Units renovated / year" value={form.unitsRenovatedPerYear} onChange={(value) => update('unitsRenovatedPerYear', value)} />
-        <InputField label="LTV" value={form.ltv} onChange={(value) => update('ltv', value)} suffix="%" step="0.1" />
-        <InputField label="Interest rate" value={form.interestRate} onChange={(value) => update('interestRate', value)} suffix="%" step="0.01" />
-        <InputField label="Amortization" value={form.amortizationYears} onChange={(value) => update('amortizationYears', value)} suffix="years" />
-        <InputField label="Interest only" value={form.interestOnlyMonths} onChange={(value) => update('interestOnlyMonths', value)} suffix="months" />
-        <InputField label="Hold period" value={form.holdPeriodYears} onChange={(value) => update('holdPeriodYears', value)} suffix="years" />
-        <InputField label="Exit cap" value={form.exitCapRate} onChange={(value) => update('exitCapRate', value)} suffix="%" step="0.05" />
-        <InputField label="Annual rent growth" value={form.rentGrowth} onChange={(value) => update('rentGrowth', value)} suffix="%" step="0.1" min="-10" />
+      <div className="app-uw-form-sections">
+        <div className="app-uw-form-section">
+          <div className="app-uw-form-heading">
+            <span>01</span>
+            <div><strong>Property operations</strong><small>Basis, rents, and current operating load.</small></div>
+          </div>
+          <div className="app-uw-form-grid">
+            <InputField label="Purchase price" value={form.purchasePrice} onChange={(value) => update('purchasePrice', value)} suffix="$" format="currency" />
+            <InputField label="Units" value={form.totalUnits} onChange={(value) => update('totalUnits', value)} />
+            <InputField label="Current avg. rent" value={form.currentRent} onChange={(value) => update('currentRent', value)} suffix="$/mo" format="currency" />
+            <InputField label="Renovated rent" value={form.marketRent} onChange={(value) => update('marketRent', value)} suffix="$/mo" format="currency" />
+            <InputField label="Fixed operating expenses" value={form.fixedOperatingExpenses} onChange={(value) => update('fixedOperatingExpenses', value)} suffix="$/yr" format="currency" />
+            <InputField label="Property taxes" value={form.propertyTaxes} onChange={(value) => update('propertyTaxes', value)} suffix="$/yr" format="currency" />
+            <InputField label="Insurance" value={form.insurance} onChange={(value) => update('insurance', value)} suffix="$/yr" format="currency" />
+            <InputField label="Vacancy" value={form.vacancyPct} onChange={(value) => update('vacancyPct', value)} suffix="%" step="0.1" format="decimal" />
+          </div>
+        </div>
+
+        <div className="app-uw-form-section">
+          <div className="app-uw-form-heading">
+            <span>02</span>
+            <div><strong>Value creation</strong><small>Renovation pace, cost, and revenue growth.</small></div>
+          </div>
+          <div className="app-uw-form-grid three">
+            <InputField label="Renovation cost" value={form.renovationCostPerUnit} onChange={(value) => update('renovationCostPerUnit', value)} suffix="$/unit" format="currency" />
+            <InputField label="Units renovated / year" value={form.unitsRenovatedPerYear} onChange={(value) => update('unitsRenovatedPerYear', value)} />
+            <InputField label="Annual rent growth" value={form.rentGrowth} onChange={(value) => update('rentGrowth', value)} suffix="%" step="0.1" min="-10" format="decimal" />
+          </div>
+        </div>
+
+        <div className="app-uw-form-section">
+          <div className="app-uw-form-heading">
+            <span>03</span>
+            <div><strong>Capital and exit</strong><small>Debt structure, hold period, and terminal value.</small></div>
+          </div>
+          <div className="app-uw-form-grid three">
+            <InputField label="LTV" value={form.ltv} onChange={(value) => update('ltv', value)} suffix="%" step="0.1" format="decimal" />
+            <InputField label="Interest rate" value={form.interestRate} onChange={(value) => update('interestRate', value)} suffix="%" step="0.01" format="decimal" />
+            <InputField label="Amortization" value={form.amortizationYears} onChange={(value) => update('amortizationYears', value)} suffix="years" />
+            <InputField label="Interest only" value={form.interestOnlyMonths} onChange={(value) => update('interestOnlyMonths', value)} suffix="months" />
+            <InputField label="Hold period" value={form.holdPeriodYears} onChange={(value) => update('holdPeriodYears', value)} suffix="years" />
+            <InputField label="Exit cap" value={form.exitCapRate} onChange={(value) => update('exitCapRate', value)} suffix="%" step="0.05" format="decimal" />
+          </div>
+        </div>
       </div>
 
       <div className="app-uw-run-row">

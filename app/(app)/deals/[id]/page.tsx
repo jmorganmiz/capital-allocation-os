@@ -172,7 +172,7 @@ export default async function DealPage({ params }: Props) {
           </section>
 
           {entitlement?.underwriting_enabled && (
-            <section id="section-underwriting" className="app-deal-section">
+            <section id="section-underwriting" className="app-underwriting-section">
               <QuickPencil
                 dealId={deal.id}
                 entitlementLabel={entitlement.plan_key === 'underwriting_beta' ? 'Beta' : 'Active'}
