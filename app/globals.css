@@ -841,6 +841,88 @@
 .app-root .app-assumption-actions button:hover { border-color: rgba(82, 102, 235, 0.55); color: #d3d7ff; }
 .app-root .app-assumption-actions button.danger { border-color: rgba(255, 88, 96, 0.22); background: rgba(255, 88, 96, 0.05); color: #ff858b; }
 .app-root .app-assumption-actions button:disabled { cursor: wait; opacity: 0.45; }
+
+.app-root .app-risk-review > h3,
+.app-root .app-ic-review > h3 { margin-bottom: 6px; }
+.app-root .app-risk-review > p,
+.app-root .app-ic-review > p {
+  margin: 0 0 14px;
+  color: #777788;
+  font-size: 9px;
+  line-height: 1.5;
+}
+.app-root .app-risk-review textarea {
+  width: 100%;
+  min-height: 210px;
+  resize: vertical;
+  padding: 11px;
+  border: 1px solid rgba(112, 112, 125, 0.2);
+  border-radius: 9px;
+  outline: none;
+  background: #111119;
+  color: #d9d9e0;
+  font: inherit;
+  font-size: 10px;
+  line-height: 1.55;
+}
+.app-root .app-risk-review textarea:focus { border-color: rgba(82, 102, 235, 0.65); }
+.app-root .app-risk-review-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+}
+.app-root .app-risk-review-footer span { color: #5f5f70; font-size: 8px; }
+.app-root .app-risk-review-footer button,
+.app-root .app-ic-ready button {
+  padding: 8px 11px;
+  border: 0;
+  border-radius: 999px;
+  background: #5266eb;
+  color: #fff;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.app-root .app-risk-review-footer button:disabled,
+.app-root .app-ic-ready button:disabled { cursor: wait; opacity: 0.5; }
+
+.app-root .app-ic-blockers { display: grid; gap: 7px; }
+.app-root .app-ic-blockers a,
+.app-root .app-ic-blockers button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid rgba(255, 184, 0, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 184, 0, 0.035);
+  color: #c9c9d1;
+  font: inherit;
+  font-size: 9px;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.app-root .app-ic-blockers strong { color: #d6a32e; font-size: 8px; font-weight: 600; }
+.app-root .app-ic-ready {
+  padding: 16px;
+  border: 1px solid rgba(53, 212, 125, 0.22);
+  border-radius: 10px;
+  background: rgba(53, 212, 125, 0.035);
+}
+.app-root .app-ic-ready > span {
+  color: #4bd787;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.app-root .app-ic-ready p { margin: 10px 0 14px; color: #848493; font-size: 9px; line-height: 1.5; }
 .app-root .app-agent-inspector-placeholder {
   display: grid;
   min-height: 220px;

@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { prepareUnderwritingAssumptionReview, processNextUnderwritingStep, reviewUnderwritingAssumption, startUnderwritingPreflight } from '@/lib/actions/underwriting-room'
+import { approveUnderwritingPreflight, approveUnderwritingRiskReview, prepareUnderwritingAssumptionReview, processNextUnderwritingStep, reviewUnderwritingAssumption, startUnderwritingPreflight } from '@/lib/actions/underwriting-room'
 import type { UnderwritingAssumption, UnderwritingRun, UnderwritingStep } from '@/lib/types/database'
 
 type Props = {
@@ -54,6 +54,12 @@ function assumptionInputValue(assumption: UnderwritingAssumption) {
   return String(assumption.unit === '%' ? value * 100 : value)
 }
 
+function artifactRecord(step: UnderwritingStep | undefined): Record<string, unknown> {
+  return step?.artifact && typeof step.artifact === 'object' && !Array.isArray(step.artifact)
+    ? step.artifact as Record<string, unknown>
+    : {}
+}
+
 export default function UnderwritingRoom({ dealId, initialRun, initialSteps, initialAssumptions }: Props) {
   const [run, setRun] = useState(initialRun)
   const [steps, setSteps] = useState(initialSteps)
@@ -62,6 +68,8 @@ export default function UnderwritingRoom({ dealId, initialRun, initialSteps, ini
   const [reviewingId, setReviewingId] = useState('')
   const [error, setError] = useState('')
   const [selectedId, setSelectedId] = useState(initialSteps[0]?.id ?? '')
+  const initialRiskStep = initialSteps.find((step) => step.step_key === 'risk_review')
+  const [riskNarrative, setRiskNarrative] = useState(() => String(artifactRecord(initialRiskStep).risk_note ?? ''))
   const [revisions, setRevisions] = useState<Record<string, string>>(() => Object.fromEntries(
     initialAssumptions.map((assumption) => [assumption.id, assumptionInputValue(assumption)]),
   ))
@@ -174,14 +182,54 @@ export default function UnderwritingRoom({ dealId, initialRun, initialSteps, ini
     setReviewingId('')
   }
 
+  async function approveRisk() {
+    if (!run || working) return
+    setWorking(true)
+    setError('')
+    const result = await approveUnderwritingRiskReview(run.id, riskNarrative)
+    if (result.error) setError(result.error)
+    if (result.run) setRun(result.run)
+    if (result.steps) setSteps(result.steps)
+    setWorking(false)
+  }
+
+  async function finalizePreflight() {
+    if (!run || working || run.approved_at) return
+    setWorking(true)
+    setError('')
+    const result = await approveUnderwritingPreflight(run.id)
+    if (result.error) setError(result.error)
+    if (result.run) setRun(result.run)
+    if (result.steps) setSteps(result.steps)
+    setWorking(false)
+  }
+
+  function openBlocker(label: string) {
+    if (label === 'Risk narrative') {
+      const step = steps.find((item) => item.step_key === 'risk_review')
+      if (step) void openStep(step)
+      return
+    }
+    if (label.includes('underwriting assumption')) {
+      const step = steps.find((item) => item.step_key === 'assumption_review')
+      if (step) void openStep(step)
+    }
+  }
+
   const canResume = Boolean(run && steps.some((step) => step.status === 'queued' || (step.status === 'failed' && step.attempts < 3)))
-  const primaryAction = canResume ? resume : reviewCount ? focusReview : start
+  const isApproved = Boolean(run?.approved_at && run.status === 'completed')
+  const canFinalize = Boolean(run && !canResume && reviewCount === 0 && !isApproved)
+  const primaryAction = canResume ? resume : reviewCount ? focusReview : canFinalize ? finalizePreflight : start
   const primaryLabel = working
     ? 'Workstreams running…'
     : canResume
       ? 'Resume preflight'
       : reviewCount
         ? `Review ${reviewCount} workstream${reviewCount === 1 ? '' : 's'}`
+        : isApproved
+          ? 'Preflight approved'
+          : canFinalize
+            ? 'Approve preflight'
         : run
           ? 'Run fresh preflight'
           : 'Start preflight'
@@ -195,7 +243,7 @@ export default function UnderwritingRoom({ dealId, initialRun, initialSteps, ini
           <small>Inspectable workstreams prepare the deal for document extraction, market verification, and analyst approval.</small>
         </div>
         <div className="app-agent-room-actions">
-          <button className="btn-primary" onClick={primaryAction} disabled={working}>{primaryLabel}</button>
+          <button className="btn-primary" onClick={primaryAction} disabled={working || isApproved}>{primaryLabel}</button>
           {run && reviewCount > 0 && !canResume && (
             <button className="app-agent-rerun" onClick={start} disabled={working}>Run fresh preflight</button>
           )}
@@ -205,7 +253,7 @@ export default function UnderwritingRoom({ dealId, initialRun, initialSteps, ini
       <div className="app-agent-progress">
         <div className="app-agent-progress-copy">
           <strong>{steps.length ? `${completedCount} complete · ${reviewCount} review` : 'Not started'}</strong>
-          <span>{run?.status === 'needs_review' ? 'Preflight finished — analyst action required' : working ? `${finishedCount} of ${steps.length} workstreams finished` : 'No credits consumed during preflight'}</span>
+          <span>{isApproved ? 'Approved package locked for the next underwriting phase' : run?.status === 'needs_review' ? 'Preflight finished — analyst action required' : working ? `${finishedCount} of ${steps.length} workstreams finished` : 'No credits consumed during preflight'}</span>
         </div>
         <div className="app-agent-progress-track">
           <span className="clear" style={{ width: `${clearProgress}%` }} />
@@ -256,7 +304,51 @@ export default function UnderwritingRoom({ dealId, initialRun, initialSteps, ini
             <p>Live artifact</p>
             <span>{selected ? statusCopy[selected.status] : 'Waiting'}</span>
           </div>
-          {selected?.step_key === 'assumption_review' && reviewingId === 'loading' ? (
+          {selected?.step_key === 'risk_review' ? (
+            <div className="app-risk-review">
+              <h3>Risk narrative</h3>
+              <p>Document the principal downside risks, evidence, and mitigants before approving this workstream.</p>
+              <textarea
+                value={riskNarrative}
+                onChange={(event) => setRiskNarrative(event.target.value)}
+                placeholder="Example: Current rents require verification against the rent roll; downside assumes slower lease trade-outs…"
+                rows={10}
+              />
+              <div className="app-risk-review-footer">
+                <span>{riskNarrative.trim().length} characters</span>
+                <button type="button" onClick={approveRisk} disabled={working}>Save & approve risk review</button>
+              </div>
+            </div>
+          ) : selected?.step_key === 'ic_readiness' ? (
+            <div className="app-ic-review">
+              <h3>IC readiness</h3>
+              {Array.isArray(artifactRecord(selected).missing) && (artifactRecord(selected).missing as unknown[]).length ? (
+                <>
+                  <p>Resolve these blockers before the reviewed package can be locked.</p>
+                  <div className="app-ic-blockers">
+                    {(artifactRecord(selected).missing as unknown[]).map((item) => {
+                      const label = String(item)
+                      const href = label === 'Deal documents' ? '#section-files'
+                        : label === 'Investment thesis' ? '#section-notes'
+                          : label === 'Quick Pencil' ? '#section-underwriting'
+                            : ''
+                      return href ? (
+                        <a href={href} key={label}><span>{label}</span><strong>Open →</strong></a>
+                      ) : (
+                        <button type="button" onClick={() => openBlocker(label)} key={label}><span>{label}</span><strong>Review →</strong></button>
+                      )
+                    })}
+                  </div>
+                </>
+              ) : (
+                <div className="app-ic-ready">
+                  <span>Ready</span>
+                  <p>All required records and analyst approvals are present. Final approval locks this exact preflight package.</p>
+                  <button type="button" onClick={finalizePreflight} disabled={working || isApproved}>{isApproved ? 'Preflight approved' : 'Approve & lock package'}</button>
+                </div>
+              )}
+            </div>
+          ) : selected?.step_key === 'assumption_review' && reviewingId === 'loading' ? (
             <div className="app-agent-inspector-placeholder">
               <span />
               <p>Preparing the durable assumption review…</p>

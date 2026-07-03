@@ -108,6 +108,20 @@ test('Assumption review is tenant scoped, auditable, and drives IC readiness', (
   assert.match(room, /enteredValue \/ 100/)
 })
 
+test('Risk and final preflight approval remain explicit human gates', () => {
+  assert.match(roomAction, /approveUnderwritingRiskReview/)
+  assert.match(roomAction, /approveUnderwritingPreflight/)
+  assert.match(roomAction, /Risk narrative reviewed and approved/)
+  assert.match(roomAction, /Final preflight package approved and locked/)
+  assert.match(roomAction, /Resolve before final approval/)
+  assert.match(roomAction, /output_snapshot: lockedPackage/)
+  assert.match(roomAction, /run\.approved_at && run\.status === 'completed'/)
+  assert.match(roomAction, /input_snapshot, output_snapshot/)
+  assert.match(room, /Save & approve risk review/)
+  assert.match(room, /Approve & lock package/)
+  assert.match(room, /Deal documents.*section-files/s)
+})
+
 test('Agent visuals expose status and artifacts without pretending to show reasoning', () => {
   assert.match(room, /Truthful progress only/)
   assert.match(room, /Live artifact/)
