@@ -20,7 +20,8 @@ const SUGGESTED_PROMPTS = [
   'What needs attention in my pipeline?',
   'Why are deals getting killed?',
   'Have we seen this broker before?',
-  'Summarize firm memory',
+  'What should we pursue from Property Finder?',
+  'How are acquired properties performing?',
 ]
 
 function makeId() {
@@ -48,7 +49,7 @@ export default function AnalystDrawer() {
     {
       id: makeId(),
       role: 'assistant',
-      content: 'Ask me about your firm memory: stale deals, killed deals, broker history, similar deals, or pipeline shape.',
+      content: 'Ask me about your pipeline, killed deals, broker history, sourced opportunities, similar deals, or actual property performance.',
     },
   ])
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -301,7 +302,7 @@ export default function AnalystDrawer() {
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask about killed deals, stale deals, brokers, similar deals..."
+                placeholder="Ask about deals, sourcing, brokers, underwriting, or actuals..."
                 rows={3}
               />
               <button onClick={() => ask(input)} disabled={loading || !input.trim()}>

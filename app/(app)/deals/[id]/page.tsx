@@ -13,6 +13,7 @@ import SimilarDeals from '@/components/deal/SimilarDeals'
 import QuickPencil from '@/components/deal/QuickPencil'
 import UnderwritingRoom from '@/components/deal/UnderwritingRoom'
 import FullUnderwriteExecution from '@/components/deal/FullUnderwriteExecution'
+import PortfolioActuals from '@/components/deal/PortfolioActuals'
 import { getScoringCriteria, getDealScores } from '@/lib/actions/scoring'
 import { createClient } from '@/lib/supabase/server'
 
@@ -89,6 +90,12 @@ export default async function DealPage({ params }: Props) {
   const dealStageId = deal?.stage_id ?? null
   const latestFullRun = fullUnderwritingRuns?.[0] ?? null
   const latestExecutionRun = fullExecutionRuns?.[0] ?? null
+  const { data: portfolioActuals } = await supabase.from('portfolio_actuals').select('*').eq('deal_id', id).order('period_date', { ascending: false })
+  const executionOutput = latestExecutionRun?.output_snapshot && typeof latestExecutionRun.output_snapshot === 'object' && !Array.isArray(latestExecutionRun.output_snapshot)
+    ? latestExecutionRun.output_snapshot as Record<string, unknown>
+    : null
+  const noiByYear = Array.isArray(executionOutput?.noiByYear) ? executionOutput.noiByYear : []
+  const underwrittenYearOneNoi = Number.isFinite(Number(noiByYear[0])) ? Number(noiByYear[0]) : null
   const billingPeriodStart = entitlement?.current_period_start ?? new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
   const billingPeriodEnd = entitlement?.current_period_end ?? new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString()
   const { data: allowanceRuns } = entitlement?.underwriting_enabled
@@ -261,6 +268,9 @@ export default async function DealPage({ params }: Props) {
               />
             </section>
           )}
+          <section id="section-actuals" className="app-section-anchor">
+            <PortfolioActuals dealId={id} initialActuals={portfolioActuals ?? []} underwrittenYearOneNoi={underwrittenYearOneNoi} />
+          </section>
 
           <section id="section-scoring" className="app-deal-section">
             <ScoringSection

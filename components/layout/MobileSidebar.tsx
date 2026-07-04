@@ -13,6 +13,7 @@ interface Props {
 const navLinks = [
   { href: '/intake', label: 'Intake' },
   { href: '/pipeline', label: 'Pipeline' },
+  { href: '/sourcing', label: 'Source' },
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/contacts', label: 'Contacts' },
   { href: '/graveyard', label: 'Graveyard' },

@@ -276,6 +276,60 @@ export interface Database {
           current_period_end?: string | null
         }
       }
+      underwriting_access_requests: {
+        Row: {
+          id: string; firm_id: string; requested_by: string; status: 'pending' | 'approved' | 'declined'
+          team_size: number; monthly_deal_volume: number; workflow_notes: string | null
+          reviewed_by: string | null; reviewed_at: string | null; created_at: string; updated_at: string
+        }
+        Insert: {
+          id?: string; firm_id: string; requested_by: string; status?: 'pending' | 'approved' | 'declined'
+          team_size: number; monthly_deal_volume: number; workflow_notes?: string | null
+          reviewed_by?: string | null; reviewed_at?: string | null
+        }
+        Update: {
+          status?: 'pending' | 'approved' | 'declined'; team_size?: number; monthly_deal_volume?: number
+          workflow_notes?: string | null; reviewed_by?: string | null; reviewed_at?: string | null
+        }
+      }
+      sourcing_opportunities: {
+        Row: {
+          id: string; firm_id: string; source_type: 'listing_url' | 'csv_import' | 'broker_email' | 'licensed_feed' | 'manual'
+          source_url: string | null; source_key: string; property_name: string; address: string | null
+          market: string | null; asset_type: string | null; asking_price: number | null; unit_count: number | null
+          status: 'new' | 'matched' | 'promoted' | 'dismissed'; buy_box_id: string | null; match_score: number | null
+          match_reasons: Json; possible_duplicate_deal_id: string | null; promoted_deal_id: string | null
+          captured_by: string; created_at: string; updated_at: string
+        }
+        Insert: {
+          id?: string; firm_id: string; source_type: 'listing_url' | 'csv_import' | 'broker_email' | 'licensed_feed' | 'manual'
+          source_url?: string | null; source_key: string; property_name: string; address?: string | null
+          market?: string | null; asset_type?: string | null; asking_price?: number | null; unit_count?: number | null
+          status?: 'new' | 'matched' | 'promoted' | 'dismissed'; buy_box_id?: string | null; match_score?: number | null
+          match_reasons?: Json; possible_duplicate_deal_id?: string | null; promoted_deal_id?: string | null; captured_by: string
+        }
+        Update: {
+          status?: 'new' | 'matched' | 'promoted' | 'dismissed'; buy_box_id?: string | null; match_score?: number | null
+          match_reasons?: Json; possible_duplicate_deal_id?: string | null; promoted_deal_id?: string | null
+        }
+      }
+      portfolio_actuals: {
+        Row: {
+          id: string; firm_id: string; deal_id: string; period_date: string; noi: number | null
+          occupancy: number | null; average_monthly_rent: number | null; capital_expenditures: number | null
+          debt_service: number | null; source_reference: string | null; notes: string | null
+          created_by: string; created_at: string; updated_at: string
+        }
+        Insert: {
+          id?: string; firm_id: string; deal_id: string; period_date: string; noi?: number | null
+          occupancy?: number | null; average_monthly_rent?: number | null; capital_expenditures?: number | null
+          debt_service?: number | null; source_reference?: string | null; notes?: string | null; created_by: string
+        }
+        Update: {
+          noi?: number | null; occupancy?: number | null; average_monthly_rent?: number | null
+          capital_expenditures?: number | null; debt_service?: number | null; source_reference?: string | null; notes?: string | null
+        }
+      }
       underwriting_runs: {
         Row: {
           id: string
@@ -450,6 +504,14 @@ export interface Database {
         }
         Returns: string
       }
+      approve_underwriting_access_request: {
+        Args: { p_request_id: string; p_reviewer_id: string; p_allowance?: number; p_included_seats?: number }
+        Returns: string
+      }
+      promote_sourcing_opportunity: {
+        Args: { p_opportunity_id: string; p_firm_id: string; p_user_id: string }
+        Returns: string
+      }
     }
   }
 }
@@ -471,6 +533,9 @@ export type StageChecklistItem = Database['public']['Tables']['stage_checklist_i
 export type DealChecklistProgress = Database['public']['Tables']['deal_checklist_progress']['Row']
 export type FirmMemory = Database['public']['Tables']['firm_memories']['Row']
 export type FirmEntitlement = Database['public']['Tables']['firm_entitlements']['Row']
+export type UnderwritingAccessRequest = Database['public']['Tables']['underwriting_access_requests']['Row']
+export type SourcingOpportunity = Database['public']['Tables']['sourcing_opportunities']['Row']
+export type PortfolioActual = Database['public']['Tables']['portfolio_actuals']['Row']
 export type UnderwritingRun = Database['public']['Tables']['underwriting_runs']['Row']
 export type UnderwritingAssumption = Database['public']['Tables']['underwriting_assumptions']['Row']
 export type UnderwritingApproval = Database['public']['Tables']['underwriting_approvals']['Row']

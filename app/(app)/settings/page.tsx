@@ -9,6 +9,8 @@ import { getStripe } from '@/lib/stripe'
 import BuyBoxSettings from '@/components/settings/BuyBoxSettings'
 import { getBuyBoxes } from '@/lib/actions/buybox'
 import FirmMemorySettings from '@/components/settings/FirmMemorySettings'
+import UnderwritingAccessCard from '@/components/settings/UnderwritingAccessCard'
+import UnderwritingQualityLab from '@/components/settings/UnderwritingQualityLab'
 
 interface Props {
   searchParams: Promise<{ success?: string }>
@@ -56,6 +58,8 @@ export default async function SettingsPage({ searchParams }: Props) {
     buyBoxResult,
     { data: firmMemories },
     { data: underwritingEntitlement },
+    { data: underwritingAccessRequest },
+    { data: underwritingFacts },
   ] = await Promise.all([
     supabase.from('deal_stages').select('*').order('position'),
     supabase.from('kill_reasons').select('*').order('position'),
@@ -71,6 +75,8 @@ export default async function SettingsPage({ searchParams }: Props) {
       .in('feedback_type', ['saved', 'correction', 'firm_rule'])
       .order('updated_at', { ascending: false }),
     supabase.from('firm_entitlements').select('*').eq('firm_id', firmId).maybeSingle(),
+    supabase.from('underwriting_access_requests').select('*').eq('firm_id', firmId).maybeSingle(),
+    supabase.from('underwriting_assumptions').select('run_id, approval_status, source_type, confidence').eq('firm_id', firmId).limit(5000),
   ])
   const underwritingPeriodStart = underwritingEntitlement?.current_period_start ?? new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
   const underwritingPeriodEnd = underwritingEntitlement?.current_period_end ?? new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString()
@@ -85,6 +91,18 @@ export default async function SettingsPage({ searchParams }: Props) {
   const underwritingCreditsUsed = (underwritingUsageRuns ?? [])
     .filter((item) => !(item.status === 'failed' || item.status === 'canceled') || item.credits_settled > 0)
     .reduce((total, item) => total + Number(item.credits_reserved), 0)
+  const documentFacts = (underwritingFacts ?? []).filter((fact) => ['om_stated', 'rent_roll', 't12', 'public_record', 'analyst_override'].includes(fact.source_type))
+  const reviewedFacts = documentFacts.filter((fact) => fact.approval_status !== 'needs_review')
+  const confidenceValues = documentFacts.map((fact) => Number(fact.confidence)).filter(Number.isFinite)
+  const qualityMetrics = {
+    runs: new Set(documentFacts.map((fact) => fact.run_id)).size,
+    facts: documentFacts.length,
+    reviewed: reviewedFacts.length,
+    approved: reviewedFacts.filter((fact) => fact.approval_status === 'approved').length,
+    rejected: reviewedFacts.filter((fact) => fact.approval_status === 'rejected').length,
+    revised: documentFacts.filter((fact) => fact.source_type === 'analyst_override').length,
+    averageConfidence: confidenceValues.length ? confidenceValues.reduce((total, value) => total + value, 0) / confidenceValues.length : null,
+  }
 
   return (
     <div className="app-page">
@@ -106,6 +124,8 @@ export default async function SettingsPage({ searchParams }: Props) {
             <p style={{ color: 'var(--app-faint)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>Configuration</p>
           </div>
           <a href="#billing">Billing</a>
+          <a href="#underwriting-beta">Underwriting Pro</a>
+          <a href="#quality-lab">OM Quality</a>
           <a href="#team">Team</a>
           <a href="#buy-box">Buy Box</a>
           <a href="#firm-memory">Firm Memory</a>
@@ -128,6 +148,12 @@ export default async function SettingsPage({ searchParams }: Props) {
               underwritingAllowance={underwritingEntitlement?.monthly_underwrite_allowance ?? 0}
               underwritingCreditsUsed={underwritingCreditsUsed}
             />
+          </section>
+          <section id="underwriting-beta" className="app-section-anchor">
+            <UnderwritingAccessCard enabled={Boolean(underwritingEntitlement?.underwriting_enabled)} initialRequest={underwritingAccessRequest ?? null} />
+          </section>
+          <section id="quality-lab" className="app-section-anchor">
+            <UnderwritingQualityLab metrics={qualityMetrics} />
           </section>
           <section id="team" className="app-section-anchor">
             <TeamSettings

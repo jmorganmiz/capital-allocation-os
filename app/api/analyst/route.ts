@@ -26,6 +26,27 @@ type FirmMemory = {
   created_at: string
 }
 
+type ActualRow = {
+  period_date: string
+  noi: number | null
+  occupancy: number | null
+  average_monthly_rent: number | null
+  source_reference: string | null
+  deals: { id: string; title: string; market: string | null } | null
+}
+
+type SourcingRow = {
+  property_name: string
+  market: string | null
+  asset_type: string | null
+  asking_price: number | null
+  unit_count: number | null
+  status: string
+  match_score: number | null
+  match_reasons: unknown
+  possible_duplicate_deal_id: string | null
+}
+
 function normalize(input: string) {
   return input.toLowerCase().trim()
 }
@@ -181,12 +202,44 @@ function answerCompare(question: string, deals: DealRow[]) {
   ].join('\n')
 }
 
-function buildAnswer(question: string, deals: DealRow[], memories: FirmMemory[]) {
+function answerActuals(question: string, actuals: ActualRow[]) {
+  if (actuals.length === 0) return 'No realized operating periods are recorded yet. Add actual NOI, occupancy, and rent on a deal to begin calibrating underwriting against performance.'
+  const lower = normalize(question)
+  const title = [...new Set(actuals.map((item) => item.deals?.title).filter(Boolean) as string[])].find((item) => lower.includes(item.toLowerCase().slice(0, Math.min(12, item.length))))
+  const scoped = title ? actuals.filter((item) => item.deals?.title === title) : actuals
+  const latestByDeal = new Map<string, ActualRow>()
+  for (const actual of scoped) {
+    const id = actual.deals?.id
+    if (!id || latestByDeal.has(id)) continue
+    latestByDeal.set(id, actual)
+  }
+  const rows = [...latestByDeal.values()].slice(0, 6)
+  return [
+    title ? `Latest recorded performance for ${title}:` : `I found actual operating data for ${latestByDeal.size} properties. Latest reported periods:`,
+    ...rows.map((item) => `- ${item.deals?.title ?? 'Unknown property'} (${new Date(`${item.period_date}T00:00:00Z`).toLocaleDateString()}): ${item.noi == null ? 'NOI not captured' : `${money(Number(item.noi))} annualized NOI`}, ${item.occupancy == null ? 'occupancy not captured' : `${(Number(item.occupancy) * 100).toFixed(1)}% occupancy`}${item.average_monthly_rent == null ? '' : `, ${money(Number(item.average_monthly_rent))} average monthly rent`}.`),
+    'Open the deal’s Actuals section to compare each observation with its preserved underwriting baseline.',
+  ].join('\n')
+}
+
+function answerSourcing(candidates: SourcingRow[]) {
+  const active = candidates.filter((item) => !['dismissed', 'promoted'].includes(item.status))
+  if (active.length === 0) return 'The Property Finder inbox is empty. Add a permitted listing URL or import an opportunity file to begin matching properties against the firm buy box.'
+  const ranked = [...active].sort((a, b) => Number(b.match_score ?? -1) - Number(a.match_score ?? -1)).slice(0, 6)
+  return [
+    `${active.length} active sourced opportunities are waiting. Highest buy-box matches:`,
+    ...ranked.map((item) => `- ${item.property_name} - ${item.market ?? 'market unknown'}, ${item.asset_type ?? 'asset type unknown'}, ${money(item.asking_price)}, match ${item.match_score ?? 'not scored'}${item.possible_duplicate_deal_id ? '; possible duplicate' : ''}.`),
+    'Promote a clean candidate to create the pipeline deal, preserve the source, and run firm scoring.',
+  ].join('\n')
+}
+
+function buildAnswer(question: string, deals: DealRow[], memories: FirmMemory[], actuals: ActualRow[], candidates: SourcingRow[]) {
   const lower = normalize(question)
   const memoryMatches = rankRelevantMemories(question, memories)
   let answer: string
 
-  if (lower.includes('stale') || lower.includes('attention') || lower.includes('review')) answer = answerStale(deals)
+  if (lower.includes('property finder') || lower.includes('sourced opportun') || lower.includes('what should we pursue') || lower.includes('find propert')) answer = answerSourcing(candidates)
+  else if (lower.includes('actual') || lower.includes('perform') || lower.includes('occupancy') || lower.includes('operat')) answer = answerActuals(question, actuals)
+  else if (lower.includes('stale') || lower.includes('attention') || lower.includes('review')) answer = answerStale(deals)
   else if (lower.includes('broker') || lower.includes('source')) answer = answerBroker(question, deals)
   else if (lower.includes('kill') || lower.includes('graveyard') || lower.includes('fail') || lower.includes('price')) answer = answerKilled(question, deals)
   else if (lower.includes('compare') || lower.includes('similar') || lower.includes('seen this') || lower.includes('seen before')) answer = answerCompare(question, deals)
@@ -227,7 +280,7 @@ export async function POST(request: Request) {
   const question = typeof body.question === 'string' ? body.question.slice(0, 500) : ''
   if (!question.trim()) return NextResponse.json({ error: 'Question is required' }, { status: 400 })
 
-  const [{ data: deals, error }, { data: memories }] = await Promise.all([
+  const [{ data: deals, error }, { data: memories }, { data: actuals }, { data: candidates }] = await Promise.all([
     supabase
       .from('deals')
       .select(`
@@ -247,16 +300,32 @@ export async function POST(request: Request) {
       .order('created_at', { ascending: false })
       .limit(50)
       .then((result) => result.error ? { data: [] } : result),
+    supabase
+      .from('portfolio_actuals')
+      .select('period_date, noi, occupancy, average_monthly_rent, source_reference, deals(id, title, market)')
+      .eq('firm_id', profile.firm_id)
+      .order('period_date', { ascending: false })
+      .limit(250)
+      .then((result) => result.error ? { data: [] } : result),
+    supabase
+      .from('sourcing_opportunities')
+      .select('property_name, market, asset_type, asking_price, unit_count, status, match_score, match_reasons, possible_duplicate_deal_id')
+      .eq('firm_id', profile.firm_id)
+      .order('created_at', { ascending: false })
+      .limit(250)
+      .then((result) => result.error ? { data: [] } : result),
   ])
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  const result = buildAnswer(question, (deals ?? []) as unknown as DealRow[], (memories ?? []) as FirmMemory[])
+  const result = buildAnswer(question, (deals ?? []) as unknown as DealRow[], (memories ?? []) as FirmMemory[], (actuals ?? []) as unknown as ActualRow[], (candidates ?? []) as SourcingRow[])
   return NextResponse.json({
     ...result,
     sources: {
       deals: deals?.length ?? 0,
       memories: memories?.length ?? 0,
+      actuals: actuals?.length ?? 0,
+      sourcingOpportunities: candidates?.length ?? 0,
       generatedFrom: 'firm_memory',
     },
   })

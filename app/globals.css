@@ -5717,6 +5717,82 @@ body {
 .app-root .app-underwriting-usage-track { overflow: hidden; height: 5px; margin: 12px 0 9px; border-radius: 999px; background: rgba(82,102,235,.15); }
 .app-root .app-underwriting-usage-track span { display: block; height: 100%; background: #5266eb; }
 
+/* Closed-loop operations: beta access, quality lab, sourcing, and actuals */
+.app-root .app-beta-status { display: flex; flex-direction: column; gap: 5px; padding: 18px; border: 1px solid var(--app-border); border-radius: 10px; background: var(--app-elevated); }
+.app-root .app-beta-status strong { color: var(--app-text); font-size: 12px; }
+.app-root .app-beta-status span { color: var(--app-muted); font-size: 10px; }
+.app-root .app-beta-status[data-tone='green'] { border-color: rgba(34,197,94,.24); background: rgba(34,197,94,.05); }
+.app-root .app-beta-status[data-tone='amber'] { border-color: rgba(245,158,11,.24); background: rgba(245,158,11,.05); }
+.app-root .app-beta-request-grid, .app-root .app-sourcing-form, .app-root .app-actuals-form { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.app-root .app-sourcing-form { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.app-root .app-actuals-form { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.app-root .app-beta-request-grid label, .app-root .app-sourcing-form label, .app-root .app-actuals-form label { display: flex; flex-direction: column; gap: 7px; }
+.app-root .app-beta-request-grid label.wide, .app-root .app-sourcing-form label.wide, .app-root .app-actuals-form label.wide { grid-column: 1 / -1; }
+.app-root .app-beta-request-grid label span, .app-root .app-sourcing-form label span, .app-root .app-actuals-form label span { color: var(--app-faint); font-size: 9px; font-weight: 650; letter-spacing: .07em; text-transform: uppercase; }
+.app-root .app-beta-request-grid input, .app-root .app-beta-request-grid textarea,
+.app-root .app-sourcing-form input, .app-root .app-sourcing-form textarea,
+.app-root .app-actuals-form input, .app-root .app-actuals-form textarea { width: 100%; padding: 11px 12px; border: 1px solid var(--app-border); border-radius: 8px; outline: none; background: var(--app-field); color: var(--app-text); font: 400 11px/1.4 inherit; }
+.app-root .app-beta-request-grid textarea, .app-root .app-actuals-form textarea { min-height: 80px; resize: vertical; }
+.app-root .app-form-error { margin-top: 10px; color: #ff747b; font-size: 10px; }
+.app-root .app-quality-progress { overflow: hidden; height: 6px; margin: 18px 0; border-radius: 99px; background: rgba(82,102,235,.13); }
+.app-root .app-quality-progress span { display: block; height: 100%; border-radius: inherit; background: #5266eb; }
+.app-root .app-quality-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+.app-root .app-quality-grid > div { padding: 16px; border: 1px solid var(--app-border); border-radius: 9px; background: var(--app-elevated); }
+.app-root .app-quality-grid strong, .app-root .app-quality-grid span { display: block; }
+.app-root .app-quality-grid strong { color: var(--app-text); font-size: 21px; }
+.app-root .app-quality-grid span { margin-top: 3px; color: var(--app-faint); font-size: 9px; }
+.app-root .app-quality-note { margin-top: 14px; color: var(--app-faint); font-size: 9px; line-height: 1.5; }
+.app-root .app-stat-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+.app-root .app-stat-card { padding: 20px; border: 1px solid var(--app-border); border-radius: 11px; background: var(--app-card); }
+.app-root .app-stat-card strong, .app-root .app-stat-card span { display: block; }
+.app-root .app-stat-card strong { color: var(--app-text); font-size: 26px; }
+.app-root .app-stat-card span { margin-top: 4px; color: var(--app-faint); font-size: 9px; }
+.app-root .app-sourcing-capture, .app-root .app-sourcing-inbox, .app-root .app-actuals-card { padding: 24px; }
+.app-root .app-sourcing-capture, .app-root .app-sourcing-inbox { margin-top: 18px; }
+.app-root .app-sourcing-submit { display: flex; justify-content: flex-end; align-items: center; gap: 14px; margin-top: 16px; }
+.app-root .app-sourcing-submit > span { margin-right: auto; color: #ff747b; font-size: 10px; }
+.app-root .app-sourcing-submit button { padding: 9px 16px; border: 1px solid rgba(82,102,235,.4); border-radius: 999px; background: rgba(82,102,235,.15); color: #dce1ff; font: 600 10px/1 inherit; cursor: pointer; }
+.app-root .app-sourcing-list { display: flex; flex-direction: column; gap: 9px; }
+.app-root .app-sourcing-list article { display: grid; grid-template-columns: 70px minmax(0,1fr) 150px 150px; align-items: center; gap: 16px; padding: 16px; border: 1px solid var(--app-border); border-radius: 10px; background: var(--app-elevated); }
+.app-root .app-sourcing-list article[data-status='dismissed'] { opacity: .46; }
+.app-root .app-sourcing-score { text-align: center; }
+.app-root .app-sourcing-score strong, .app-root .app-sourcing-score span { display: block; }
+.app-root .app-sourcing-score strong { color: #8e9bff; font-size: 24px; }
+.app-root .app-sourcing-score span { color: var(--app-faint); font-size: 8px; text-transform: uppercase; }
+.app-root .app-sourcing-property small { color: var(--app-faint); font-size: 8px; text-transform: uppercase; letter-spacing: .05em; }
+.app-root .app-sourcing-property h3 { margin-top: 3px; color: var(--app-text); font-size: 12px; }
+.app-root .app-sourcing-property p { margin-top: 3px; color: var(--app-muted); font-size: 9px; }
+.app-root .app-sourcing-property > div { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.app-root .app-sourcing-property > div span { padding: 3px 7px; border: 1px solid rgba(82,102,235,.2); border-radius: 99px; color: #aeb6ff; font-size: 7px; }
+.app-root .app-sourcing-basis strong, .app-root .app-sourcing-basis span { display: block; }
+.app-root .app-sourcing-basis strong { color: var(--app-text); font-size: 11px; }
+.app-root .app-sourcing-basis span { margin-top: 4px; color: var(--app-faint); font-size: 8px; }
+.app-root .app-sourcing-actions { display: flex; justify-content: flex-end; gap: 6px; }
+.app-root .app-sourcing-actions button, .app-root .app-sourcing-actions a { padding: 7px 10px; border: 1px solid rgba(82,102,235,.35); border-radius: 99px; background: transparent; color: #cdd3ff; font: 600 8px/1 inherit; text-decoration: none; cursor: pointer; }
+.app-root .app-sourcing-actions .muted { border-color: var(--app-border); color: var(--app-faint); }
+.app-root .app-sourcing-empty { display: flex; flex-direction: column; align-items: center; padding: 34px; border: 1px dashed var(--app-border); border-radius: 10px; text-align: center; }
+.app-root .app-sourcing-empty strong { color: var(--app-text); font-size: 11px; }
+.app-root .app-sourcing-empty span { margin-top: 5px; color: var(--app-faint); font-size: 9px; }
+.app-root .app-actuals-history { display: flex; flex-direction: column; gap: 8px; margin-top: 22px; }
+.app-root .app-actuals-history > div:not(.app-sourcing-empty) { display: grid; grid-template-columns: 130px 1fr 120px; gap: 12px; align-items: center; padding: 14px; border: 1px solid var(--app-border); border-radius: 9px; background: var(--app-elevated); }
+.app-root .app-actuals-history span, .app-root .app-actuals-history small { color: var(--app-faint); font-size: 9px; }
+.app-root .app-actuals-history strong { color: var(--app-text); font-size: 11px; }
+.app-root .app-actuals-history em { justify-self: end; color: var(--app-muted); font-size: 9px; font-style: normal; }
+.app-root .app-actuals-history em[data-tone='green'] { color: #4ade80; }
+.app-root .app-actuals-history em[data-tone='red'] { color: #ff747b; }
+.app-root .app-actuals-history small { grid-column: 1 / -1; }
+.app-root .app-admin-queue { display: flex; flex-direction: column; gap: 12px; }
+.app-root .app-admin-queue article { display: grid; grid-template-columns: minmax(0,1fr) 340px 220px; gap: 24px; align-items: center; padding: 22px; border: 1px solid var(--app-border); border-radius: 12px; background: var(--app-card); }
+.app-root .app-admin-queue article[data-status='declined'] { opacity: .5; }
+.app-root .app-admin-queue small { color: #8e9bff; font-size: 9px; font-weight: 650; text-transform: uppercase; }
+.app-root .app-admin-queue h2 { margin-top: 4px; color: var(--app-text); font-size: 14px; }
+.app-root .app-admin-queue p { margin-top: 6px; color: var(--app-muted); font-size: 10px; line-height: 1.55; }
+.app-root .app-admin-queue dl { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+.app-root .app-admin-queue dl div { padding: 10px; border: 1px solid var(--app-border); border-radius: 8px; background: var(--app-elevated); }
+.app-root .app-admin-queue dt { color: var(--app-faint); font-size: 8px; }
+.app-root .app-admin-queue dd { margin-top: 3px; color: var(--app-text); font-size: 10px; }
+.app-root .app-admin-back { display: inline-block; margin-top: 14px; color: #aeb6ff; font-size: 10px; text-decoration: none; }
+
 .app-root .app-settings-billing-action {
   margin-top: 16px;
   border-top: 1px solid rgba(112,112,125,0.1);
@@ -6698,6 +6774,11 @@ body {
   .memory-loop-flow i { display: none; }
   .site-footer { grid-template-columns: 1fr; margin: 0 20px; }
   .footer-links { justify-content: flex-start; }
+  .app-root .app-sourcing-form, .app-root .app-actuals-form { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .app-root .app-sourcing-list article { grid-template-columns: 60px minmax(0,1fr); }
+  .app-root .app-sourcing-basis, .app-root .app-sourcing-actions { grid-column: 2; }
+  .app-root .app-sourcing-actions { justify-content: flex-start; }
+  .app-root .app-admin-queue article { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 560px) {
@@ -6731,6 +6812,14 @@ body {
   .uw-ic-heading, .uw-ic-footer { align-items: stretch; flex-direction: column; gap: 16px; }
   .uw-ready { text-align: left; }
   .pcard { padding: 32px 24px; }
+  .app-root .app-stat-grid, .app-root .app-quality-grid,
+  .app-root .app-beta-request-grid, .app-root .app-sourcing-form,
+  .app-root .app-actuals-form { grid-template-columns: 1fr; }
+  .app-root .app-sourcing-list article { grid-template-columns: 1fr; }
+  .app-root .app-sourcing-score { text-align: left; }
+  .app-root .app-sourcing-basis, .app-root .app-sourcing-actions { grid-column: 1; }
+  .app-root .app-actuals-history > div:not(.app-sourcing-empty) { grid-template-columns: 1fr; }
+  .app-root .app-actuals-history em { justify-self: start; }
 }
 .reveal {
   opacity: 0;

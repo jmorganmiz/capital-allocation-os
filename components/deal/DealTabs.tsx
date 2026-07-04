@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 const TABS = [
   { label: 'Financials', id: 'section-financials' },
   { label: 'Underwriting', id: 'section-underwriting' },
+  { label: 'Actuals', id: 'section-actuals' },
   { label: 'Scoring', id: 'section-scoring' },
   { label: 'Notes', id: 'section-notes' },
   { label: 'Files', id: 'section-files' },
