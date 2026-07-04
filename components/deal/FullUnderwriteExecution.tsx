@@ -69,6 +69,11 @@ export default function FullUnderwriteExecution({ dealId, preflightRun, initialR
   const exitShifts = Array.isArray(sensitivity.exit_cap_shifts) ? sensitivity.exit_cap_shifts : []
   const growthShifts = Array.isArray(sensitivity.rent_growth_shifts) ? sensitivity.rent_growth_shifts : []
   const sensitivityValues = Array.isArray(sensitivity.levered_irr) ? sensitivity.levered_irr : []
+  const documentStep = steps.find((step) => step.step_key === 'document_evidence')
+  const documentArtifact = record(documentStep?.artifact ?? null)
+  const extractionWarnings = Array.isArray(documentArtifact.extraction_warnings)
+    ? documentArtifact.extraction_warnings.filter((warning): warning is string => typeof warning === 'string')
+    : []
 
   async function process(runId: string, startingSteps: UnderwritingStep[]) {
     setWorking(true)
@@ -180,6 +185,12 @@ export default function FullUnderwriteExecution({ dealId, preflightRun, initialR
               </article>
             ))}
           </div>
+          {extractionWarnings.length > 0 && (
+            <div className="app-extraction-warnings">
+              <strong>Extraction guardrails</strong>
+              <ul>{extractionWarnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>
+            </div>
+          )}
           {assumptions.length > 0 && assumptions.some((fact) => fact.approval_status === 'needs_review') && (
             <div className="app-extraction-review">
               <div className="app-extraction-review-header">

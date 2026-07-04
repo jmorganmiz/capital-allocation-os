@@ -182,6 +182,12 @@ test('Document extraction produces cited proposals and pauses before calculation
   assert.match(fullRoom, /Approve cited document facts/)
   assert.match(extraction, /offering_memorandum, rent_roll, t12, debt_quote, other/)
   assert.match(extraction, /fixedOperatingExpenses/)
+  assert.match(extraction, /asset_type/)
+  assert.match(extraction, /multifamily underwriting facts were suppressed/)
+  assert.match(extraction, /Uncited \$\{key\} value was suppressed/)
+  assert.match(extraction, /Multiple materially different \$\{key\} values were suppressed/)
+  assert.match(extraction, /Never divide a rent total by units/)
+  assert.match(extraction, /Never calculate it from line items/)
 })
 
 test('Analysts can reject unsupported extraction without silently changing the model', () => {

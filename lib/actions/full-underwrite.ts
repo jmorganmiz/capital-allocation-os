@@ -160,11 +160,13 @@ async function buildResult(
       filename: string
       document_type: UnderwritingDocumentType
     }> = []
+    const extractionWarnings: string[] = []
     for (const file of pdfs) {
       const { data: blob, error: downloadError } = await admin.storage.from('deal-files').download(file.storage_path)
       if (downloadError || !blob) throw downloadError ?? new Error(`Could not download ${file.filename}.`)
       const result = await extractUnderwritingFacts(Buffer.from(await blob.arrayBuffer()), file.filename)
       extracted.push(...result.facts.map((fact) => ({ ...fact, file_id: file.id, filename: file.filename, document_type: result.documentType })))
+      extractionWarnings.push(...result.warnings.map((warning) => `${file.filename}: ${warning}`))
       await admin.from('usage_events').upsert({
         firm_id: run.firm_id,
         user_id: run.created_by,
@@ -177,7 +179,7 @@ async function buildResult(
         input_tokens: result.inputTokens,
         output_tokens: result.outputTokens,
         idempotency_key: `${run.id}:${file.id}:cited-extraction`,
-        metadata: { filename: file.filename, document_type: result.documentType, facts: result.facts.length, customer_charge: false },
+        metadata: { filename: file.filename, document_type: result.documentType, asset_type: result.assetType, facts: result.facts.length, warnings: result.warnings, customer_charge: false },
       }, { onConflict: 'firm_id,idempotency_key', ignoreDuplicates: true })
     }
     if (extracted.length) {
@@ -210,7 +212,7 @@ async function buildResult(
       })))
     }
     return {
-      summary: extracted.length ? `${extracted.length} cited fact${extracted.length === 1 ? '' : 's'} await analyst review` : pdfs.length ? 'No supported facts extracted' : 'No PDF source documents linked',
+      summary: extracted.length ? `${extracted.length} cited fact${extracted.length === 1 ? '' : 's'} await analyst review` : pdfs.length ? 'No supported multifamily facts extracted' : 'No PDF source documents linked',
       artifact: {
         documents: (files ?? []).map((file) => ({
           ...file,
@@ -218,6 +220,7 @@ async function buildResult(
         })),
         extracted_facts: extracted,
         citation_verified: extracted.filter((fact) => fact.citationVerified).length,
+        extraction_warnings: extractionWarnings,
       },
       evidenceCount: extracted.filter((fact) => fact.citationVerified).length,
       confidence: extracted.length ? extracted.filter((fact) => fact.citationVerified).length / extracted.length : 0.1,
