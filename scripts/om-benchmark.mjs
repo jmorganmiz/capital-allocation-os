@@ -86,6 +86,8 @@ function scoreCase(item, extraction, durationMs) {
     file: path.basename(item.absoluteFile),
     expectedDocumentType: item.documentType,
     actualDocumentType: extraction.documentType,
+    actualAssetType: extraction.assetType,
+    warnings: extraction.warnings ?? [],
     documentTypeCorrect: extraction.documentType === item.documentType,
     durationMs,
     inputTokens: extraction.inputTokens,
@@ -94,6 +96,8 @@ function scoreCase(item, extraction, durationMs) {
     extractedExpectedFieldCount: extracted.length,
     correctFieldCount: correct.length,
     falsePositiveCount: falsePositives.length,
+    extractedFactCount: extraction.facts.length,
+    citedFactCount: cited.length,
     citationCoverage: extraction.facts.length ? cited.length / extraction.facts.length : 0,
     fields,
   }
@@ -108,9 +112,10 @@ function aggregate(results, pricing) {
     inputTokens: sum.inputTokens + result.inputTokens,
     outputTokens: sum.outputTokens + result.outputTokens,
     durationMs: sum.durationMs + result.durationMs,
-    citations: sum.citations + result.citationCoverage,
+    citations: sum.citations + result.citedFactCount,
+    facts: sum.facts + result.extractedFactCount,
     documentTypes: sum.documentTypes + Number(result.documentTypeCorrect),
-  }), { expected: 0, extracted: 0, correct: 0, falsePositives: 0, inputTokens: 0, outputTokens: 0, durationMs: 0, citations: 0, documentTypes: 0 })
+  }), { expected: 0, extracted: 0, correct: 0, falsePositives: 0, inputTokens: 0, outputTokens: 0, durationMs: 0, citations: 0, facts: 0, documentTypes: 0 })
   const estimatedCostUsd = pricing?.inputUsdPerMillion != null && pricing?.outputUsdPerMillion != null
     ? (totals.inputTokens / 1_000_000) * pricing.inputUsdPerMillion + (totals.outputTokens / 1_000_000) * pricing.outputUsdPerMillion
     : null
@@ -119,7 +124,7 @@ function aggregate(results, pricing) {
     fieldRecall: totals.expected ? totals.extracted / totals.expected : 0,
     fieldAccuracy: totals.expected ? totals.correct / totals.expected : 0,
     falsePositiveCount: totals.falsePositives,
-    citationCoverage: results.length ? totals.citations / results.length : 0,
+    citationCoverage: totals.facts ? totals.citations / totals.facts : 1,
     documentTypeAccuracy: results.length ? totals.documentTypes / results.length : 0,
     averageLatencyMs: results.length ? totals.durationMs / results.length : 0,
     inputTokens: totals.inputTokens,
@@ -134,8 +139,9 @@ function pct(value) {
 
 function markdownReport(report) {
   const summary = report.summary
-  const rows = report.results.map((item) => `| ${item.id} | ${item.correctFieldCount}/${item.expectedFieldCount} | ${item.falsePositiveCount} | ${pct(item.citationCoverage)} | ${(item.durationMs / 1000).toFixed(1)}s |`).join('\n')
-  return `# OM benchmark\n\nGenerated: ${report.generatedAt}\n\n| Metric | Result |\n|---|---:|\n| Cases | ${summary.cases} |\n| Field recall | ${pct(summary.fieldRecall)} |\n| Field accuracy | ${pct(summary.fieldAccuracy)} |\n| False positives | ${summary.falsePositiveCount} |\n| Citation coverage | ${pct(summary.citationCoverage)} |\n| Document classification | ${pct(summary.documentTypeAccuracy)} |\n| Average latency | ${(summary.averageLatencyMs / 1000).toFixed(1)}s |\n| Input tokens | ${summary.inputTokens.toLocaleString()} |\n| Output tokens | ${summary.outputTokens.toLocaleString()} |\n| Estimated provider cost | ${summary.estimatedCostUsd == null ? 'Not configured' : `$${summary.estimatedCostUsd.toFixed(4)}`} |\n\n## Cases\n\n| Case | Correct fields | False positives | Citation coverage | Latency |\n|---|---:|---:|---:|---:|\n${rows}\n`
+  const rows = report.results.map((item) => `| ${item.id} | ${item.actualAssetType ?? 'unknown'} | ${item.correctFieldCount}/${item.expectedFieldCount} | ${item.falsePositiveCount} | ${pct(item.citationCoverage)} | ${item.warnings.length} | ${(item.durationMs / 1000).toFixed(1)}s |`).join('\n')
+  const warnings = report.results.flatMap((item) => item.warnings.map((warning) => `- **${item.id}:** ${warning}`)).join('\n') || '- None'
+  return `# OM benchmark\n\nGenerated: ${report.generatedAt}\n\n| Metric | Result |\n|---|---:|\n| Cases | ${summary.cases} |\n| Field recall | ${pct(summary.fieldRecall)} |\n| Field accuracy | ${pct(summary.fieldAccuracy)} |\n| False positives | ${summary.falsePositiveCount} |\n| Citation coverage | ${pct(summary.citationCoverage)} |\n| Document classification | ${pct(summary.documentTypeAccuracy)} |\n| Average latency | ${(summary.averageLatencyMs / 1000).toFixed(1)}s |\n| Input tokens | ${summary.inputTokens.toLocaleString()} |\n| Output tokens | ${summary.outputTokens.toLocaleString()} |\n| Estimated provider cost | ${summary.estimatedCostUsd == null ? 'Not configured' : `$${summary.estimatedCostUsd.toFixed(4)}`} |\n\n## Cases\n\n| Case | Asset | Correct fields | False positives | Citation coverage | Warnings | Latency |\n|---|---|---:|---:|---:|---:|---:|\n${rows}\n\n## Warnings\n\n${warnings}\n`
 }
 
 async function main() {

@@ -173,6 +173,7 @@ test('Completed work settles reserved credits while failed work releases capacit
 
 test('Document extraction produces cited proposals and pauses before calculation', () => {
   assert.match(extraction, /citations: \{ enabled: true \}/)
+  assert.match(extraction, /Always use the API citation mechanism for every fact, even inside the JSON format/)
   assert.match(extraction, /citationVerified/)
   assert.match(extraction, /Never estimate or infer a missing value/)
   assert.match(fullAction, /extractUnderwritingFacts/)
@@ -188,9 +189,15 @@ test('Document extraction produces cited proposals and pauses before calculation
   assert.match(extraction, /projected development unit counts/)
   assert.match(extraction, /multifamily underwriting facts were suppressed/)
   assert.match(extraction, /Uncited \$\{key\} value was suppressed/)
+  assert.match(extraction, /Document reported a \$\{conflict\.key\} conflict/)
   assert.match(extraction, /Multiple materially different \$\{key\} values were suppressed/)
   assert.match(extraction, /Never divide a rent total by units/)
   assert.match(extraction, /Never calculate it from line items/)
+  assert.match(extraction, /citationSupportsValue/)
+  assert.match(extraction, /fully occupied\|no vacancy\|zero vacancy/)
+  assert.match(extraction, /Math\.abs\(item\.value\)/)
+  assert.match(extraction, /Never derive ltv from loan and equity amounts/)
+  assert.match(extraction, /displayed amount reconciles with its stated per-unit formula or percentage/)
 })
 
 test('Analysts can reject unsupported extraction without silently changing the model', () => {

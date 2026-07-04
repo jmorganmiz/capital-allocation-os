@@ -45,6 +45,7 @@ Classify a development or redevelopment site with no existing operating multifam
 Then extract only explicitly stated multifamily underwriting facts.
 Return one JSON object with "document_type", "asset_type", "conflicts", and "facts". Each fact must contain:
 key, value, confidence, evidence_quote, page.
+Always use the API citation mechanism for every fact, even inside the JSON format. Every fact must be emitted in cited response text with an attached document citation.
 
 If the asset_type is not multifamily, return an empty facts array.
 If a field has multiple materially different values and the document does not clearly identify which one is current, omit it from facts and add { key, values, reason } to conflicts.
@@ -71,9 +72,10 @@ Rules:
 - If several values exist, use the current/in-place or trailing value and make the quote identify it.
 - Never extract projected development unit counts, development rents, construction-budget inputs, or other development assumptions as current operating facts.
 - totalUnits must be the existing legal multifamily unit count. If legal, operating, approved, or projected unit counts differ, omit totalUnits and report a conflict.
-- For purchasePrice, do not choose between conflicting asking prices; report a conflict.
+- For purchasePrice, use a reduced/current asking price only when it is explicitly labeled as the current price and corroborated by the current investment summary; otherwise report a conflict.
 - currentRent and marketRent must be explicitly labeled monthly per-unit averages. Never divide a rent total by units.
-- If a displayed total conflicts with its stated per-unit formula or percentage, omit the field and report a conflict.
+- Before including vacancyPct, insurance, or another formula-labeled field, verify the displayed amount reconciles with its stated per-unit formula or percentage. If it does not reconcile, omit the field and report a conflict.
+- Never derive ltv from loan and equity amounts. Extract it only when the document explicitly labels an LTV percentage.
 - fixedOperatingExpenses may be extracted only when the document explicitly states the relevant total excluding property taxes, insurance, management fees, and replacement reserves. Never calculate it from line items and never use total operating expenses.
 - Omit unsupported facts.
 - Output valid JSON only.`
@@ -95,6 +97,30 @@ function isValidValue(key: FieldKey, value: number) {
 
 function materiallyDifferent(a: number, b: number) {
   return Math.abs(a - b) > Math.max(0.001, Math.max(Math.abs(a), Math.abs(b)) * 0.001)
+}
+
+function citedNumbers(text: string) {
+  return [...text.matchAll(/[-+]?\$?\s*\d[\d,]*(?:\.\d+)?\s*%?/g)].map((match) => {
+    const raw = match[0].replace(/[$,\s]/g, '')
+    const percent = raw.endsWith('%')
+    const value = Number(percent ? raw.slice(0, -1) : raw)
+    return { value, percent }
+  }).filter((item) => Number.isFinite(item.value))
+}
+
+function citationSupportsValue(key: FieldKey, value: number, citedText: string) {
+  const numbers = citedNumbers(citedText)
+  const close = (actual: number, expected: number) => Math.abs(actual - expected) <= Math.max(0.001, Math.abs(expected) * 0.001)
+  if (key === 'vacancyPct' || key === 'ltv' || key === 'interestRate') {
+    if (numbers.some((item) => close(item.percent ? Math.abs(item.value) / 100 : Math.abs(item.value), value))) return true
+    if (key === 'vacancyPct' && value === 0 && /fully occupied|no vacancy|zero vacancy/i.test(citedText)) return true
+    return key === 'vacancyPct' && /occupancy/i.test(citedText)
+      && numbers.some((item) => item.percent && close(1 - item.value / 100, value))
+  }
+  if (key === 'interestOnlyMonths' && /years?/i.test(citedText)) {
+    if (numbers.some((item) => !item.percent && close(item.value * 12, value))) return true
+  }
+  return numbers.some((item) => !item.percent && close(item.value, value))
 }
 
 export async function extractUnderwritingFacts(buffer: Buffer, filename: string) {
@@ -135,7 +161,7 @@ export async function extractUnderwritingFacts(buffer: Buffer, filename: string)
   }
   for (const conflict of parsed.conflicts ?? []) {
     if (!conflict.key || !(conflict.key in FIELD_DEFINITIONS)) continue
-    warnings.push(`Conflicting ${conflict.key} values were suppressed${typeof conflict.reason === 'string' && conflict.reason.trim() ? `: ${conflict.reason.trim()}` : '.'}`)
+    warnings.push(`Document reported a ${conflict.key} conflict${typeof conflict.reason === 'string' && conflict.reason.trim() ? `: ${conflict.reason.trim()}` : '.'}`)
   }
 
   const candidates = (assetType === 'multifamily' ? parsed.facts : []).flatMap((raw): ExtractedUnderwritingFact[] => {
@@ -148,13 +174,12 @@ export async function extractUnderwritingFacts(buffer: Buffer, filename: string)
     }
     const quote = typeof raw.evidence_quote === 'string' ? raw.evidence_quote.trim() : ''
     const requestedPage = Number(raw.page)
-    const citation = citations.find((item) => {
+    const quoteCitation = citations.find((item) => {
       const citedText = 'cited_text' in item ? item.cited_text : ''
-      const quoteMatch = quote.length >= 12 && citedText.toLowerCase().includes(quote.slice(0, 40).toLowerCase())
-      const pageMatch = item.type === 'page_location' && Number.isFinite(requestedPage)
-        && requestedPage >= item.start_page_number && requestedPage <= item.end_page_number
-      return quoteMatch || pageMatch
+      return quote.length >= 12 && citedText.toLowerCase().includes(quote.slice(0, 40).toLowerCase())
     })
+    const citation = quoteCitation ?? citations.find((item) => item.type === 'page_location' && Number.isFinite(requestedPage)
+      && requestedPage >= item.start_page_number && requestedPage <= item.end_page_number)
     const locator = citation?.type === 'page_location'
       ? citation.start_page_number === citation.end_page_number
         ? `Page ${citation.start_page_number}`
@@ -165,6 +190,10 @@ export async function extractUnderwritingFacts(buffer: Buffer, filename: string)
       return []
     }
     const citedText = citation && 'cited_text' in citation ? citation.cited_text : quote
+    if (!citationSupportsValue(key, value, citedText)) {
+      warnings.push(`Citation did not explicitly support the ${key} value; it was suppressed.`)
+      return []
+    }
     const rawConfidence = Number(raw.confidence)
     const confidence = Math.max(0, Math.min(citation ? 0.95 : 0.45, Number.isFinite(rawConfidence) ? rawConfidence : 0.5))
     const definition = FIELD_DEFINITIONS[key]
