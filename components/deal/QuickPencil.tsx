@@ -12,6 +12,7 @@ type Defaults = {
   fixedOperatingExpenses: number
   propertyTaxes: number
   insurance: number
+  vacancyPct: number
   ltv: number
   interestRate: number
 }
@@ -123,7 +124,7 @@ export default function QuickPencil({ dealId, entitlementLabel, monthlyAllowance
     fixedOperatingExpenses: String(Math.round(defaults.fixedOperatingExpenses || 0)),
     propertyTaxes: String(Math.round(defaults.propertyTaxes || 0)),
     insurance: String(Math.round(defaults.insurance || 0)),
-    vacancyPct: '7',
+    vacancyPct: String(((defaults.vacancyPct ?? 0.07) * 100).toFixed(2)),
     renovationCostPerUnit: '12000',
     unitsRenovatedPerYear: String(Math.max(1, Math.ceil((defaults.totalUnits || 50) / 5))),
     ltv: String(((defaults.ltv || 0.65) * 100).toFixed(0)),

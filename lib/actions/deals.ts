@@ -516,6 +516,13 @@ export async function createDealFromOM(params: {
     num_units: number | null
     occupancy_rate: number | null
   }
+  underwritingInputs: {
+    current_rent: number | null
+    market_rent: number | null
+    vacancy_rate: number | null
+    property_taxes: number | null
+    insurance: number | null
+  }
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -568,9 +575,11 @@ export async function createDealFromOM(params: {
   // Create financial snapshot if any data was extracted
   const { asking_price, noi, cap_rate, irr } = params.financials
   const { square_footage, year_built, num_units, occupancy_rate } = params.propertyDetails
+  const { current_rent, market_rent, vacancy_rate, property_taxes, insurance } = params.underwritingInputs
   if (
     asking_price !== null || noi !== null || cap_rate !== null || irr !== null ||
-    square_footage !== null || year_built !== null || num_units !== null || occupancy_rate !== null
+    square_footage !== null || year_built !== null || num_units !== null || occupancy_rate !== null ||
+    current_rent !== null || market_rent !== null || vacancy_rate !== null || property_taxes !== null || insurance !== null
   ) {
     const { error: snapshotErr } = await supabase.from('deal_financial_snapshots').insert({
       deal_id:        deal.id,
@@ -583,6 +592,11 @@ export async function createDealFromOM(params: {
       year_built,
       num_units,
       occupancy_rate,
+      current_rent,
+      market_rent,
+      vacancy_rate,
+      property_taxes,
+      insurance,
       created_by:     user.id,
     })
     if (snapshotErr) {

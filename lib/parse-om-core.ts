@@ -17,6 +17,11 @@ export type ParsedOMData = {
   year_built: number | null
   num_units: number | null
   occupancy_rate: number | null
+  current_rent: number | null
+  market_rent: number | null
+  vacancy_rate: number | null
+  property_taxes: number | null
+  insurance: number | null
   broker_name: string | null
   brokerage: string | null
   market: string | null
@@ -39,6 +44,11 @@ const EXTRACTION_PROMPT = `You are a real estate data extraction assistant. Extr
 - year_built (number): Four-digit year the property was built
 - num_units (number): Number of units for multifamily/self-storage, null otherwise
 - occupancy_rate (number): Current or in-place occupancy as decimal (e.g. 0.95 for 95%). Look for "Occupancy", "Leased %", "Physical Occupancy".
+- current_rent (number): Explicitly stated average current/in-place monthly rent per unit. Do not calculate it from totals.
+- market_rent (number): Explicitly stated average market monthly rent per unit. Do not calculate it from totals.
+- vacancy_rate (number): Explicit current or underwriting vacancy as a decimal (e.g. 0.05 for 5%). If only occupancy is stated, return null rather than deriving it.
+- property_taxes (number): Explicit annual current or T-12 property tax expense in dollars. Do not use a projected value when a current value is shown.
+- insurance (number): Explicit annual current or T-12 insurance expense in dollars. Do not calculate from a per-unit assumption.
 - broker_name (string): Broker's full name
 - brokerage (string): Brokerage firm name
 - market (string): City and state (e.g. "Austin, TX")

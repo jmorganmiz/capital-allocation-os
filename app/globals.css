@@ -7060,6 +7060,16 @@ body {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
+.om-review-operations {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+}
+.om-review-operations > :nth-child(1),
+.om-review-operations > :nth-child(2),
+.om-review-operations > :nth-child(3) { grid-column: span 2; }
+.om-review-operations > :nth-child(4),
+.om-review-operations > :nth-child(5) { grid-column: span 3; }
 .om-review-money > span,
 .om-review-percent > span {
   position: absolute;
@@ -7148,7 +7158,9 @@ body {
   .om-review-section-heading { align-items: flex-start; flex-direction: column; gap: 5px; }
   .om-review-section-heading > p { max-width: none; text-align: left; }
   .om-review-fields,
-  .om-review-financials { grid-template-columns: 1fr; }
+  .om-review-financials,
+  .om-review-operations { grid-template-columns: 1fr; }
+  .om-review-operations > :nth-child(n) { grid-column: auto; }
   .om-review-field-wide { grid-column: auto; }
   .om-review-details { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .om-review-broker { align-items: flex-start; flex-direction: column; }

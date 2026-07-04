@@ -201,6 +201,11 @@ export default async function DealPage({ params }: Props) {
   const estimatedCurrentRent = totalUnits > 0 && statedNoi > 0
     ? Math.max(500, Math.round((statedNoi / 0.58 / 0.93) / totalUnits / 12))
     : 1200
+  const currentRent = Number(latestSnapshot?.current_rent ?? estimatedCurrentRent)
+  const marketRent = Number(latestSnapshot?.market_rent ?? Math.round(currentRent * 1.12))
+  const vacancyRate = Number(latestSnapshot?.vacancy_rate ?? (
+    latestSnapshot?.occupancy_rate != null ? Math.max(0, 1 - Number(latestSnapshot.occupancy_rate)) : 0.07
+  ))
 
   return (
     <div className="app-page app-deal-page">
@@ -241,11 +246,12 @@ export default async function DealPage({ params }: Props) {
                 defaults={{
                   purchasePrice,
                   totalUnits,
-                  currentRent: estimatedCurrentRent,
-                  marketRent: Math.round(estimatedCurrentRent * 1.12),
+                  currentRent,
+                  marketRent,
+                  vacancyPct: vacancyRate,
                   fixedOperatingExpenses: Math.round(Math.max(0, totalUnits * 1700)),
-                  propertyTaxes: Math.round(purchasePrice * 0.0185),
-                  insurance: Math.round(totalUnits * 300),
+                  propertyTaxes: Number(latestSnapshot?.property_taxes ?? Math.round(purchasePrice * 0.0185)),
+                  insurance: Number(latestSnapshot?.insurance ?? Math.round(totalUnits * 300)),
                   ltv: Number(latestSnapshot?.ltv ?? 0.65),
                   interestRate: Number(latestSnapshot?.debt_rate ?? 0.065),
                 }}

@@ -198,6 +198,8 @@ export interface Database {
           debt_rate: number | null; ltv: number | null; irr: number | null
           square_footage: number | null; year_built: number | null
           num_units: number | null; occupancy_rate: number | null
+          current_rent: number | null; market_rent: number | null; vacancy_rate: number | null
+          property_taxes: number | null; insurance: number | null
           notes: string | null
           created_by: string; created_at: string
         }
@@ -207,6 +209,8 @@ export interface Database {
           debt_rate?: number | null; ltv?: number | null; irr?: number | null
           square_footage?: number | null; year_built?: number | null
           num_units?: number | null; occupancy_rate?: number | null
+          current_rent?: number | null; market_rent?: number | null; vacancy_rate?: number | null
+          property_taxes?: number | null; insurance?: number | null
           notes?: string | null
           created_by: string | null
         }

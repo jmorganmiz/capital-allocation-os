@@ -18,6 +18,11 @@ interface ParsedOM {
   year_built: number | null
   num_units: number | null
   occupancy_rate: number | null
+  current_rent: number | null
+  market_rent: number | null
+  vacancy_rate: number | null
+  property_taxes: number | null
+  insurance: number | null
   broker_name: string | null
   brokerage: string | null
   market: string | null
@@ -81,6 +86,11 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
   const [askingPrice, setAskingPrice] = useState('')
   const [noi, setNoi] = useState('')
   const [capRate, setCapRate] = useState('')
+  const [currentRent, setCurrentRent] = useState('')
+  const [marketRent, setMarketRent] = useState('')
+  const [vacancyRate, setVacancyRate] = useState('')
+  const [propertyTaxes, setPropertyTaxes] = useState('')
+  const [insurance, setInsurance] = useState('')
   const [addBroker, setAddBroker] = useState(false)
 
   // Storage path set by analyzeFile so handleConfirm can reuse it (avoid double-upload)
@@ -92,7 +102,7 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
   const inputRef = useRef<HTMLInputElement>(null)
 
   const isLoading = uploading || isPending
-  const extractedFieldCount = [title, market, dealType, sourceName, askingPrice, noi, capRate].filter(Boolean).length
+  const extractedFieldCount = [title, market, dealType, sourceName, askingPrice, noi, capRate, currentRent, marketRent, vacancyRate, propertyTaxes, insurance].filter(Boolean).length
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -208,6 +218,11 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
     setAskingPrice(data.asking_price ? formatCurrency(data.asking_price) : '')
     setNoi(data.noi ? formatCurrency(data.noi) : '')
     setCapRate(data.cap_rate ? (data.cap_rate * 100).toFixed(2) : '')
+    setCurrentRent(data.current_rent ? formatCurrency(data.current_rent) : '')
+    setMarketRent(data.market_rent ? formatCurrency(data.market_rent) : '')
+    setVacancyRate(data.vacancy_rate !== null ? (data.vacancy_rate * 100).toFixed(2) : '')
+    setPropertyTaxes(data.property_taxes ? formatCurrency(data.property_taxes) : '')
+    setInsurance(data.insurance ? formatCurrency(data.insurance) : '')
     setAddBroker(false)
     console.log('[OM] Setting step to preview')
     setStep('preview')
@@ -289,6 +304,13 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
             year_built:     parsedOM?.year_built ?? null,
             num_units:      parsedOM?.num_units ?? null,
             occupancy_rate: parsedOM?.occupancy_rate ?? null,
+          },
+          underwritingInputs: {
+            current_rent: parseCurrency(currentRent),
+            market_rent: parseCurrency(marketRent),
+            vacancy_rate: vacancyRate ? parseFloat(vacancyRate) / 100 : null,
+            property_taxes: parseCurrency(propertyTaxes),
+            insurance: parseCurrency(insurance),
           },
         })
 
@@ -641,6 +663,38 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
                     placeholder="6.00"
                   />
                   <span>%</span>
+                  </div>
+                </div>
+              </section>
+
+              <section className="om-review-section">
+                <div className="om-review-section-heading">
+                  <div>
+                    <p className="om-upload-eyebrow">Quick Pencil</p>
+                    <h3>Operating assumptions</h3>
+                  </div>
+                  <p>These values seed the first underwriting model. Review them before creating the deal.</p>
+                </div>
+                <div className="om-review-operations">
+                  <div className="om-review-field om-review-money">
+                    <label>Current rent / unit</label><span>$</span>
+                    <input value={currentRent} onChange={e => setCurrentRent(e.target.value)} className="input-base" placeholder="1,388" />
+                  </div>
+                  <div className="om-review-field om-review-money">
+                    <label>Market rent / unit</label><span>$</span>
+                    <input value={marketRent} onChange={e => setMarketRent(e.target.value)} className="input-base" placeholder="1,650" />
+                  </div>
+                  <div className="om-review-field om-review-percent">
+                    <label>Vacancy</label>
+                    <input value={vacancyRate} onChange={e => setVacancyRate(e.target.value)} className="input-base" placeholder="5.00" /><span>%</span>
+                  </div>
+                  <div className="om-review-field om-review-money">
+                    <label>Annual property taxes</label><span>$</span>
+                    <input value={propertyTaxes} onChange={e => setPropertyTaxes(e.target.value)} className="input-base" placeholder="14,096" />
+                  </div>
+                  <div className="om-review-field om-review-money">
+                    <label>Annual insurance</label><span>$</span>
+                    <input value={insurance} onChange={e => setInsurance(e.target.value)} className="input-base" placeholder="5,821" />
                   </div>
                 </div>
               </section>
