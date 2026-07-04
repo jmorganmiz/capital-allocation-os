@@ -76,3 +76,12 @@ test('deal notes survive navigation with explicit, observable save behavior', as
   assert.match(notes, /lastSavedRef/)
   assert.match(deals, /\.eq\('firm_id', profile\.firm_id\)/)
 })
+
+test('pipeline queries only real deal columns and never converts query failures into an empty board', async () => {
+  const pipeline = await read('app/(app)/pipeline/page.tsx')
+
+  assert.doesNotMatch(pipeline, /asking_price, unit_count, created_at/)
+  assert.match(pipeline, /\{ data: rawDeals, error: dealsError \}/)
+  assert.match(pipeline, /if \(dealsError\)/)
+  assert.match(pipeline, /throw new Error\('The pipeline could not be loaded/)
+})

@@ -13,7 +13,7 @@ export default async function PipelinePage() {
   const [
     { data: stages },
     { data: killReasons },
-    { data: rawDeals },
+    { data: rawDeals, error: dealsError },
     { data: checklistItems },
     { data: dealProgress },
   ] = await Promise.all([
@@ -23,7 +23,7 @@ export default async function PipelinePage() {
       .from('deals')
       .select(`
         id, title, market, deal_type, stage_id, firm_id, is_archived,
-        asking_price, unit_count, created_at,
+        asking_price, created_at,
         owner:profiles!owner_user_id(full_name),
         latest_stage_event:deal_events(created_at),
         deal_notes(section, content),
@@ -34,6 +34,11 @@ export default async function PipelinePage() {
     supabase.from('stage_checklist_items').select('id, stage_id, name, position').order('position'),
     supabase.from('deal_checklist_progress').select('deal_id, checklist_item_id'),
   ])
+
+  if (dealsError) {
+    console.error('[pipeline] failed to load active deals:', dealsError)
+    throw new Error('The pipeline could not be loaded. Your deals remain preserved in Dealstash; please retry.')
+  }
 
   // Get latest stage_changed event per deal for time-in-stage
   const deals = (rawDeals ?? []).map(deal => {
