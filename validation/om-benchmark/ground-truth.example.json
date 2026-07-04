@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "pricing": {
+    "inputUsdPerMillion": null,
+    "outputUsdPerMillion": null
+  },
+  "cases": [
+    {
+      "id": "example-multifamily-01",
+      "file": "documents/example-multifamily-01.pdf",
+      "documentType": "offering_memorandum",
+      "expected": {
+        "purchasePrice": 2500000,
+        "totalUnits": 20,
+        "currentRent": 1456,
+        "marketRent": 1631,
+        "vacancyPct": 0.07,
+        "renovationCostPerUnit": 12000,
+        "propertyTaxes": 46250,
+        "insurance": 6000,
+        "fixedOperatingExpenses": 34000,
+        "ltv": 0.65,
+        "interestRate": 0.065,
+        "amortizationYears": 30,
+        "interestOnlyMonths": 12
+      }
+    }
+  ]
+}

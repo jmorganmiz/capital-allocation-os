@@ -9,6 +9,8 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "node --test tests/*.test.mjs",
+    "benchmark:om": "node scripts/om-benchmark.mjs",
+    "benchmark:om:dry": "node scripts/om-benchmark.mjs --manifest validation/om-benchmark/ground-truth.example.json --dry-run",
     "check": "npm run typecheck && npm run lint && npm test && npm audit --omit=dev"
   },
   "dependencies": {

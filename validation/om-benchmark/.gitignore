@@ -1,0 +1,5 @@
+documents/*
+reports/*
+ground-truth.json
+!documents/.gitkeep
+!reports/.gitkeep
