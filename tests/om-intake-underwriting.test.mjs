@@ -85,3 +85,14 @@ test('pipeline queries only real deal columns and never converts query failures 
   assert.match(pipeline, /if \(dealsError\)/)
   assert.match(pipeline, /throw new Error\('The pipeline could not be loaded/)
 })
+
+test('stale IC artifacts can be rechecked against live approved records before Full Underwrite', async () => {
+  const room = await read('components/deal/UnderwritingRoom.tsx')
+  const actions = await read('lib/actions/underwriting-room.ts')
+
+  assert.match(room, /onlyIcReadinessNeedsReview/)
+  assert.match(room, /Recheck & lock package/)
+  assert.match(room, /onClick=\{finalizePreflight\}/)
+  assert.match(actions, /admin\.from\('deal_notes'\)\.select\('section, content'\)/)
+  assert.match(actions, /if \(uniqueBlockers\.length\) return \{ error:/)
+})

@@ -239,12 +239,16 @@ export default function UnderwritingRoom({ dealId, initialRun, initialSteps, ini
 
   const canResume = Boolean(run && steps.some((step) => step.status === 'queued' || (step.status === 'failed' && step.attempts < 3)))
   const isApproved = Boolean(run?.approved_at && run.status === 'completed')
+  const reviewSteps = steps.filter((step) => step.status === 'needs_review')
+  const onlyIcReadinessNeedsReview = reviewSteps.length === 1 && reviewSteps[0]?.step_key === 'ic_readiness'
   const canFinalize = Boolean(run && !canResume && reviewCount === 0 && !isApproved)
-  const primaryAction = canResume ? resume : reviewCount ? focusReview : canFinalize ? finalizePreflight : start
+  const primaryAction = canResume ? resume : onlyIcReadinessNeedsReview ? finalizePreflight : reviewCount ? focusReview : canFinalize ? finalizePreflight : start
   const primaryLabel = working
     ? 'Workstreams running…'
     : canResume
       ? 'Resume preflight'
+      : onlyIcReadinessNeedsReview
+        ? 'Recheck & lock package'
       : reviewCount
         ? `Review ${reviewCount} workstream${reviewCount === 1 ? '' : 's'}`
         : isApproved
@@ -369,6 +373,12 @@ export default function UnderwritingRoom({ dealId, initialRun, initialSteps, ini
                         <button type="button" onClick={() => openBlocker(label)} key={label}><span>{label}</span><strong>Review →</strong></button>
                       )
                     })}
+                  </div>
+                  <div className="app-ic-ready">
+                    <p>Already resolved a blocker? Recheck the live deal record and lock the package when every requirement is present.</p>
+                    <button type="button" onClick={finalizePreflight} disabled={working || isApproved}>
+                      {working ? 'Rechecking...' : 'Recheck & lock package'}
+                    </button>
                   </div>
                 </>
               ) : (
