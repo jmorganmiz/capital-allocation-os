@@ -41,6 +41,7 @@ type RawExtraction = { document_type?: string; asset_type?: string; facts?: RawF
 
 const PROMPT = `Classify this document as exactly one of: offering_memorandum, rent_roll, t12, debt_quote, other.
 Classify the asset as exactly one of: multifamily, retail, office, industrial, hospitality, self_storage, mixed_use, land, other, unknown.
+Classify a development or redevelopment site with no existing operating multifamily improvements as land, even when its planned use is multifamily.
 Then extract only explicitly stated multifamily underwriting facts.
 Return one JSON object with "document_type", "asset_type", "conflicts", and "facts". Each fact must contain:
 key, value, confidence, evidence_quote, page.
@@ -68,8 +69,11 @@ Rules:
 - Cite the exact supporting document text for every fact using the document citation system.
 - Normalize percentages to decimals.
 - If several values exist, use the current/in-place or trailing value and make the quote identify it.
+- Never extract projected development unit counts, development rents, construction-budget inputs, or other development assumptions as current operating facts.
+- totalUnits must be the existing legal multifamily unit count. If legal, operating, approved, or projected unit counts differ, omit totalUnits and report a conflict.
 - For purchasePrice, do not choose between conflicting asking prices; report a conflict.
 - currentRent and marketRent must be explicitly labeled monthly per-unit averages. Never divide a rent total by units.
+- If a displayed total conflicts with its stated per-unit formula or percentage, omit the field and report a conflict.
 - fixedOperatingExpenses may be extracted only when the document explicitly states the relevant total excluding property taxes, insurance, management fees, and replacement reserves. Never calculate it from line items and never use total operating expenses.
 - Omit unsupported facts.
 - Output valid JSON only.`
