@@ -61,6 +61,23 @@ function artifactRecord(step: UnderwritingStep | undefined): Record<string, unkn
     : {}
 }
 
+type RiskScore = { name: string; score: number; notes: string }
+
+function riskScores(step: UnderwritingStep | undefined): RiskScore[] {
+  const raw = artifactRecord(step).low_scores
+  if (!Array.isArray(raw)) return []
+  return raw.flatMap((item) => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) return []
+    const record = item as Record<string, unknown>
+    const criteria = record.scoring_criteria && typeof record.scoring_criteria === 'object' && !Array.isArray(record.scoring_criteria)
+      ? record.scoring_criteria as Record<string, unknown>
+      : {}
+    const score = Number(record.score)
+    if (!Number.isFinite(score)) return []
+    return [{ name: String(criteria.name ?? 'Scoring criterion'), score, notes: String(record.notes ?? 'No supporting note.') }]
+  })
+}
+
 export default function UnderwritingRoom({ dealId, initialRun, initialSteps, initialAssumptions }: Props) {
   const router = useRouter()
   const [run, setRun] = useState(initialRun)
@@ -85,6 +102,7 @@ export default function UnderwritingRoom({ dealId, initialRun, initialSteps, ini
     () => steps.find((step) => step.id === selectedId) ?? steps.find((step) => step.status === 'running') ?? steps[0],
     [selectedId, steps],
   )
+  const selectedRiskScores = useMemo(() => riskScores(selected), [selected])
 
   async function processRun(runId: string, startingSteps: UnderwritingStep[]) {
     setWorking(true)
@@ -311,6 +329,16 @@ export default function UnderwritingRoom({ dealId, initialRun, initialSteps, ini
             <div className="app-risk-review">
               <h3>Risk narrative</h3>
               <p>Document the principal downside risks, evidence, and mitigants before approving this workstream.</p>
+              {selectedRiskScores.length > 0 && (
+                <div className="app-risk-evidence">
+                  {selectedRiskScores.map((item) => (
+                    <article key={item.name}>
+                      <div><strong>{item.name}</strong><span>{item.score}/5</span></div>
+                      <p>{item.notes}</p>
+                    </article>
+                  ))}
+                </div>
+              )}
               <textarea
                 value={riskNarrative}
                 onChange={(event) => setRiskNarrative(event.target.value)}

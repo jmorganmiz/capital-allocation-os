@@ -39,3 +39,22 @@ test('deal detail displays normalized percentages and document property size', a
   assert.match(dealPage, /latestSnapshot\?\.square_footage/)
   assert.match(deals, /property_size: params\.propertyDetails\.square_footage/)
 })
+
+test('rescoring and preflight evidence remain normalized, relevant, and inspectable', async () => {
+  const scoring = await read('lib/actions/scoring.ts')
+  const scoringUi = await read('components/deal/ScoringSection.tsx')
+  const roomAction = await read('lib/actions/underwriting-room.ts')
+  const roomUi = await read('components/deal/UnderwritingRoom.tsx')
+
+  for (const field of ['cap_rate', 'debt_rate', 'ltv', 'irr']) {
+    assert.match(scoring, new RegExp(`snapshot\\?\\.${field}[^\\n]+\\* 100`))
+  }
+  assert.match(scoring, /upsert\(rows, \{ onConflict: 'deal_id,criteria_id' \}\)/)
+  assert.match(scoring, /export async function rescoreDeal/)
+  assert.match(scoringUi, /Re-score with AI/)
+  assert.match(roomAction, /Math\.abs\(candidatePrice - currentPrice\) \/ currentPrice <= 0\.5/)
+  assert.match(roomAction, /seen\.has\(duplicateKey\)/)
+  assert.match(roomAction, /No relevant comparable firm deals yet/)
+  assert.match(roomUi, /app-risk-evidence/)
+  assert.match(roomUi, /selectedRiskScores/)
+})

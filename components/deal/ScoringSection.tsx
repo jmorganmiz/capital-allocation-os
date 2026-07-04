@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useState } from 'react'
-import { upsertDealScore } from '@/lib/actions/scoring'
+import { rescoreDeal, upsertDealScore } from '@/lib/actions/scoring'
 import { showToast } from '@/lib/toast'
 
 interface Criteria {
@@ -47,6 +47,7 @@ export default function ScoringSection({ dealId, criteria, initialScores }: Prop
   })
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set())
   const [saving, setSaving] = useState<Set<string>>(new Set())
+  const [rescoring, setRescoring] = useState(false)
 
   const activeCriteria = criteria.filter((criterion) => criterion.is_active)
   const overall = calcOverall(scores)
@@ -106,6 +107,19 @@ export default function ScoringSection({ dealId, criteria, initialScores }: Prop
     })
   }
 
+  async function handleRescore() {
+    if (rescoring) return
+    setRescoring(true)
+    const result = await rescoreDeal(dealId)
+    if (result.error) {
+      showToast(result.error, 'error')
+      setRescoring(false)
+      return
+    }
+    showToast(`AI refreshed ${result.scoresWritten} criteria`, 'success')
+    window.location.reload()
+  }
+
   return (
     <>
       <div className="app-deal-section-header">
@@ -113,13 +127,18 @@ export default function ScoringSection({ dealId, criteria, initialScores }: Prop
           <p>AI underwriting</p>
           <h2>Scoring</h2>
         </div>
-        {overall !== null && (
-          <div className="app-deal-score-summary" data-tone={scoreTone(overall)}>
-            <span>{scoredCount}/{activeCriteria.length} scored</span>
-            <strong>{overall}</strong>
-            <em>/100</em>
-          </div>
-        )}
+        <div className="app-deal-score-header-actions">
+          <button type="button" className="app-deal-pill-button" onClick={handleRescore} disabled={rescoring}>
+            {rescoring ? 'Re-scoring…' : 'Re-score with AI'}
+          </button>
+          {overall !== null && (
+            <div className="app-deal-score-summary" data-tone={scoreTone(overall)}>
+              <span>{scoredCount}/{activeCriteria.length} scored</span>
+              <strong>{overall}</strong>
+              <em>/100</em>
+            </div>
+          )}
+        </div>
       </div>
 
       {overall !== null && (
@@ -142,7 +161,7 @@ export default function ScoringSection({ dealId, criteria, initialScores }: Prop
                 <div className="app-deal-score-row-main">
                   <div>
                     <strong>{criterion.name}</strong>
-                    {current?.scored_by === 'ai-auto' && <em>AI</em>}
+                    {current && !current.scored_by && <em>AI</em>}
                     {isSaving && <span>Saving...</span>}
                   </div>
                   {criterion.description && <p>{criterion.description}</p>}

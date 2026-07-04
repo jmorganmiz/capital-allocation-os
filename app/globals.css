@@ -851,9 +851,30 @@
   font-size: 9px;
   line-height: 1.5;
 }
+.app-root .app-risk-evidence {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.app-root .app-risk-evidence article {
+  padding: 10px;
+  border: 1px solid rgba(245,158,11,0.22);
+  border-radius: 9px;
+  background: rgba(245,158,11,0.055);
+}
+.app-root .app-risk-evidence article > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 5px;
+}
+.app-root .app-risk-evidence strong { color: #ededf3; font-size: 9px; }
+.app-root .app-risk-evidence span { color: #ffc23d; font-size: 8px; font-weight: 700; }
+.app-root .app-risk-evidence p { margin: 0; color: #8f8f9d; font-size: 8px; line-height: 1.45; }
 .app-root .app-risk-review textarea {
   width: 100%;
-  min-height: 210px;
+  min-height: 160px;
   resize: vertical;
   padding: 11px;
   border: 1px solid rgba(112, 112, 125, 0.2);
@@ -3228,6 +3249,12 @@ body {
   display: flex;
   align-items: baseline;
   gap: 6px;
+}
+.app-root .app-deal-score-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
 }
 
 .app-root .app-deal-score-summary span,

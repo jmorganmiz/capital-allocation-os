@@ -300,10 +300,10 @@ export async function autoScoreDeal(dealId: string, firmId: string): Promise<Aut
       deal.financing_type && `Financing type: ${deal.financing_type}`,
       snapshot?.purchase_price != null && `Purchase price: $${Number(snapshot.purchase_price).toLocaleString()}`,
       snapshot?.noi            != null && `NOI: $${Number(snapshot.noi).toLocaleString()}`,
-      snapshot?.cap_rate       != null && `Cap rate: ${Number(snapshot.cap_rate).toFixed(2)}%`,
-      snapshot?.debt_rate      != null && `Debt rate: ${Number(snapshot.debt_rate).toFixed(2)}%`,
-      snapshot?.ltv            != null && `LTV: ${Number(snapshot.ltv).toFixed(1)}%`,
-      snapshot?.irr            != null && `Projected IRR: ${Number(snapshot.irr).toFixed(1)}%`,
+      snapshot?.cap_rate       != null && `Cap rate: ${(Number(snapshot.cap_rate) * 100).toFixed(2)}%`,
+      snapshot?.debt_rate      != null && `Debt rate: ${(Number(snapshot.debt_rate) * 100).toFixed(2)}%`,
+      snapshot?.ltv            != null && `LTV: ${(Number(snapshot.ltv) * 100).toFixed(1)}%`,
+      snapshot?.irr            != null && `Projected IRR: ${(Number(snapshot.irr) * 100).toFixed(1)}%`,
       snapshot?.square_footage != null && `Square footage: ${Number(snapshot.square_footage).toLocaleString()} SF`,
       snapshot?.year_built     != null && `Year built: ${snapshot.year_built}`,
       snapshot?.num_units      != null && `Number of units: ${snapshot.num_units}`,
@@ -428,7 +428,9 @@ ${criteriaText}`
       return { criteriaCount: activeCriteria.length, scoresWritten: 0, error: 'all Claude scores filtered (criteria ID mismatch)' }
     }
 
-    const { error: insertError } = await supabase.from('deal_scores').insert(rows)
+    const { error: insertError } = await supabase
+      .from('deal_scores')
+      .upsert(rows, { onConflict: 'deal_id,criteria_id' })
     if (insertError) {
       console.error('[auto-score] insert failed:', insertError.message, '| code:', insertError.code, '| hint:', insertError.hint, '| details:', insertError.details)
       return { criteriaCount: activeCriteria.length, scoresWritten: 0, error: `insert failed: ${insertError.message}` }
@@ -442,4 +444,17 @@ ${criteriaText}`
     if (err instanceof Error && err.stack) console.error('[auto-score] stack:', err.stack)
     return { criteriaCount: 0, scoresWritten: 0, error: msg }
   }
+}
+
+export async function rescoreDeal(dealId: string): Promise<AutoScoreResult> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { criteriaCount: 0, scoresWritten: 0, error: 'Not authenticated' }
+
+  const { data: profile } = await supabase.from('profiles').select('firm_id').eq('id', user.id).single()
+  if (!profile) return { criteriaCount: 0, scoresWritten: 0, error: 'Profile not found' }
+
+  const result = await autoScoreDeal(dealId, profile.firm_id)
+  if (!result.error) revalidatePath(`/deals/${dealId}`)
+  return result
 }

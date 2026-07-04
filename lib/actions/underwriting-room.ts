@@ -228,7 +228,7 @@ async function buildStepResult(
   if (step.step_key === 'comparable_memory') {
     const { data: current } = await admin
       .from('deals')
-      .select('market, deal_type')
+      .select('market, deal_type, asking_price')
       .eq('id', run.deal_id)
       .single()
     const { data: candidates } = await admin
@@ -237,12 +237,25 @@ async function buildStepResult(
       .eq('firm_id', run.firm_id)
       .neq('id', run.deal_id)
       .limit(100)
-    const matches = (candidates ?? []).filter((deal) => (
-      (current?.market && deal.market === current.market)
-      || (current?.deal_type && deal.deal_type === current.deal_type)
-    )).slice(0, 8)
+    const normalize = (value: string | null) => value?.toLowerCase().replace(/[^a-z0-9]/g, '') ?? ''
+    const seen = new Set<string>()
+    const matches = (candidates ?? []).flatMap((deal) => {
+      const marketMatch = Boolean(current?.market && normalize(deal.market) === normalize(current.market))
+      const typeMatch = Boolean(current?.deal_type && normalize(deal.deal_type) === normalize(current.deal_type))
+      const currentPrice = Number(current?.asking_price)
+      const candidatePrice = Number(deal.asking_price)
+      const priceMatch = currentPrice > 0 && candidatePrice > 0
+        ? Math.abs(candidatePrice - currentPrice) / currentPrice <= 0.5
+        : false
+      if (!marketMatch && !(typeMatch && priceMatch)) return []
+      const duplicateKey = `${normalize(deal.title)}|${normalize(deal.market)}`
+      if (seen.has(duplicateKey)) return []
+      seen.add(duplicateKey)
+      const matchReasons = [marketMatch && 'same market', typeMatch && 'same asset type', priceMatch && 'similar price'].filter(Boolean)
+      return [{ ...deal, match_reasons: matchReasons }]
+    }).sort((a, b) => b.match_reasons.length - a.match_reasons.length).slice(0, 8)
     return {
-      summary: matches.length ? `${matches.length} comparable firm deal${matches.length === 1 ? '' : 's'} found` : 'No comparable firm deals yet',
+      summary: matches.length ? `${matches.length} relevant comparable firm deal${matches.length === 1 ? '' : 's'} found` : 'No relevant comparable firm deals yet',
       artifact: { matches },
       evidenceCount: matches.length,
       confidence: matches.length >= 3 ? 0.8 : matches.length ? 0.55 : 0.2,
