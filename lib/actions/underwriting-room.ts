@@ -228,18 +228,25 @@ async function buildStepResult(
   if (step.step_key === 'comparable_memory') {
     const { data: current } = await admin
       .from('deals')
-      .select('market, deal_type, asking_price')
+      .select('title, address, market, deal_type, asking_price')
       .eq('id', run.deal_id)
       .single()
     const { data: candidates } = await admin
       .from('deals')
-      .select('id, title, market, deal_type, asking_price, is_archived, updated_at')
+      .select('id, title, address, market, deal_type, asking_price, is_archived, updated_at')
       .eq('firm_id', run.firm_id)
       .neq('id', run.deal_id)
       .limit(100)
     const normalize = (value: string | null) => value?.toLowerCase().replace(/[^a-z0-9]/g, '') ?? ''
     const seen = new Set<string>()
     const matches = (candidates ?? []).flatMap((deal) => {
+      const sameTitle = Boolean(
+        current?.title && deal.title && normalize(deal.title) === normalize(current.title),
+      )
+      const sameAddress = Boolean(
+        current?.address && deal.address && normalize(deal.address) === normalize(current.address),
+      )
+      if (sameTitle || sameAddress) return []
       const marketMatch = Boolean(current?.market && normalize(deal.market) === normalize(current.market))
       const typeMatch = Boolean(current?.deal_type && normalize(deal.deal_type) === normalize(current.deal_type))
       const currentPrice = Number(current?.asking_price)

@@ -404,6 +404,7 @@ ${criteriaText}`
 
     // Only insert scores for criteria that actually belong to this firm
     const validIds = new Set(activeCriteria.map(c => c.id))
+    const scoredAt = new Date().toISOString()
     const rows = scores
       .filter(s =>
         validIds.has(s.criteria_id) &&
@@ -418,6 +419,7 @@ ${criteriaText}`
         score:       s.score,
         notes:       s.reasoning || null,
         scored_by:   null,
+        updated_at:  scoredAt,
       }))
 
     console.log('[auto-score] rows to insert:', rows.length, '(filtered from', scores.length, 'returned)')
