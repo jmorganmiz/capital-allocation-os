@@ -64,3 +64,15 @@ test('rescoring and preflight evidence remain normalized, relevant, and inspecta
   assert.match(roomUi, /selectedRiskScores/)
   assert.match(scoring, /updated_at:\s+scoredAt/)
 })
+
+test('deal notes survive navigation with explicit, observable save behavior', async () => {
+  const notes = await read('components/deal/NotesSection.tsx')
+  const deals = await read('lib/actions/deals.ts')
+
+  assert.match(notes, /onBlur=\{\(\) => save\(content\)\}/)
+  assert.match(notes, /onClick=\{\(\) => save\(content\)\}/)
+  assert.match(notes, /beforeunload/)
+  assert.match(notes, /Save failed:/)
+  assert.match(notes, /lastSavedRef/)
+  assert.match(deals, /\.eq\('firm_id', profile\.firm_id\)/)
+})

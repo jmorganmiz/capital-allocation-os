@@ -317,6 +317,7 @@ export async function upsertDealNote(
     .select('id')
     .eq('deal_id', dealId)
     .eq('section', section)
+    .eq('firm_id', profile.firm_id)
     .maybeSingle()
 
   if (existing) {
@@ -324,6 +325,7 @@ export async function upsertDealNote(
       .from('deal_notes')
       .update({ content, updated_by: user.id })
       .eq('id', existing.id)
+      .eq('firm_id', profile.firm_id)
     if (error) return { error: error.message }
   } else {
     const { error } = await supabase
