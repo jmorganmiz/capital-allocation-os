@@ -24,7 +24,7 @@ interface Props {
 
 function fmt(val: number | null, isPercent = false): string {
   if (val === null || val === undefined) return '—'
-  if (isPercent) return `${val.toFixed(2)}%`
+  if (isPercent) return `${(val * 100).toFixed(2)}%`
   return `$${val.toLocaleString()}`
 }
 
@@ -72,10 +72,10 @@ export default function FinancialSnapshot({ dealId, firmId, snapshots: initial }
           created_by: user.id,
           purchase_price: form.purchase_price ? parseFloat(form.purchase_price) : null,
           noi: form.noi ? parseFloat(form.noi) : null,
-          cap_rate: form.cap_rate ? parseFloat(form.cap_rate) : null,
-          debt_rate: form.debt_rate ? parseFloat(form.debt_rate) : null,
-          ltv: form.ltv ? parseFloat(form.ltv) : null,
-          irr: form.irr ? parseFloat(form.irr) : null,
+          cap_rate: form.cap_rate ? parseFloat(form.cap_rate) / 100 : null,
+          debt_rate: form.debt_rate ? parseFloat(form.debt_rate) / 100 : null,
+          ltv: form.ltv ? parseFloat(form.ltv) / 100 : null,
+          irr: form.irr ? parseFloat(form.irr) / 100 : null,
           notes: form.notes || null,
         })
         .select()

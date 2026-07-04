@@ -25,3 +25,17 @@ test('reviewed OM operating facts flow into Quick Pencil without silent heuristi
   assert.match(dealPage, /latestSnapshot\?\.insurance/)
   assert.match(dealPage, /latestSnapshot\?\.vacancy_rate/)
 })
+
+test('deal detail displays normalized percentages and document property size', async () => {
+  const financials = await read('components/deal/FinancialSnapshot.tsx')
+  const dealInfo = await read('components/deal/DealInfo.tsx')
+  const dealPage = await read('app/(app)/deals/[id]/page.tsx')
+  const deals = await read('lib/actions/deals.ts')
+
+  assert.match(financials, /\(val \* 100\)\.toFixed\(2\)/)
+  assert.match(financials, /parseFloat\(form\.cap_rate\) \/ 100/)
+  assert.match(dealInfo, /propertySizeFallback/)
+  assert.match(dealInfo, /value \?\? '—'/)
+  assert.match(dealPage, /latestSnapshot\?\.square_footage/)
+  assert.match(deals, /property_size: params\.propertyDetails\.square_footage/)
+})

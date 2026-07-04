@@ -9,6 +9,7 @@ const FINANCING_TYPES = ['Conventional', 'Bridge', 'CMBS', 'Agency', 'All Cash',
 
 interface Props {
   deal: Deal
+  propertySizeFallback?: string | null
 }
 
 function formatPrice(n: number | null): string {
@@ -84,7 +85,7 @@ function EditableText({
           }}
           data-empty={!value}
         >
-          {value ?? placeholder}
+          {value ?? '—'}
         </button>
       )}
     </DetailMetric>
@@ -192,13 +193,13 @@ function EditablePrice({
   )
 }
 
-export default function DealInfo({ deal }: Props) {
+export default function DealInfo({ deal, propertySizeFallback = null }: Props) {
   const [isPending, startTransition] = useTransition()
   const [fields, setFields] = useState({
     asking_price: deal.asking_price,
     deal_structure: deal.deal_structure,
     financing_type: deal.financing_type,
-    property_size: deal.property_size,
+    property_size: deal.property_size ?? propertySizeFallback,
   })
 
   function save(patch: Partial<typeof fields>) {

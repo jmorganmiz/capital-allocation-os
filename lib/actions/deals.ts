@@ -554,6 +554,7 @@ export async function createDealFromOM(params: {
       source_type:   params.source_name ? 'Broker' : null,
       source_name:   params.source_name,
       asking_price:  params.financials.asking_price,
+      property_size: params.propertyDetails.square_footage ? `${params.propertyDetails.square_footage.toLocaleString()} SF` : null,
       stage_id:      params.stageId,
       owner_user_id: user.id,
       intake_type:   'upload',

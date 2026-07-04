@@ -230,7 +230,10 @@ export default async function DealPage({ params }: Props) {
             />
           )}
 
-          <DealInfo deal={deal} />
+          <DealInfo
+            deal={deal}
+            propertySizeFallback={latestSnapshot?.square_footage ? `${Number(latestSnapshot.square_footage).toLocaleString()} SF` : null}
+          />
 
           <section id="section-financials" className="app-deal-section">
             <FinancialSnapshot dealId={deal.id} firmId={deal.firm_id} snapshots={snapshots ?? []} />
