@@ -18,6 +18,11 @@ function argValue(name, fallback = null) {
   return index >= 0 && process.argv[index + 1] ? process.argv[index + 1] : fallback
 }
 
+function requestedCaseIds() {
+  const value = argValue('--cases')
+  return value ? [...new Set(value.split(',').map((id) => id.trim()).filter(Boolean))] : []
+}
+
 function fail(message) {
   console.error(`OM benchmark: ${message}`)
   process.exitCode = 1
@@ -138,6 +143,13 @@ async function main() {
   const dryRun = process.argv.includes('--dry-run')
   const consent = process.argv.includes('--consent-external-processing')
   const manifest = readManifest(manifestPath)
+  const requestedIds = requestedCaseIds()
+  if (requestedIds.length) {
+    const availableIds = new Set(manifest.cases.map((item) => item.id))
+    const missingIds = requestedIds.filter((id) => !availableIds.has(id))
+    if (missingIds.length) throw new Error(`Unknown benchmark cases: ${missingIds.join(', ')}`)
+    manifest.cases = manifest.cases.filter((item) => requestedIds.includes(item.id))
+  }
   console.log(`Validated ${manifest.cases.length} benchmark case${manifest.cases.length === 1 ? '' : 's'}.`)
   if (dryRun) return
   if (!consent) throw new Error('External processing is disabled. Re-run with --consent-external-processing only after confirming these PDFs may be sent to Anthropic.')

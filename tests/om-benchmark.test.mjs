@@ -9,6 +9,8 @@ const example = JSON.parse(fs.readFileSync(path.join(ROOT, 'validation/om-benchm
 
 test('real-OM benchmark fails closed before external document processing', () => {
   assert.match(script, /--consent-external-processing/)
+  assert.match(script, /--cases/)
+  assert.match(script, /Unknown benchmark cases/)
   assert.match(script, /External processing is disabled/)
   assert.match(script, /citationCoverage/)
   assert.match(script, /falsePositiveCount/)

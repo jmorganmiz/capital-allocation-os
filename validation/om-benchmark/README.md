@@ -27,6 +27,12 @@ npm run benchmark:om -- --consent-external-processing
 
 Reports are written to the ignored `reports/` directory. They contain extracted numeric values and metrics but omit citation excerpts.
 
+To run a permitted subset without processing the rest of the corpus, pass a comma-separated list of exact case IDs:
+
+```bash
+npm run benchmark:om -- --cases case-a,case-b --consent-external-processing
+```
+
 ## Launch gate
 
 - At least 20 real documents
