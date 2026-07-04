@@ -92,6 +92,7 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
   const inputRef = useRef<HTMLInputElement>(null)
 
   const isLoading = uploading || isPending
+  const extractedFieldCount = [title, market, dealType, sourceName, askingPrice, noi, capRate].filter(Boolean).length
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -541,19 +542,35 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
         {/* ── Preview ── */}
         {step === 'preview' && (
           <>
-            <div className="mb-4 flex items-center gap-2">
+            <div className="om-review-toolbar">
               <button
+                type="button"
                 onClick={() => setStep('select')}
-                className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
+                className="om-review-back"
               >
                 ← Back
               </button>
-              <span className="text-xs text-gray-400">Review and edit extracted data</span>
+              <div className="om-review-status">
+                <span aria-hidden="true">✓</span>
+                <div>
+                  <strong>Extraction complete</strong>
+                  <small>{extractedFieldCount} core fields found</small>
+                </div>
+              </div>
             </div>
 
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="om-review-content">
+              <section className="om-review-section">
+                <div className="om-review-section-heading">
+                  <div>
+                    <p className="om-upload-eyebrow">Deal profile</p>
+                    <h3>Core deal facts</h3>
+                  </div>
+                  <p>Confirm the facts Dealstash will use to create the record.</p>
+                </div>
+                <div className="om-review-fields">
+                  <div className="om-review-field om-review-field-wide">
+                <label>
                   Deal Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -563,114 +580,129 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
                   placeholder="123 Main St, Austin TX"
                   autoFocus
                 />
-              </div>
+                  </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Market</label>
+                  <div className="om-review-field">
+                  <label>Market</label>
                   <input value={market} onChange={e => setMarket(e.target.value)} className="input-base" placeholder="Austin, TX" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Deal Type</label>
+                  </div>
+                  <div className="om-review-field">
+                  <label>Deal Type</label>
                   <input value={dealType} onChange={e => setDealType(e.target.value)} className="input-base" placeholder="Multifamily" />
-                </div>
-              </div>
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Broker / Source</label>
+                  <div className="om-review-field om-review-field-wide">
+                <label>Broker / Source</label>
                 <input
                   value={sourceName}
                   onChange={e => setSourceName(e.target.value)}
                   className="input-base"
                   placeholder="John Smith"
                 />
-              </div>
+                  </div>
+                </div>
+              </section>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Asking Price</label>
+              <section className="om-review-section">
+                <div className="om-review-section-heading">
+                  <div>
+                    <p className="om-upload-eyebrow">Financial snapshot</p>
+                    <h3>Initial underwriting facts</h3>
+                  </div>
+                  <p>Missing values can be completed later inside the deal.</p>
+                </div>
+                <div className="om-review-financials">
+                  <div className="om-review-field om-review-money">
+                  <label>Asking Price</label>
+                  <span>$</span>
                   <input
                     value={askingPrice}
                     onChange={e => setAskingPrice(e.target.value)}
                     className="input-base"
                     placeholder="5,000,000"
                   />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">NOI</label>
+                  </div>
+                  <div className="om-review-field om-review-money">
+                  <label>NOI</label>
+                  <span>$</span>
                   <input
                     value={noi}
                     onChange={e => setNoi(e.target.value)}
                     className="input-base"
                     placeholder="300,000"
                   />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Cap Rate %</label>
+                  </div>
+                  <div className="om-review-field om-review-percent">
+                  <label>Cap Rate</label>
                   <input
                     value={capRate}
                     onChange={e => setCapRate(e.target.value)}
                     className="input-base"
                     placeholder="6.00"
                   />
+                  <span>%</span>
+                  </div>
                 </div>
-              </div>
+              </section>
 
               {/* Additional details (read-only) */}
               {parsedOM && (parsedOM.square_footage || parsedOM.year_built || parsedOM.num_units || parsedOM.occupancy_rate || parsedOM.irr || parsedOM.debt_service) && (
-                <div className="bg-gray-50 rounded-md p-3">
-                  <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">Additional Details</p>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                <section className="om-review-section">
+                  <div className="om-review-section-heading">
+                    <div>
+                      <p className="om-upload-eyebrow">From the document</p>
+                      <h3>Additional details</h3>
+                    </div>
+                    <p>These facts will be retained with the source OM.</p>
+                  </div>
+                  <div className="om-review-details">
                     {parsedOM.square_footage && (
-                      <p className="text-xs text-gray-600">SF: {parsedOM.square_footage.toLocaleString()}</p>
+                      <div><span>Square feet</span><strong>{parsedOM.square_footage.toLocaleString()}</strong></div>
                     )}
                     {parsedOM.year_built && (
-                      <p className="text-xs text-gray-600">Year Built: {parsedOM.year_built}</p>
+                      <div><span>Year built</span><strong>{parsedOM.year_built}</strong></div>
                     )}
                     {parsedOM.num_units && (
-                      <p className="text-xs text-gray-600">Units: {parsedOM.num_units}</p>
+                      <div><span>Units</span><strong>{parsedOM.num_units}</strong></div>
                     )}
                     {parsedOM.occupancy_rate && (
-                      <p className="text-xs text-gray-600">Occupancy: {(parsedOM.occupancy_rate * 100).toFixed(1)}%</p>
+                      <div><span>Occupancy</span><strong>{(parsedOM.occupancy_rate * 100).toFixed(1)}%</strong></div>
                     )}
                     {parsedOM.irr && (
-                      <p className="text-xs text-gray-600">Projected IRR: {(parsedOM.irr * 100).toFixed(1)}%</p>
+                      <div><span>Projected IRR</span><strong>{(parsedOM.irr * 100).toFixed(1)}%</strong></div>
                     )}
                     {parsedOM.debt_service && (
-                      <p className="text-xs text-gray-600">Debt Service: ${parsedOM.debt_service.toLocaleString()}/yr</p>
+                      <div><span>Debt service</span><strong>${parsedOM.debt_service.toLocaleString()}/yr</strong></div>
                     )}
                   </div>
-                </div>
+                </section>
               )}
 
               {/* Broker contact prompt */}
               {parsedOM?.broker_name && (
-                <div className="border border-blue-200 bg-blue-50 rounded-md p-3">
-                  <p className="text-sm text-blue-800">
-                    We found broker <strong>{parsedOM.broker_name}</strong>
-                    {parsedOM.brokerage ? ` from ${parsedOM.brokerage}` : ''} — add them to your contacts?
-                  </p>
-                  <div className="flex gap-2 mt-2">
+                <section className="om-review-broker">
+                  <div>
+                    <p className="om-upload-eyebrow">Relationship memory</p>
+                    <strong>{parsedOM.broker_name}</strong>
+                    <span>{parsedOM.brokerage ? parsedOM.brokerage : 'Broker found in this OM'}</span>
+                  </div>
+                  <div className="om-review-choice" aria-label="Add broker to contacts">
                     <button
+                      type="button"
                       onClick={() => setAddBroker(true)}
-                      className={`text-xs px-3 py-1 rounded border transition-colors
-                        ${addBroker
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                      className={addBroker ? 'is-active' : ''}
                     >
-                      Yes
+                      Add contact
                     </button>
                     <button
+                      type="button"
                       onClick={() => setAddBroker(false)}
-                      className={`text-xs px-3 py-1 rounded border transition-colors
-                        ${!addBroker
-                          ? 'bg-gray-200 text-gray-700 border-gray-300'
-                          : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                      className={!addBroker ? 'is-active' : ''}
                     >
-                      No
+                      Not now
                     </button>
                   </div>
-                </div>
+                </section>
               )}
             </div>
 
@@ -683,7 +715,7 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
                 disabled={isLoading || !title.trim()}
                 className="btn-primary disabled:opacity-50"
               >
-                {isLoading ? 'Creating deal…' : 'Confirm & Create Deal'}
+                {isLoading ? 'Creating deal…' : 'Create deal & open record'}
               </button>
             </div>
           </>
