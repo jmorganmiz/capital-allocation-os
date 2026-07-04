@@ -45,11 +45,14 @@ test('rescoring and preflight evidence remain normalized, relevant, and inspecta
   const scoringUi = await read('components/deal/ScoringSection.tsx')
   const roomAction = await read('lib/actions/underwriting-room.ts')
   const roomUi = await read('components/deal/UnderwritingRoom.tsx')
+  const scoreConstraint = await read('supabase/migrations/028_deal_score_upsert_constraint.sql')
 
   for (const field of ['cap_rate', 'debt_rate', 'ltv', 'irr']) {
     assert.match(scoring, new RegExp(`snapshot\\?\\.${field}[^\\n]+\\* 100`))
   }
   assert.match(scoring, /upsert\(rows, \{ onConflict: 'deal_id,criteria_id' \}\)/)
+  assert.match(scoreConstraint, /UNIQUE INDEX IF NOT EXISTS/)
+  assert.match(scoreConstraint, /deal_id, criteria_id/)
   assert.match(scoring, /export async function rescoreDeal/)
   assert.match(scoringUi, /Re-score with AI/)
   assert.match(roomAction, /Math\.abs\(candidatePrice - currentPrice\) \/ currentPrice <= 0\.5/)
