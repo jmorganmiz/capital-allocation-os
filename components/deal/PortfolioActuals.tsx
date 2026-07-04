@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { savePortfolioActual } from '@/lib/actions/portfolio-actuals'
 import type { PortfolioActual } from '@/lib/types/database'
 
@@ -8,12 +8,23 @@ function money(value: number | null) {
   return value == null ? '—' : `$${Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
 }
 
+function localDateValue(date = new Date()) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 export default function PortfolioActuals({ dealId, initialActuals, underwrittenYearOneNoi }: { dealId: string; initialActuals: PortfolioActual[]; underwrittenYearOneNoi: number | null }) {
   const [actuals, setActuals] = useState(initialActuals)
-  const [form, setForm] = useState({ periodDate: new Date().toISOString().slice(0, 10), noi: '', occupancy: '', averageMonthlyRent: '', capitalExpenditures: '', debtService: '', sourceReference: '', notes: '' })
+  const [form, setForm] = useState({ periodDate: '', noi: '', occupancy: '', averageMonthlyRent: '', capitalExpenditures: '', debtService: '', sourceReference: '', notes: '' })
   const [error, setError] = useState('')
   const [pending, startTransition] = useTransition()
   const set = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }))
+
+  useEffect(() => {
+    setForm((current) => current.periodDate ? current : { ...current, periodDate: localDateValue() })
+  }, [])
 
   function save() {
     setError('')
