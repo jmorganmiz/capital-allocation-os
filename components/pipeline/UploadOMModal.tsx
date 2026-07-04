@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useTransition } from 'react'
+import { useEffect, useState, useRef, useTransition } from 'react'
 import { Deal, DealStage } from '@/lib/types/database'
 import { createClient } from '@/lib/supabase/client'
 import { createDealFromUpload, createDealFromOM } from '@/lib/actions/deals'
@@ -92,6 +92,14 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
   const inputRef = useRef<HTMLInputElement>(null)
 
   const isLoading = uploading || isPending
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape' && !isLoading) onCancel()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isLoading, onCancel])
 
   async function analyzeFile(f: File) {
     console.log('[OM] analyzeFile called, file:', f.name, f.size, 'bytes')
@@ -351,42 +359,59 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="app-modal bg-white rounded-lg p-6 w-full max-w-lg shadow-xl">
-        <h2 className="text-lg font-semibold text-gray-900 mb-1">Upload Offering Memorandum</h2>
-        <p className="text-sm text-gray-500 mb-5">Upload a PDF to create a new deal or attach to an existing one.</p>
+    <div
+      className="om-upload-backdrop"
+      role="presentation"
+      onMouseDown={event => {
+        if (event.target === event.currentTarget && !isLoading) onCancel()
+      }}
+    >
+      <section className="app-modal om-upload-modal" role="dialog" aria-modal="true" aria-labelledby="om-upload-title">
+        <header className="om-upload-header">
+          <div>
+            <p className="om-upload-eyebrow">Deal intake</p>
+            <h2 id="om-upload-title">Upload an offering memorandum</h2>
+            <p>Dealstash reads the PDF, prepares the deal record, and keeps the source document attached.</p>
+          </div>
+          <button type="button" className="om-upload-close" onClick={onCancel} disabled={isLoading} aria-label="Close upload dialog">
+            <span aria-hidden="true">×</span>
+          </button>
+        </header>
+        <div className="om-upload-body">
 
         {/* Mode toggle — hidden while analyzing or in preview */}
         {step === 'select' && (
-          <div className="flex gap-3 mb-4">
+          <div className="om-upload-mode" aria-label="Upload destination">
             <button
+              type="button"
               onClick={() => handleModeChange('new')}
-              className={`flex-1 text-sm py-2 rounded-md border transition-colors
-                ${mode === 'new' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+              className={mode === 'new' ? 'is-active' : ''}
             >
-              Create New Deal
+              <span>Create new deal</span>
+              <small>Start a fresh record</small>
             </button>
             <button
+              type="button"
               onClick={() => handleModeChange('existing')}
-              className={`flex-1 text-sm py-2 rounded-md border transition-colors
-                ${mode === 'existing' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+              className={mode === 'existing' ? 'is-active' : ''}
             >
-              Attach to Existing
+              <span>Attach to existing</span>
+              <small>Add the OM to a deal</small>
             </button>
           </div>
         )}
 
         {/* ── Analyzing ── */}
         {step === 'analyzing' && (
-          <div className="py-12 text-center">
-            <div className="inline-flex items-center gap-3 text-gray-700">
+          <div className="om-upload-analyzing">
+            <div className="om-upload-analyzing-icon">
               <svg className="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
-              <span className="text-sm font-medium">Analyzing your OM…</span>
             </div>
-            <p className="text-xs text-gray-400 mt-2">Extracting property details with AI</p>
+            <h3>Reading your OM…</h3>
+            <p>Extracting deal facts and preparing a reviewable record.</p>
           </div>
         )}
 
@@ -395,18 +420,32 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
           <>
             <div
               onClick={() => inputRef.current?.click()}
-              className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer mb-4 transition-colors
-                ${file ? 'border-blue-300 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}
+              onDragOver={event => event.preventDefault()}
+              onDrop={event => {
+                event.preventDefault()
+                const droppedFile = event.dataTransfer.files[0]
+                if (!droppedFile) return
+                setFile(droppedFile)
+                if (mode === 'new') analyzeFile(droppedFile)
+              }}
+              className={`om-upload-dropzone ${file ? 'has-file' : ''}`}
             >
               {file ? (
                 <>
-                  <p className="text-sm font-medium text-blue-700">{file.name}</p>
-                  <p className="text-xs text-gray-400 mt-1">{(file.size / 1024 / 1024).toFixed(1)} MB</p>
+                  <span className="om-upload-file-icon" aria-hidden="true">PDF</span>
+                  <div>
+                    <strong>{file.name}</strong>
+                    <p>{(file.size / 1024 / 1024).toFixed(1)} MB · Ready to analyze</p>
+                  </div>
+                  <span className="om-upload-change">Change file</span>
                 </>
               ) : (
                 <>
-                  <p className="text-sm text-gray-500">Click to select a PDF</p>
-                  <p className="text-xs text-gray-400 mt-1">or drag and drop</p>
+                  <span className="om-upload-document-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8m-6-6 6 6m-6-6v6h6M12 18v-6m-3 3 3-3 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </span>
+                  <strong>Choose a PDF or drag it here</strong>
+                  <p>Offering memorandums up to 20 MB</p>
                 </>
               )}
               <input ref={inputRef} type="file" accept=".pdf" className="hidden" onChange={handleFileSelect} />
@@ -441,7 +480,7 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
                       autoFocus
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Market</label>
                       <input value={market} onChange={e => setMarket(e.target.value)} className="input-base" placeholder="Austin, TX" />
@@ -475,7 +514,7 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
 
             {error && <p className="text-sm text-red-600 mt-3">{error}</p>}
 
-            <div className="flex gap-3 justify-end mt-5">
+            <div className="om-upload-footer">
               <button onClick={onCancel} className="btn-ghost">Cancel</button>
               {mode === 'new' && parseError && (
                 <button
@@ -512,7 +551,7 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
               <span className="text-xs text-gray-400">Review and edit extracted data</span>
             </div>
 
-            <div className="space-y-3 max-h-[55vh] overflow-y-auto pr-1">
+            <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Deal Name <span className="text-red-500">*</span>
@@ -526,7 +565,7 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Market</label>
                   <input value={market} onChange={e => setMarket(e.target.value)} className="input-base" placeholder="Austin, TX" />
@@ -547,7 +586,7 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Asking Price</label>
                   <input
@@ -637,7 +676,7 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
 
             {error && <p className="text-sm text-red-600 mt-3">{error}</p>}
 
-            <div className="flex gap-3 justify-end mt-5">
+            <div className="om-upload-footer">
               <button onClick={onCancel} className="btn-ghost">Cancel</button>
               <button
                 onClick={handleConfirm}
@@ -649,7 +688,8 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
             </div>
           </>
         )}
-      </div>
+        </div>
+      </section>
     </div>
   )
 }

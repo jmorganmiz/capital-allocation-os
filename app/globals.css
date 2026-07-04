@@ -6789,6 +6789,217 @@ body {
 .app-modal .hover\:bg-gray-50:hover,
 .app-modal .hover\:bg-blue-50:hover { background: rgba(39,39,53,0.7) !important; }
 
+/* Offering memorandum intake */
+.om-upload-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(5, 5, 12, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.om-upload-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(720px, 100%);
+  max-height: calc(100dvh - 48px);
+  overflow: hidden;
+  border-radius: 18px;
+  box-shadow: 0 28px 80px rgba(0,0,0,0.52);
+}
+.om-upload-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 28px 30px 24px;
+  border-bottom: 1px solid rgba(112,112,125,0.16);
+}
+.om-upload-header h2 {
+  margin: 4px 0 8px;
+  font-size: 25px;
+  line-height: 1.2;
+  letter-spacing: -0.035em;
+  font-weight: 600;
+}
+.om-upload-header > div > p:last-child {
+  max-width: 540px;
+  color: var(--silver);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.om-upload-eyebrow {
+  color: var(--mercury-blue) !important;
+  font-size: 10px !important;
+  line-height: 1.2 !important;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.om-upload-close {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid rgba(112,112,125,0.22);
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--silver);
+  font: inherit;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+.om-upload-close:hover { color: var(--starlight); background: rgba(39,39,53,0.8); }
+.om-upload-close:disabled { opacity: 0.4; cursor: not-allowed; }
+.om-upload-body {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 26px 30px 30px;
+}
+.om-upload-mode {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 20px;
+  padding: 5px;
+  border: 1px solid rgba(112,112,125,0.16);
+  border-radius: 12px;
+  background: #171721;
+}
+.om-upload-mode button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--silver);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.om-upload-mode button span { color: inherit; font-size: 13px; font-weight: 600; }
+.om-upload-mode button small { color: var(--lead); font-size: 11px; font-weight: 400; }
+.om-upload-mode button.is-active {
+  border-color: rgba(82,102,235,0.42);
+  background: rgba(82,102,235,0.13);
+  color: var(--starlight);
+}
+.om-upload-mode button.is-active small { color: #aeb7f8; }
+.om-upload-dropzone {
+  display: flex;
+  min-height: 190px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding: 28px;
+  border: 1px dashed rgba(112,112,125,0.42);
+  border-radius: 14px;
+  background: rgba(23,23,33,0.72);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+.om-upload-dropzone:hover {
+  border-color: rgba(82,102,235,0.72);
+  background: rgba(82,102,235,0.06);
+  transform: translateY(-1px);
+}
+.om-upload-document-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  margin-bottom: 5px;
+  border: 1px solid rgba(82,102,235,0.38);
+  border-radius: 12px;
+  background: rgba(82,102,235,0.12);
+  color: #8f9cf7;
+}
+.om-upload-document-icon svg { width: 22px; height: 22px; }
+.om-upload-dropzone strong { color: var(--starlight); font-size: 14px; font-weight: 600; }
+.om-upload-dropzone p { color: var(--lead); font-size: 12px; }
+.om-upload-dropzone.has-file {
+  min-height: 92px;
+  flex-direction: row;
+  justify-content: flex-start;
+  text-align: left;
+  border-style: solid;
+  border-color: rgba(82,102,235,0.42);
+  background: rgba(82,102,235,0.08);
+}
+.om-upload-file-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 9px;
+  background: rgba(82,102,235,0.18);
+  color: #aeb7f8;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+}
+.om-upload-dropzone.has-file > div { min-width: 0; }
+.om-upload-dropzone.has-file strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.om-upload-change { margin-left: auto; color: #9ba6fa; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.om-upload-analyzing {
+  display: flex;
+  min-height: 280px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+}
+.om-upload-analyzing-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 18px;
+  border-radius: 9999px;
+  background: rgba(82,102,235,0.12);
+}
+.om-upload-analyzing h3 { margin-bottom: 6px; font-size: 17px; font-weight: 600; }
+.om-upload-analyzing p { color: var(--silver); font-size: 12px; }
+.om-upload-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin: 24px -30px -30px;
+  padding: 18px 30px;
+  border-top: 1px solid rgba(112,112,125,0.16);
+  background: rgba(30,30,42,0.98);
+}
+
+@media (max-width: 640px) {
+  .om-upload-backdrop { align-items: end; padding: 0; }
+  .om-upload-modal { max-height: 94dvh; border-radius: 18px 18px 0 0; }
+  .om-upload-header { padding: 22px 20px 18px; }
+  .om-upload-header h2 { font-size: 21px; }
+  .om-upload-body { padding: 20px; }
+  .om-upload-mode { grid-template-columns: 1fr; }
+  .om-upload-dropzone { min-height: 170px; padding: 22px 16px; }
+  .om-upload-dropzone.has-file { min-height: 88px; }
+  .om-upload-change { display: none; }
+  .om-upload-footer { margin: 22px -20px -20px; padding: 14px 20px; }
+  .om-upload-footer .btn-primary,
+  .om-upload-footer .btn-ghost { flex: 1; justify-content: center; }
+}
+
 @media (max-width: 900px) {
   .landing-page > nav { gap: 14px; height: auto; min-height: 64px; padding: 10px 16px; }
   .nav-links { gap: 12px; overflow-x: auto; scrollbar-width: none; white-space: nowrap; }
