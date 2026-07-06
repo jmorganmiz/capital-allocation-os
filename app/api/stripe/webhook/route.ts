@@ -70,9 +70,12 @@ export async function POST(request: Request) {
         stripe_current_period_end: currentPeriodEnd
           ? new Date(currentPeriodEnd * 1000).toISOString()
           : null,
+        stripe_last_subscription_event_at: event.created,
       }
 
+      // Skip delayed retries of older events so they cannot overwrite newer state
       const query = admin.from('firms').update(updates)
+        .or(`stripe_last_subscription_event_at.is.null,stripe_last_subscription_event_at.lte.${event.created}`)
       const { error } = firmId
         ? await query.eq('id', firmId)
         : await query.eq('stripe_subscription_id', subscription.id)
