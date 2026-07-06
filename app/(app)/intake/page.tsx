@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import InboxAddressCard from '@/components/intake/InboxAddressCard'
 import SetupChecklist from '@/components/intake/SetupChecklist'
+import IntakeHealthLog, { type IntakeEvent } from '@/components/intake/IntakeHealthLog'
 import { calculateOverallScore } from '@/lib/workflow.mjs'
 
 function formatDate(value: string) {
@@ -31,16 +32,24 @@ export default async function IntakePage() {
       .limit(20),
     supabase
       .from('inbound_email_events')
-      .select('id, status, attempts, last_error, received_at, processed_at')
+      .select('id, status, attempts, last_error, received_at, processed_at, sender, subject, attachment_count, deal_ids')
       .eq('firm_id', firmId)
       .order('received_at', { ascending: false })
-      .limit(20),
+      .limit(100),
     supabase.from('buy_boxes').select('id', { count: 'exact', head: true }).eq('firm_id', firmId),
     supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('firm_id', firmId),
     supabase.from('deals').select('id', { count: 'exact', head: true }).eq('firm_id', firmId),
   ])
 
-  const failedCount = (recentEvents ?? []).filter(event => event.status === 'failed').length
+  const events = (recentEvents ?? []) as IntakeEvent[]
+  // Server-rendered operational window; recalculated once per request.
+  // eslint-disable-next-line react-hooks/purity
+  const weekStart = Date.now() - (7 * 24 * 60 * 60 * 1000)
+  const weekEvents = events.filter(event => new Date(event.received_at).getTime() >= weekStart)
+  const processedCount = weekEvents.filter(event => event.status === 'processed').length
+  const failedCount = weekEvents.filter(event => event.status === 'failed').length
+  const completedCount = processedCount + failedCount
+  const successRate = completedCount > 0 ? Math.round((processedCount / completedCount) * 100) : 100
 
   return (
     <div className="app-page app-intake-page">
@@ -75,8 +84,9 @@ export default async function IntakePage() {
 
       <div className="app-intake-metrics">
         {[
-          { value: recentDeals?.length ?? 0, label: 'Recent emailed deals', alert: false },
-          { value: (recentEvents ?? []).filter(e => e.status === 'processed').length, label: 'Emails processed', alert: false },
+          { value: weekEvents.length, label: 'Emails received · 7 days', alert: false },
+          { value: `${successRate}%`, label: 'Intake success rate', alert: successRate < 95 },
+          { value: processedCount, label: 'Delivered to pipeline', alert: false },
           { value: failedCount, label: 'Needs attention', alert: failedCount > 0 },
         ].map(({ value, label, alert }) => (
           <div key={label} className="app-intake-metric" data-alert={alert ? 'true' : 'false'}>
@@ -85,6 +95,8 @@ export default async function IntakePage() {
           </div>
         ))}
       </div>
+
+      <IntakeHealthLog events={events.slice(0, 20)} />
 
       <section className="app-intake-panel app-intake-recent">
         <div className="app-intake-recent-header">

@@ -75,39 +75,11 @@ export async function POST(req: NextRequest) {
   const emailId = event.data.email_id
   if (!emailId) return NextResponse.json({ error: 'missing_email_id' }, { status: 400 })
 
-  const [{ data: email, error: emailError }, { data: attachmentList, error: attachmentError }] =
-    await Promise.all([
-      getResend().emails.receiving.get(emailId),
-      getResend().emails.receiving.attachments.list({ emailId }),
-    ])
+  const { data: email, error: emailError } = await getResend().emails.receiving.get(emailId)
 
-  if (emailError || attachmentError || !email) {
+  if (emailError || !email) {
     console.error('[inbox] failed to retrieve received email')
     return NextResponse.json({ error: 'email_retrieval_failed' }, { status: 502 })
-  }
-
-  const pdfMetadata = (attachmentList?.data ?? [])
-    .filter(a => a.content_type === 'application/pdf' || (a.filename ?? '').toLowerCase().endsWith('.pdf'))
-    .slice(0, MAX_ATTACHMENTS)
-
-  const attachments: ResendAttachment[] = []
-  for (const attachment of pdfMetadata) {
-    if (attachment.size > MAX_ATTACHMENT_BYTES) continue
-    try {
-      const response = await fetch(attachment.download_url)
-      if (!response.ok) throw new Error(`download returned ${response.status}`)
-      const bytes = Buffer.from(await response.arrayBuffer())
-      if (bytes.length > MAX_ATTACHMENT_BYTES) continue
-      attachments.push({
-        filename: attachment.filename ?? 'attachment.pdf',
-        content: bytes.toString('base64'),
-        contentType: attachment.content_type ?? 'application/pdf',
-        size: bytes.length,
-      })
-    } catch (error) {
-      console.error('[inbox] attachment download failed:', error instanceof Error ? error.message : 'unknown error')
-      return NextResponse.json({ error: 'attachment_download_failed' }, { status: 502 })
-    }
   }
 
   const payload: ResendInboundPayload = {
@@ -116,7 +88,7 @@ export async function POST(req: NextRequest) {
     subject: email.subject ?? undefined,
     text: email.text ?? undefined,
     html: email.html ?? undefined,
-    attachments,
+    attachments: [],
     messageId: email.message_id ?? emailId,
     headers: email.headers ?? undefined,
   }
@@ -155,17 +127,6 @@ export async function POST(req: NextRequest) {
 
   console.log('[inbox] matched firm:', firm.name, '| id:', firm.id)
 
-  // Filter PDF attachments only
-  const pdfAttachments = (payload.attachments ?? []).filter(a =>
-    a.contentType === 'application/pdf' ||
-    (a.filename ?? '').toLowerCase().endsWith('.pdf')
-  )
-
-  if (pdfAttachments.length === 0) {
-    console.log('[inbox] no PDF attachments — skipping')
-    return NextResponse.json({ received: true, skipped: 'no PDF attachments' })
-  }
-
   const { data: claimStatus, error: claimError } = await supabase.rpc(
     'claim_inbound_email_event',
     { p_event_id: emailId },
@@ -183,7 +144,65 @@ export async function POST(req: NextRequest) {
 
   await supabase
     .from('inbound_email_events')
-    .update({ firm_id: firm.id })
+    .update({
+      firm_id: firm.id,
+      sender: payload.from,
+      recipient: toAddresses.join(', '),
+      subject: payload.subject ?? null,
+    })
+    .eq('id', emailId)
+
+  const { data: attachmentList, error: attachmentError } =
+    await getResend().emails.receiving.attachments.list({ emailId })
+  if (attachmentError) {
+    console.error('[inbox] failed to list received email attachments')
+    await failInboundEvent(supabase, emailId, 'attachment_list_failed')
+    return NextResponse.json({ error: 'attachment_list_failed' }, { status: 502 })
+  }
+
+  const pdfMetadata = (attachmentList?.data ?? [])
+    .filter(a => a.content_type === 'application/pdf' || (a.filename ?? '').toLowerCase().endsWith('.pdf'))
+    .slice(0, MAX_ATTACHMENTS)
+
+  const attachments: ResendAttachment[] = []
+  for (const attachment of pdfMetadata) {
+    if (attachment.size > MAX_ATTACHMENT_BYTES) continue
+    try {
+      const response = await fetch(attachment.download_url)
+      if (!response.ok) throw new Error(`download returned ${response.status}`)
+      const bytes = Buffer.from(await response.arrayBuffer())
+      if (bytes.length > MAX_ATTACHMENT_BYTES) continue
+      attachments.push({
+        filename: attachment.filename ?? 'attachment.pdf',
+        content: bytes.toString('base64'),
+        contentType: attachment.content_type ?? 'application/pdf',
+        size: bytes.length,
+      })
+    } catch (error) {
+      console.error('[inbox] attachment download failed:', error instanceof Error ? error.message : 'unknown error')
+      await failInboundEvent(supabase, emailId, 'attachment_download_failed')
+      return NextResponse.json({ error: 'attachment_download_failed' }, { status: 502 })
+    }
+  }
+  payload.attachments = attachments
+
+  // Filter PDF attachments only
+  const pdfAttachments = (payload.attachments ?? []).filter(a =>
+    a.contentType === 'application/pdf' ||
+    (a.filename ?? '').toLowerCase().endsWith('.pdf')
+  )
+
+  if (pdfAttachments.length === 0) {
+    await failInboundEvent(supabase, emailId, 'no_pdf_attachment')
+    console.log('[inbox] no PDF attachments — skipping')
+    return NextResponse.json({ error: 'no_pdf_attachment' }, { status: 422 })
+  }
+
+  await supabase
+    .from('inbound_email_events')
+    .update({
+      attachment_count: pdfAttachments.length,
+    })
     .eq('id', emailId)
 
   console.log('[inbox] PDF attachments count:', pdfAttachments.length)
@@ -239,7 +258,12 @@ export async function POST(req: NextRequest) {
   if (processingFailed || createdDeals.length !== pdfAttachments.length) {
     await supabase
       .from('inbound_email_events')
-      .update({ status: 'failed', last_error: 'attachment_processing_failed' })
+      .update({
+        status: 'failed',
+        last_error: 'attachment_processing_failed',
+        deal_ids: createdDeals.map(deal => deal.id),
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', emailId)
     return NextResponse.json({ error: 'attachment_processing_failed' }, { status: 500 })
   }
@@ -250,6 +274,7 @@ export async function POST(req: NextRequest) {
       status: 'processed',
       processed_at: new Date().toISOString(),
       last_error: null,
+      deal_ids: createdDeals.map(deal => deal.id),
     })
     .eq('id', emailId)
   if (completeError) {
@@ -271,6 +296,17 @@ export async function POST(req: NextRequest) {
 }
 
 // ── Process a single PDF attachment ───────────────────────────────────────────
+
+async function failInboundEvent(
+  supabase: ReturnType<typeof createAdminClient>,
+  emailId: string,
+  lastError: string,
+) {
+  await supabase
+    .from('inbound_email_events')
+    .update({ status: 'failed', last_error: lastError, updated_at: new Date().toISOString() })
+    .eq('id', emailId)
+}
 
 async function processAttachment({
   supabase,

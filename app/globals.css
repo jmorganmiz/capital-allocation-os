@@ -4778,7 +4778,7 @@ body {
 
 .app-root .app-intake-metrics {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
   margin-top: 24px;
 }
@@ -4819,6 +4819,113 @@ body {
 .app-root .app-intake-recent {
   margin-top: 28px;
 }
+
+.app-root .app-intake-health {
+  margin-top: 28px;
+  padding: 24px;
+}
+
+.app-root .app-intake-health .app-intake-recent-header p:not(.app-intake-kicker) {
+  color: var(--app-faint);
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.app-root .app-intake-health .app-intake-recent-header > span {
+  color: var(--app-faint);
+  font-size: 11px;
+}
+
+.app-root .app-intake-health-list {
+  overflow: hidden;
+  border: 1px solid rgba(112,112,125,0.18);
+  border-radius: 14px;
+  background: rgba(12,12,20,0.25);
+}
+
+.app-root .app-intake-health-row {
+  display: grid;
+  grid-template-columns: 10px minmax(230px, 1.4fr) minmax(190px, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  min-height: 76px;
+  padding: 14px 16px;
+}
+
+.app-root .app-intake-health-row + .app-intake-health-row {
+  border-top: 1px solid rgba(112,112,125,0.12);
+}
+
+.app-root .app-intake-health-row[data-status='failed'] {
+  background: rgba(248,113,113,0.035);
+}
+
+.app-root .app-intake-health-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #4ade80;
+  box-shadow: 0 0 0 4px rgba(74,222,128,0.08);
+}
+
+.app-root [data-status='failed'] .app-intake-health-status {
+  background: #f87171;
+  box-shadow: 0 0 0 4px rgba(248,113,113,0.08);
+}
+
+.app-root [data-status='processing'] .app-intake-health-status {
+  background: #fbbf24;
+  box-shadow: 0 0 0 4px rgba(251,191,36,0.08);
+}
+
+.app-root .app-intake-health-message,
+.app-root .app-intake-health-outcome {
+  min-width: 0;
+}
+
+.app-root .app-intake-health-message strong,
+.app-root .app-intake-health-outcome strong {
+  display: block;
+  overflow: hidden;
+  color: var(--app-text);
+  font-size: 13px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-root [data-status='failed'] .app-intake-health-outcome strong { color: #fca5a5; }
+
+.app-root .app-intake-health-message span,
+.app-root .app-intake-health-outcome span {
+  display: block;
+  overflow: hidden;
+  color: var(--app-faint);
+  font-size: 11px;
+  margin-top: 4px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-root .app-intake-health-action a,
+.app-root .app-intake-health-action button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  border: 1px solid rgba(82,102,235,0.4);
+  border-radius: 999px;
+  background: rgba(82,102,235,0.08);
+  color: var(--ghost-blue);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 7px 13px;
+  text-decoration: none;
+}
+
+.app-root .app-intake-health-action button:disabled { cursor: wait; opacity: 0.55; }
+
+.app-root .app-intake-health-empty { min-height: 140px; }
 
 .app-root .app-intake-recent-header a {
   color: var(--ghost-blue);
@@ -6680,6 +6787,14 @@ body {
     grid-template-columns: 1fr;
   }
 
+  .app-root .app-intake-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .app-root .app-intake-health-row {
+    grid-template-columns: 10px minmax(190px, 1.2fr) minmax(170px, 1fr) auto;
+  }
+
   .app-root .app-dashboard-kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -6764,6 +6879,17 @@ body {
 
   .app-root .app-title {
     font-size: 28px;
+  }
+
+  .app-root .app-intake-health { padding: 18px; }
+
+  .app-root .app-intake-health-row {
+    grid-template-columns: 10px minmax(0, 1fr) auto;
+    gap: 12px;
+  }
+
+  .app-root .app-intake-health-outcome {
+    grid-column: 2 / -1;
   }
 
   .app-root .app-detail-header-main {

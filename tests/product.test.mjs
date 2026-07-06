@@ -19,6 +19,29 @@ test('intake is user-visible, tenant-scoped, and automatically scored', async ()
   assert.match(navigation, /href: '\/intake'/)
 })
 
+test('email intake exposes firm-scoped health, safe retries, and operational metadata', async () => {
+  const [page, healthLog, retryAction, route, migration] = await Promise.all([
+    read('app/(app)/intake/page.tsx'),
+    read('components/intake/IntakeHealthLog.tsx'),
+    read('lib/actions/intake.ts'),
+    read('app/api/inbox/inbound/route.ts'),
+    read('supabase/migrations/033_inbound_email_observability.sql'),
+  ])
+
+  assert.match(page, /IntakeHealthLog/)
+  assert.match(page, /Intake success rate/)
+  assert.match(healthLog, /Email intake log/)
+  assert.match(healthLog, /retryInboundEmail/)
+  assert.match(retryAction, /\.eq\('firm_id', profile\.firm_id\)/)
+  assert.match(retryAction, /event\.status !== 'failed'/)
+  assert.match(retryAction, /MAX_RETRY_ATTEMPTS/)
+  assert.match(route, /sender: payload\.from/)
+  assert.match(route, /deal_ids: createdDeals\.map/)
+  assert.match(route, /failInboundEvent\(supabase, emailId, 'no_pdf_attachment'\)/)
+  assert.match(migration, /Message bodies and attachment contents are/)
+  assert.match(migration, /inbound_email_events_firm_status_received_idx/)
+})
+
 test('trial lifecycle is enforced by the application shell', async () => {
   const [layout, gate, migration] = await Promise.all([
     read('app/(app)/layout.tsx'),
