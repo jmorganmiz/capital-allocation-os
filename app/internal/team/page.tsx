@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { getInternalContext, can } from '@/lib/internal/auth'
 import TaskList from '@/components/internal/TaskList'
+import RosterManager from '@/components/internal/RosterManager'
 
 export default async function InternalTeamPage() {
   const context = await getInternalContext()
@@ -33,6 +34,10 @@ export default async function InternalTeamPage() {
         canWrite={can(context, 'team', 'write')}
         currentUserId={context.userId}
       />
+
+      {context.role === 'owner' && (
+        <RosterManager members={(members ?? []) as never[]} currentUserId={context.userId} />
+      )}
 
       <section>
         <h2 className="text-base font-semibold" style={{ color: '#f4f4f8' }}>Activity log</h2>
