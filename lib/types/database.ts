@@ -74,6 +74,30 @@ export interface Database {
         Insert: { id?: string; deal_id: string; firm_id: string; section: string; content?: string; created_by: string }
         Update: { content?: string; updated_by?: string }
       }
+      decision_writing_drafts: {
+        Row: {
+          id: string; firm_id: string; deal_id: string; user_id: string
+          section: 'overview' | 'risks'; mode: 'guided' | 'evidence'
+          prompt_answers: Json; input_text: string | null; draft_text: string
+          evidence: Json; missing_questions: Json; warnings: Json
+          source_run_id: string | null; model: string | null
+          inserted_at: string | null; inserted_by: string | null; inserted_text: string | null
+          saved_at: string | null; saved_text: string | null; created_at: string
+        }
+        Insert: {
+          id?: string; firm_id: string; deal_id: string; user_id: string
+          section: 'overview' | 'risks'; mode: 'guided' | 'evidence'
+          prompt_answers?: Json; input_text?: string | null; draft_text: string
+          evidence?: Json; missing_questions?: Json; warnings?: Json
+          source_run_id?: string | null; model?: string | null
+          inserted_at?: string | null; inserted_by?: string | null; inserted_text?: string | null
+          saved_at?: string | null; saved_text?: string | null
+        }
+        Update: {
+          inserted_at?: string | null; inserted_by?: string | null; inserted_text?: string | null
+          saved_at?: string | null; saved_text?: string | null
+        }
+      }
       deal_files: {
         Row: {
           id: string; deal_id: string; firm_id: string; storage_bucket: string

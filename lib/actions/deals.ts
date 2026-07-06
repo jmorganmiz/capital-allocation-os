@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient, createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { autoScoreDeal } from '@/lib/actions/scoring'
 
@@ -302,7 +302,8 @@ export async function killDeal(
 export async function upsertDealNote(
   dealId: string,
   section: 'overview' | 'risks' | 'notes',
-  content: string
+  content: string,
+  sourceDraftId?: string,
 ) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -340,6 +341,14 @@ export async function upsertDealNote(
       notes:         `Section: ${section}`,
       actor_user_id: user.id,
     })
+  }
+
+  if (sourceDraftId) {
+    const admin = createAdminClient()
+    await admin.from('decision_writing_drafts').update({
+      saved_at: new Date().toISOString(),
+      saved_text: content.slice(0, 12000),
+    }).eq('id', sourceDraftId).eq('firm_id', profile.firm_id).eq('user_id', user.id)
   }
 
   revalidatePath(`/deals/${dealId}`)

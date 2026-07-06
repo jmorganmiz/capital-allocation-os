@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import { upsertDealNote } from '@/lib/actions/deals'
+import DecisionWritingCopilot from '@/components/deal/DecisionWritingCopilot'
 
 interface Props {
   dealId: string
@@ -20,6 +21,7 @@ export default function NotesSection({ dealId, section, title, initialContent, p
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const contentRef = useRef(initialContent)
   const lastSavedRef = useRef(initialContent)
+  const activeDraftIdRef = useRef<string | undefined>(undefined)
 
   const save = useCallback((value: string) => {
     clearTimeout(debounceRef.current)
@@ -29,7 +31,7 @@ export default function NotesSection({ dealId, section, title, initialContent, p
     }
     setError('')
     startTransition(async () => {
-      const result = await upsertDealNote(dealId, section, value)
+      const result = await upsertDealNote(dealId, section, value, activeDraftIdRef.current)
       if (result.error) {
         setError(result.error)
         setSaved(false)
@@ -60,6 +62,11 @@ export default function NotesSection({ dealId, section, title, initialContent, p
     debounceRef.current = setTimeout(() => save(value), 1500)
   }
 
+  function handleDraftInsert(value: string, draftId: string) {
+    activeDraftIdRef.current = draftId
+    handleChange(value)
+  }
+
   const isEmpty = Boolean(highlight && !content.trim())
 
   return (
@@ -73,6 +80,9 @@ export default function NotesSection({ dealId, section, title, initialContent, p
           </h2>
         </div>
         <div className="app-deal-note-actions" aria-live="polite">
+          {(section === 'overview' || section === 'risks') && (
+            <DecisionWritingCopilot dealId={dealId} section={section} currentText={content} onInsert={handleDraftInsert} />
+          )}
           <span data-error={Boolean(error)}>{isPending ? 'Saving...' : error ? `Save failed: ${error}` : saved ? 'Saved' : 'Unsaved'}</span>
           <button
             type="button"

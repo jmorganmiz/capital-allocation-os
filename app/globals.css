@@ -2983,6 +2983,235 @@ body {
   opacity: 0.45;
 }
 
+.app-root .app-writing-copilot {
+  position: relative;
+}
+
+.app-root .app-writing-trigger {
+  border-color: rgba(82,102,235,0.46) !important;
+  background: rgba(82,102,235,0.18) !important;
+  color: #dfe4ff !important;
+}
+
+.app-root .app-writing-panel {
+  position: absolute;
+  z-index: 30;
+  top: 42px;
+  right: 0;
+  width: min(720px, calc(100vw - 72px));
+  border: 1px solid rgba(82,102,235,0.32);
+  border-radius: 16px;
+  background: #151520;
+  box-shadow: 0 24px 70px rgba(0,0,0,0.56);
+  padding: 18px;
+}
+
+.app-root .app-writing-panel-head,
+.app-root .app-writing-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.app-root .app-writing-panel-head > div:first-child p,
+.app-root .app-writing-draft > p,
+.app-root .app-writing-evidence > p,
+.app-root .app-writing-gaps > p {
+  color: var(--mercury-blue) !important;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.app-root .app-writing-panel-head h3 {
+  color: var(--app-text);
+  font-size: 18px;
+  margin-top: 5px;
+}
+
+.app-root .app-writing-modes {
+  display: flex;
+  gap: 5px;
+  border: 1px solid rgba(112,112,125,0.16);
+  border-radius: 999px;
+  padding: 4px;
+}
+
+.app-root .app-writing-modes button {
+  min-height: 30px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--app-faint);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 0 11px;
+}
+
+.app-root .app-writing-modes button[data-active='true'] {
+  background: rgba(82,102,235,0.18);
+  color: #e7eaff;
+}
+
+.app-root .app-writing-grounded-note {
+  display: grid;
+  gap: 5px;
+  border: 1px solid rgba(44,210,132,0.18);
+  border-radius: 12px;
+  background: rgba(44,210,132,0.05);
+  margin-top: 16px;
+  padding: 13px 14px;
+}
+
+.app-root .app-writing-grounded-note strong {
+  color: #7ee8b2;
+  font-size: 12px;
+}
+
+.app-root .app-writing-grounded-note span,
+.app-root .app-writing-action-row > span {
+  color: var(--app-faint);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.app-root .app-writing-prompts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.app-root .app-writing-prompts label {
+  display: grid;
+  gap: 6px;
+}
+
+.app-root .app-writing-prompts label > span {
+  color: var(--app-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.app-root .app-writing-prompts textarea {
+  min-height: 70px;
+  border: 1px solid rgba(112,112,125,0.18);
+  border-radius: 10px;
+  background: #101019;
+  color: var(--app-text);
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.5;
+  outline: none;
+  padding: 10px;
+  resize: vertical;
+}
+
+.app-root .app-writing-action-row {
+  border-top: 1px solid rgba(112,112,125,0.12);
+  margin-top: 16px;
+  padding-top: 14px;
+}
+
+.app-root .app-writing-action-row button {
+  min-height: 36px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--mercury-blue);
+  color: white;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 0 16px;
+}
+
+.app-root .app-writing-action-row button:disabled {
+  opacity: .5;
+}
+
+.app-root .app-writing-error {
+  color: #ff7782 !important;
+  font-size: 12px;
+  margin-top: 10px;
+}
+
+.app-root .app-writing-result {
+  display: grid;
+  gap: 12px;
+  border-top: 1px solid rgba(112,112,125,0.12);
+  margin-top: 16px;
+  padding-top: 16px;
+}
+
+.app-root .app-writing-draft > div {
+  border: 1px solid rgba(82,102,235,0.2);
+  border-radius: 12px;
+  background: rgba(82,102,235,0.05);
+  color: var(--app-text);
+  font-size: 13px;
+  line-height: 1.7;
+  margin-top: 7px;
+  padding: 13px;
+}
+
+.app-root .app-writing-evidence,
+.app-root .app-writing-gaps {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.app-root .app-writing-evidence > p,
+.app-root .app-writing-gaps > p {
+  grid-column: 1 / -1;
+}
+
+.app-root .app-writing-evidence > span,
+.app-root .app-writing-gaps > span {
+  display: grid;
+  gap: 3px;
+  border: 1px solid rgba(112,112,125,0.13);
+  border-radius: 9px;
+  color: var(--app-muted);
+  font-size: 11px;
+  padding: 9px 10px;
+}
+
+.app-root .app-writing-evidence b {
+  color: var(--app-text);
+}
+
+.app-root .app-writing-evidence small {
+  color: var(--app-faint);
+}
+
+.app-root .app-writing-gaps > span {
+  border-color: rgba(255,184,0,0.18);
+  color: #d7bf82;
+}
+
+@media (max-width: 760px) {
+  .app-root .app-writing-panel {
+    position: fixed;
+    inset: 78px 12px 12px;
+    width: auto;
+    overflow-y: auto;
+  }
+  .app-root .app-writing-panel-head,
+  .app-root .app-writing-action-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .app-root .app-writing-prompts,
+  .app-root .app-writing-evidence,
+  .app-root .app-writing-gaps {
+    grid-template-columns: 1fr;
+  }
+}
+
 .app-root .app-deal-pill-button {
   border: 1px solid rgba(82,102,235,0.3);
   border-radius: 999px;
