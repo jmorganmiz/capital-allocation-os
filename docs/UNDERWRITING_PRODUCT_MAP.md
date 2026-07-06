@@ -88,6 +88,60 @@ Initial run stages:
 - Exportable memo, source appendix, and editable workbook.
 - No AI-generated assumption becomes approved without an attributable human action.
 
+#### Decision Writing Copilot
+
+Add an evidence-grounded writing assistant directly inside the fields where analysts already work. It helps users structure and draft decision language without becoming an autonomous author or silently changing the deal record.
+
+Initial supported fields:
+
+- Investment thesis.
+- Risks and mitigants.
+- Open diligence questions.
+- IC decision summary.
+- Kill rationale and Graveyard note.
+- Meeting notes and follow-up summary.
+
+Two interaction modes:
+
+1. **Guided builder:** asks short, field-specific questions and assembles the answers into a structured draft.
+2. **Draft from evidence:** proposes language from the current approved deal package and shows the supporting facts beside each paragraph.
+
+Drafting rules:
+
+- Use only firm-authorized evidence: reviewed document facts, approved assumptions, deterministic outputs, buy-box criteria, firm rules, and relevant firm-memory comparisons.
+- Label OM claims, analyst assumptions, model outputs, and historical comparisons distinctly.
+- Never invent a market fact, mitigant, diligence result, or investment conclusion to make prose sound complete.
+- Highlight unsupported statements and convert missing evidence into a suggested diligence question.
+- Show which underwriting version and approval state the draft reflects; warn when the deal has changed since drafting.
+- Never auto-save, auto-approve, or overwrite existing text. The user must explicitly insert or replace a draft.
+- Preserve the submitted text, generated draft, user edits, evidence references, model version, and approving user in the audit trail.
+- Learn tone and structure only from explicitly accepted firm examples or saved firm rules, not from every keystroke.
+
+Field-specific structure:
+
+- **Investment thesis:** acquisition basis, strategy, value-creation mechanism, supporting evidence, return profile, buy-box fit, and conditions to conviction.
+- **Risks and mitigants:** risk, evidence, potential impact, mitigation, remaining diligence, owner, and status.
+- **Kill rationale:** primary reason, supporting threshold or evidence, counterfactual that would reopen the deal, and related historical pattern.
+- **IC summary:** recommendation, key outputs, major assumptions, sensitivities, unresolved diligence, and requested decision.
+
+The first release should be a compact `Help me write` action on each supported field, not a separate writing workspace. The AI Analyst can invoke the same drafting service conversationally later.
+
+Packaging:
+
+- Include guided templates in Core.
+- Include evidence-grounded drafting and firm-style memory in Underwriting Pro.
+- Draft generation does not consume a Full Underwrite allowance; provider usage is metered internally with rate limits and fair-use controls.
+
+Success and safety measures:
+
+- Median time to complete thesis and risk sections.
+- Draft insertion, rejection, and substantial-edit rates.
+- Citation coverage for factual sentences.
+- Unsupported-claim rate in adversarial and real-deal evaluations.
+- Percentage of missing facts correctly converted into diligence questions.
+- Stale-draft warnings triggered after assumption or underwriting changes.
+- Cross-firm isolation and prompt-injection tests for every evidence source.
+
 ### 6. Sourcing
 
 Phase A, controlled ingestion:
@@ -281,9 +335,10 @@ Exit gate: safe retry/resume behavior and truthful progress under forced failure
 - Sensitivities and break-even analysis.
 - Excel export.
 - Evidence-backed IC memo.
+- Evidence-grounded Decision Writing Copilot for thesis, risks, diligence, and IC summary.
 - Stripe entitlement and allowance enforcement.
 
-Exit gate: design-partner approval on real deals and validated unit economics.
+Exit gate: design-partner approval on real deals, validated unit economics, and no unsupported factual claims in the drafting evaluation set.
 
 ### Phase 4: Sourcing Inbox
 
@@ -355,6 +410,7 @@ Review at every phase and before every release.
 6. Long-running work fails without durable orchestration.
 7. Historical data is too sparse to create early learning value.
 8. Usage pricing creates anxiety or billing disputes.
+9. AI-written decision language sounds authoritative while hiding weak or missing evidence.
 
 ## Mitigations
 
@@ -366,6 +422,7 @@ Review at every phase and before every release.
 - Included allowances rather than raw-token billing.
 - Historical import and onboarding services to accelerate memory.
 - Durable, idempotent execution before full automation.
+- Evidence-linked drafts, explicit insertion, stale-version warnings, and human-owned final language.
 
 ## Decision log
 
@@ -378,4 +435,5 @@ Review at every phase and before every release.
 - Use Postgres for the initial Decision Graph.
 - Do not use unauthorized listing-platform scraping.
 - Agent visuals display status, artifacts, evidence, and disagreement—not private chain-of-thought.
-
+- Add a field-level Decision Writing Copilot; keep final decision language explicitly user-owned.
+- Do not charge a Full Underwrite allowance for writing assistance.
