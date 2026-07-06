@@ -10,11 +10,11 @@ async function loadPortalFirm(slug: string) {
   const admin = createAdminClient()
   const { data: firm } = await admin
     .from('firms')
-    .select('id, name, inbox_email, broker_portal_enabled, trial_ends_at, stripe_subscription_status')
+    .select('id, name, inbox_email, broker_portal_enabled, trial_ends_at, stripe_subscription_status, comp_access')
     .eq('inbox_slug', slug)
     .maybeSingle()
   if (!firm?.broker_portal_enabled) return null
-  const access = getAccessState({ trialEndsAt: firm.trial_ends_at, subscriptionStatus: firm.stripe_subscription_status })
+  const access = getAccessState({ trialEndsAt: firm.trial_ends_at, subscriptionStatus: firm.stripe_subscription_status, compAccess: firm.comp_access })
   if (!access.allowed) return null
 
   const { data: boxes } = await admin

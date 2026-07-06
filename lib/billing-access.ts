@@ -13,7 +13,7 @@ export async function assertFirmAccess(
 ): Promise<string | null> {
   const { data: firm, error } = await supabase
     .from('firms')
-    .select('trial_ends_at, stripe_subscription_status')
+    .select('trial_ends_at, stripe_subscription_status, comp_access')
     .eq('id', firmId)
     .maybeSingle()
 
@@ -22,6 +22,7 @@ export async function assertFirmAccess(
   const access = getAccessState({
     trialEndsAt: firm.trial_ends_at,
     subscriptionStatus: firm.stripe_subscription_status,
+    compAccess: firm.comp_access,
   })
   return access.allowed ? null : SUBSCRIPTION_REQUIRED_ERROR
 }

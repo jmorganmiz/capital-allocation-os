@@ -60,11 +60,11 @@ export async function POST(request: NextRequest) {
 
   const { data: firm } = await admin
     .from('firms')
-    .select('id, name, inbox_email, broker_portal_enabled, trial_ends_at, stripe_subscription_status')
+    .select('id, name, inbox_email, broker_portal_enabled, trial_ends_at, stripe_subscription_status, comp_access')
     .eq('inbox_slug', slug)
     .maybeSingle()
 
-  const access = firm ? getAccessState({ trialEndsAt: firm.trial_ends_at, subscriptionStatus: firm.stripe_subscription_status }) : null
+  const access = firm ? getAccessState({ trialEndsAt: firm.trial_ends_at, subscriptionStatus: firm.stripe_subscription_status, compAccess: firm.comp_access }) : null
   if (!firm || !firm.broker_portal_enabled || !access?.allowed) {
     return NextResponse.json({ error: 'This firm is not accepting submissions right now.' }, { status: 404 })
   }

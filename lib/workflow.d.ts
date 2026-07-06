@@ -1,8 +1,9 @@
 export function getAccessState(input: {
   trialEndsAt: string | null
   subscriptionStatus: string | null
+  compAccess?: boolean | null
   now?: number
-}): { subscribed: boolean; trialActive: boolean; allowed: boolean; daysLeft: number }
+}): { subscribed: boolean; trialActive: boolean; compAccess: boolean; allowed: boolean; daysLeft: number }
 
 export function calculateOverallScore(scores: unknown[]): number | null
 

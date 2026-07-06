@@ -7,14 +7,18 @@ import { getAccessState } from '@/lib/workflow.mjs'
 interface Props {
   trialEndsAt: string | null
   subscriptionStatus: string | null
+  compAccess?: boolean
   children: React.ReactNode
 }
 
-export default function AccessGate({ trialEndsAt, subscriptionStatus, children }: Props) {
+export default function AccessGate({ trialEndsAt, subscriptionStatus, compAccess = false, children }: Props) {
   const pathname = usePathname()
-  const { subscribed, trialActive, daysLeft } = getAccessState({ trialEndsAt, subscriptionStatus })
+  const { subscribed, trialActive, allowed, daysLeft } = getAccessState({ trialEndsAt, subscriptionStatus, compAccess })
 
-  if (!subscribed && !trialActive && pathname !== '/settings') {
+  // Comped workspaces get the full app with no billing banners.
+  if (compAccess) return <>{children}</>
+
+  if (!allowed && pathname !== '/settings') {
     return (
       <div className="flex min-h-full items-center justify-center px-4 py-12">
         <div className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">

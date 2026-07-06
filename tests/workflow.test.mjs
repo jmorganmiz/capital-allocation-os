@@ -6,10 +6,11 @@ test('trial access is deterministic and active subscriptions override expiry', (
   const now = Date.parse('2026-06-28T12:00:00Z')
   assert.deepEqual(
     getAccessState({ trialEndsAt: '2026-07-03T12:00:00Z', subscriptionStatus: null, now }),
-    { subscribed: false, trialActive: true, allowed: true, daysLeft: 5 },
+    { subscribed: false, trialActive: true, compAccess: false, allowed: true, daysLeft: 5 },
   )
   assert.equal(getAccessState({ trialEndsAt: '2026-06-01T00:00:00Z', subscriptionStatus: null, now }).allowed, false)
   assert.equal(getAccessState({ trialEndsAt: null, subscriptionStatus: 'active', now }).allowed, true)
+  assert.equal(getAccessState({ trialEndsAt: '2026-06-01T00:00:00Z', subscriptionStatus: null, compAccess: true, now }).allowed, true)
 })
 
 test('overall underwriting score maps the 1-5 scale to 0-100', () => {

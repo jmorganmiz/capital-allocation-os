@@ -244,6 +244,28 @@ export async function addInternalUser(input: { email: string; fullName: string; 
   return { success: true }
 }
 
+export async function setFirmCompAccess(firmId: string, comp: boolean) {
+  const context = await getInternalContext()
+  if (!context || !can(context, 'ops', 'write')) return { error: 'Not authorized.' }
+  if (!firmId) return { error: 'Invalid firm.' }
+
+  // Customer firms are outside internal RLS; the permission check above gates
+  // the service-role write.
+  const { createAdminClient } = await import('@/lib/supabase/server')
+  const admin = createAdminClient()
+  const { data: firm, error } = await admin
+    .from('firms')
+    .update({ comp_access: comp })
+    .eq('id', firmId)
+    .select('name')
+    .single()
+  if (error) return { error: error.message }
+
+  await logActivity(context, 'ops', comp ? 'comp_access_granted' : 'comp_access_revoked', { firm_id: firmId, firm: firm.name })
+  revalidatePath('/internal')
+  return { success: true }
+}
+
 export async function removeInternalUser(userId: string) {
   const context = await getInternalContext()
   if (!context || context.role !== 'owner') return { error: 'Only the owner can manage the internal roster.' }
