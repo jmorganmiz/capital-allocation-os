@@ -2,14 +2,14 @@
 -- Internal team users are separate from Dealstash customer profiles and are
 -- gated by a role -> module permission lookup instead of per-page checks.
 
-CREATE TABLE public.internal_users (
+CREATE TABLE IF NOT EXISTS public.internal_users (
   id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   full_name text NOT NULL,
   role text NOT NULL CHECK (role IN ('owner','engineer','finance','employee')),
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE TABLE public.role_permissions (
+CREATE TABLE IF NOT EXISTS public.role_permissions (
   role text NOT NULL,
   module text NOT NULL,
   access_level text NOT NULL CHECK (access_level IN ('none','read','write','full')),
@@ -24,7 +24,8 @@ INSERT INTO public.role_permissions (role, module, access_level) VALUES
   ('finance','ops','read'), ('finance','team','full'), ('finance','dev','none'),
   ('finance','secrets','none'), ('finance','marketing','read'), ('finance','ownership','full'),
   ('employee','ops','read'), ('employee','team','write'), ('employee','dev','none'),
-  ('employee','secrets','none'), ('employee','marketing','none'), ('employee','ownership','none');
+  ('employee','secrets','none'), ('employee','marketing','none'), ('employee','ownership','none')
+ON CONFLICT (role, module) DO NOTHING;
 
 -- Helper used by every internal RLS policy: the caller's access level for a module.
 CREATE OR REPLACE FUNCTION public.internal_access(p_module text)
@@ -45,13 +46,27 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.internal_access(text) TO authenticated;
 
+-- Role lookup that bypasses RLS (SECURITY DEFINER) so policies on
+-- internal_users itself do not recurse.
+CREATE OR REPLACE FUNCTION public.internal_role()
+RETURNS text
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT role FROM internal_users WHERE id = auth.uid();
+$$;
+
+GRANT EXECUTE ON FUNCTION public.internal_role() TO authenticated;
+
 -- Seed the owner.
 INSERT INTO public.internal_users (id, full_name, role)
 SELECT id, 'Jack', 'owner' FROM auth.users WHERE email = 'jmorganmiz@gmail.com'
 ON CONFLICT (id) DO NOTHING;
 
 -- ── Ops: Dealstash sales pipeline (accounts = prospective/current customer firms)
-CREATE TABLE public.sales_accounts (
+CREATE TABLE IF NOT EXISTS public.sales_accounts (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   firm_id uuid REFERENCES public.firms(id) ON DELETE SET NULL, -- null until they sign up
   company_name text NOT NULL,
@@ -64,7 +79,7 @@ CREATE TABLE public.sales_accounts (
 );
 
 -- ── Team
-CREATE TABLE public.tasks (
+CREATE TABLE IF NOT EXISTS public.tasks (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   title text NOT NULL,
   description text,
@@ -77,7 +92,7 @@ CREATE TABLE public.tasks (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE TABLE public.activity_log (
+CREATE TABLE IF NOT EXISTS public.activity_log (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   actor_id uuid REFERENCES public.internal_users(id),
   module text NOT NULL,
@@ -87,7 +102,7 @@ CREATE TABLE public.activity_log (
 );
 
 -- ── Dev: agent pipeline runs (FastAPI service on Railway emits these; read here)
-CREATE TABLE public.agent_runs (
+CREATE TABLE IF NOT EXISTS public.agent_runs (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   deal_reference text, -- external pipeline's deal identifier
   agent_name text NOT NULL,
@@ -100,7 +115,7 @@ CREATE TABLE public.agent_runs (
 );
 
 -- ── Marketing
-CREATE TABLE public.campaigns (
+CREATE TABLE IF NOT EXISTS public.campaigns (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name text NOT NULL,
   channel text NOT NULL,
@@ -111,7 +126,7 @@ CREATE TABLE public.campaigns (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE TABLE public.outreach_contacts (
+CREATE TABLE IF NOT EXISTS public.outreach_contacts (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   campaign_id uuid REFERENCES public.campaigns(id) ON DELETE SET NULL,
   contact_name text NOT NULL,
@@ -127,7 +142,7 @@ ALTER TABLE public.firms
   ADD COLUMN IF NOT EXISTS lead_source_campaign_id uuid REFERENCES public.campaigns(id);
 
 -- ── Ownership
-CREATE TABLE public.equity_reference (
+CREATE TABLE IF NOT EXISTS public.equity_reference (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   holder_name text NOT NULL,
   percentage numeric,
@@ -135,7 +150,7 @@ CREATE TABLE public.equity_reference (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE TABLE public.decision_log (
+CREATE TABLE IF NOT EXISTS public.decision_log (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   title text NOT NULL,
   summary text NOT NULL,
@@ -157,64 +172,84 @@ ALTER TABLE public.equity_reference ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.decision_log ENABLE ROW LEVEL SECURITY;
 
 -- Internal users can see the roster and the permission matrix; only the owner edits.
+DROP POLICY IF EXISTS internal_users_select ON public.internal_users;
 CREATE POLICY internal_users_select ON public.internal_users
-  FOR SELECT USING (EXISTS (SELECT 1 FROM internal_users iu WHERE iu.id = auth.uid()));
+  FOR SELECT USING (internal_role() IS NOT NULL);
+DROP POLICY IF EXISTS internal_users_owner_write ON public.internal_users;
 CREATE POLICY internal_users_owner_write ON public.internal_users
-  FOR ALL USING (EXISTS (SELECT 1 FROM internal_users iu WHERE iu.id = auth.uid() AND iu.role = 'owner'))
-  WITH CHECK (EXISTS (SELECT 1 FROM internal_users iu WHERE iu.id = auth.uid() AND iu.role = 'owner'));
+  FOR ALL USING (internal_role() = 'owner')
+  WITH CHECK (internal_role() = 'owner');
+DROP POLICY IF EXISTS role_permissions_select ON public.role_permissions;
 CREATE POLICY role_permissions_select ON public.role_permissions
-  FOR SELECT USING (EXISTS (SELECT 1 FROM internal_users iu WHERE iu.id = auth.uid()));
+  FOR SELECT USING (internal_role() IS NOT NULL);
 
+DROP POLICY IF EXISTS sales_accounts_select ON public.sales_accounts;
 CREATE POLICY sales_accounts_select ON public.sales_accounts
   FOR SELECT USING (internal_access('ops') <> 'none');
+DROP POLICY IF EXISTS sales_accounts_write ON public.sales_accounts;
 CREATE POLICY sales_accounts_write ON public.sales_accounts
   FOR ALL USING (internal_access('ops') IN ('write','full'))
   WITH CHECK (internal_access('ops') IN ('write','full'));
 
+DROP POLICY IF EXISTS tasks_select ON public.tasks;
 CREATE POLICY tasks_select ON public.tasks
   FOR SELECT USING (internal_access('team') <> 'none');
+DROP POLICY IF EXISTS tasks_insert ON public.tasks;
 CREATE POLICY tasks_insert ON public.tasks
   FOR INSERT WITH CHECK (internal_access('team') IN ('write','full'));
+DROP POLICY IF EXISTS tasks_update ON public.tasks;
 CREATE POLICY tasks_update ON public.tasks
   FOR UPDATE USING (
     internal_access('team') = 'full'
     OR (internal_access('team') = 'write' AND (assignee_id = auth.uid() OR created_by = auth.uid()))
   );
+DROP POLICY IF EXISTS tasks_delete ON public.tasks;
 CREATE POLICY tasks_delete ON public.tasks
   FOR DELETE USING (internal_access('team') = 'full');
 
+DROP POLICY IF EXISTS activity_log_select ON public.activity_log;
 CREATE POLICY activity_log_select ON public.activity_log
   FOR SELECT USING (internal_access(module) <> 'none');
+DROP POLICY IF EXISTS activity_log_insert ON public.activity_log;
 CREATE POLICY activity_log_insert ON public.activity_log
-  FOR INSERT WITH CHECK (actor_id = auth.uid() AND EXISTS (SELECT 1 FROM internal_users iu WHERE iu.id = auth.uid()));
+  FOR INSERT WITH CHECK (actor_id = auth.uid() AND internal_role() IS NOT NULL);
 
+DROP POLICY IF EXISTS agent_runs_select ON public.agent_runs;
 CREATE POLICY agent_runs_select ON public.agent_runs
   FOR SELECT USING (internal_access('dev') <> 'none');
 
+DROP POLICY IF EXISTS campaigns_select ON public.campaigns;
 CREATE POLICY campaigns_select ON public.campaigns
   FOR SELECT USING (internal_access('marketing') <> 'none');
+DROP POLICY IF EXISTS campaigns_write ON public.campaigns;
 CREATE POLICY campaigns_write ON public.campaigns
   FOR ALL USING (internal_access('marketing') IN ('write','full'))
   WITH CHECK (internal_access('marketing') IN ('write','full'));
 
+DROP POLICY IF EXISTS outreach_select ON public.outreach_contacts;
 CREATE POLICY outreach_select ON public.outreach_contacts
   FOR SELECT USING (internal_access('marketing') <> 'none');
+DROP POLICY IF EXISTS outreach_write ON public.outreach_contacts;
 CREATE POLICY outreach_write ON public.outreach_contacts
   FOR ALL USING (internal_access('marketing') IN ('write','full'))
   WITH CHECK (internal_access('marketing') IN ('write','full'));
 
+DROP POLICY IF EXISTS equity_select ON public.equity_reference;
 CREATE POLICY equity_select ON public.equity_reference
   FOR SELECT USING (internal_access('ownership') <> 'none');
+DROP POLICY IF EXISTS equity_write ON public.equity_reference;
 CREATE POLICY equity_write ON public.equity_reference
   FOR ALL USING (internal_access('ownership') = 'full')
   WITH CHECK (internal_access('ownership') = 'full');
 
+DROP POLICY IF EXISTS decisions_select ON public.decision_log;
 CREATE POLICY decisions_select ON public.decision_log
   FOR SELECT USING (internal_access('ownership') <> 'none');
+DROP POLICY IF EXISTS decisions_write ON public.decision_log;
 CREATE POLICY decisions_write ON public.decision_log
   FOR INSERT WITH CHECK (internal_access('ownership') IN ('write','full'));
 
-CREATE INDEX tasks_assignee_idx ON public.tasks(assignee_id, status);
-CREATE INDEX activity_log_created_idx ON public.activity_log(created_at DESC);
-CREATE INDEX agent_runs_status_idx ON public.agent_runs(status, created_at DESC);
-CREATE INDEX sales_accounts_stage_idx ON public.sales_accounts(stage);
+CREATE INDEX IF NOT EXISTS tasks_assignee_idx ON public.tasks(assignee_id, status);
+CREATE INDEX IF NOT EXISTS activity_log_created_idx ON public.activity_log(created_at DESC);
+CREATE INDEX IF NOT EXISTS agent_runs_status_idx ON public.agent_runs(status, created_at DESC);
+CREATE INDEX IF NOT EXISTS sales_accounts_stage_idx ON public.sales_accounts(stage);
