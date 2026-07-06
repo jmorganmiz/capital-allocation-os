@@ -11,6 +11,7 @@ import { getBuyBoxes } from '@/lib/actions/buybox'
 import FirmMemorySettings from '@/components/settings/FirmMemorySettings'
 import UnderwritingAccessCard from '@/components/settings/UnderwritingAccessCard'
 import UnderwritingQualityLab from '@/components/settings/UnderwritingQualityLab'
+import BrokerPortalSettings from '@/components/settings/BrokerPortalSettings'
 
 interface Props {
   searchParams: Promise<{ success?: string }>
@@ -24,7 +25,7 @@ export default async function SettingsPage({ searchParams }: Props) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('firm_id, firms(name, stripe_subscription_id)')
+    .select('firm_id, role, firms(name, stripe_subscription_id, broker_portal_enabled, inbox_slug)')
     .eq('id', user?.id ?? '')
     .single()
 
@@ -32,6 +33,12 @@ export default async function SettingsPage({ searchParams }: Props) {
   const firmName = (profile?.firms as any)?.name ?? 'My Firm'
   const subscriptionId = (profile?.firms as any)?.stripe_subscription_id as string | null
   const isSubscribed = !!subscriptionId
+  const isAdmin = profile?.role === 'admin'
+  const inboxSlug = (profile?.firms as any)?.inbox_slug as string | null
+  const brokerPortalEnabled = Boolean((profile?.firms as any)?.broker_portal_enabled)
+  const portalUrl = inboxSlug
+    ? `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://getdealstash.com'}/submit/${inboxSlug}`
+    : null
 
   // Check if cancellation is already scheduled
   let cancelAtPeriodEnd = false
@@ -127,6 +134,7 @@ export default async function SettingsPage({ searchParams }: Props) {
           <a href="#underwriting-beta">Underwriting Pro</a>
           <a href="#quality-lab">OM Quality</a>
           <a href="#team">Team</a>
+          <a href="#broker-portal">Broker Portal</a>
           <a href="#buy-box">Buy Box</a>
           <a href="#firm-memory">Firm Memory</a>
           <a href="#pipeline-rules">Pipeline</a>
@@ -161,6 +169,9 @@ export default async function SettingsPage({ searchParams }: Props) {
               invites={invites ?? []}
               firmName={firmName}
             />
+          </section>
+          <section id="broker-portal" className="app-section-anchor">
+            <BrokerPortalSettings enabled={brokerPortalEnabled} portalUrl={portalUrl} isAdmin={isAdmin} />
           </section>
           <section id="buy-box" className="app-section-anchor">
             <BuyBoxSettings buyBoxes={buyBoxResult.buyBoxes ?? []} />

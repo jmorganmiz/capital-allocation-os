@@ -4,10 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
 import { assertFirmAccess } from '@/lib/billing-access'
 import { autoScoreDeal } from '@/lib/actions/scoring'
-
-function normalize(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9]/g, '')
-}
+import { matchAgainstBuyBoxes, normalizeKey as normalize } from '@/lib/sourcing-match.mjs'
 
 function sourceKey(url: string, address: string, name: string) {
   if (url) {
@@ -64,25 +61,7 @@ export async function captureSourcingOpportunity(input: {
   ])
   const duplicate = (deals ?? []).find((deal) => address && normalize(deal.address ?? '') === normalize(address))
     ?? (deals ?? []).find((deal) => normalize(deal.title) === normalize(propertyName))
-  const box = (boxes ?? []).find((item) => normalize(item.asset_type) === normalize(assetType)) ?? null
-
-  const reasons: string[] = []
-  let score: number | null = null
-  if (box) {
-    score = 20
-    if (normalize(box.asset_type) === normalize(assetType)) { score += 30; reasons.push('Asset type matches buy box') }
-    const markets = String(box.preferred_markets ?? '').split(',').map(normalize).filter(Boolean)
-    if (!markets.length) { score += 15; reasons.push('No market restriction') }
-    else if (markets.some((item) => normalize(market).includes(item) || item.includes(normalize(market)))) { score += 25; reasons.push('Preferred market') }
-    else reasons.push('Outside preferred markets')
-    if (box.max_asking_price == null) { score += 15; reasons.push('No price ceiling') }
-    else if (askingPrice != null && askingPrice <= Number(box.max_asking_price)) { score += 25; reasons.push('Within price ceiling') }
-    else if (askingPrice != null) reasons.push('Above price ceiling')
-    if (address && unitCount != null) score += 10
-    score = Math.min(100, score)
-  } else {
-    reasons.push('No matching buy box yet')
-  }
+  const { box, score, reasons } = matchAgainstBuyBoxes(boxes ?? [], { assetType, market, askingPrice, address, unitCount })
   if (duplicate) reasons.unshift('Possible duplicate in firm memory')
 
   const { data, error } = await admin.from('sourcing_opportunities').insert({

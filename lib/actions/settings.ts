@@ -136,6 +136,27 @@ export async function deleteKillReason(id: string) {
   return { success: true }
 }
 
+export async function setBrokerPortalEnabled(enabled: boolean) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: profile } = await supabase.from('profiles').select('firm_id, role').eq('id', user.id).single()
+  if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
+
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
+
+  const { error } = await supabase
+    .from('firms')
+    .update({ broker_portal_enabled: enabled })
+    .eq('id', profile.firm_id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/settings')
+  return { success: true }
+}
+
 export async function inviteTeamMember(email: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
