@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { runMonthlyUnderwriting, ADVANCED_UNDERWRITING_MODEL_VERSION } from '@/lib/underwriting-model-v3.mjs'
 import { extractUnderwritingFacts, type ExtractedUnderwritingFact, type UnderwritingDocumentType } from '@/lib/underwriting-extraction'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
+import { INTERNAL_UNDERWRITING_WORKER } from '@/lib/internal/underwriting-worker'
 import { assertFirmAccess } from '@/lib/billing-access'
 import type { Json, UnderwritingAssumption, UnderwritingRun, UnderwritingStep } from '@/lib/types/database'
 
@@ -385,13 +386,26 @@ async function buildResult(
 
 export async function processNextFullUnderwriteStep(
   runId: string,
+  workerContext?: typeof INTERNAL_UNDERWRITING_WORKER,
 ): Promise<{ run?: UnderwritingRun; steps?: UnderwritingStep[]; assumptions?: UnderwritingAssumption[]; error?: string }> {
   try {
-    const context = await membership()
-    if ('error' in context) return context
-    const { user, firmId } = context
     const admin = createAdminClient()
-    const { data: run } = await admin.from('underwriting_runs').select('*').eq('id', runId).eq('firm_id', firmId).eq('run_type', 'full_underwrite').single()
+    let firmId: string
+    let actorUserId: string
+    let run: UnderwritingRun | null
+    if (workerContext === INTERNAL_UNDERWRITING_WORKER) {
+      const result = await admin.from('underwriting_runs').select('*').eq('id', runId).eq('run_type', 'full_underwrite').single()
+      run = result.data
+      firmId = run?.firm_id ?? ''
+      actorUserId = run?.created_by ?? ''
+    } else {
+      const context = await membership()
+      if ('error' in context) return context
+      firmId = context.firmId
+      actorUserId = context.user.id
+      const result = await admin.from('underwriting_runs').select('*').eq('id', runId).eq('firm_id', firmId).eq('run_type', 'full_underwrite').single()
+      run = result.data
+    }
     if (!run) return { error: 'Full underwrite not found.' }
 
     const { data: step } = await admin.from('underwriting_steps').select('*').eq('run_id', runId).eq('status', 'queued').order('position').limit(1).maybeSingle()
@@ -453,7 +467,7 @@ export async function processNextFullUnderwriteStep(
     if (status === 'completed') {
       await admin.from('usage_events').upsert({
         firm_id: firmId,
-        user_id: user.id,
+        user_id: actorUserId,
         underwriting_run_id: runId,
         event_type: 'full_underwrite',
         quantity: 1,

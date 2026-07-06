@@ -3,6 +3,7 @@
 import { randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
+import { INTERNAL_UNDERWRITING_WORKER } from '@/lib/internal/underwriting-worker'
 import { assertFirmAccess } from '@/lib/billing-access'
 import type { Json, UnderwritingAssumption, UnderwritingRun, UnderwritingStep } from '@/lib/types/database'
 
@@ -432,18 +433,22 @@ async function buildStepResult(
 
 export async function processNextUnderwritingStep(
   runId: string,
+  workerContext?: typeof INTERNAL_UNDERWRITING_WORKER,
 ): Promise<{ run?: UnderwritingRun; steps?: UnderwritingStep[]; assumptions?: UnderwritingAssumption[]; error?: string }> {
-  const membership = await getMembership()
-  if ('error' in membership) return membership
-  const { user, firmId } = membership
   const admin = createAdminClient()
-
-  const { data: run } = await admin
-    .from('underwriting_runs')
-    .select('*')
-    .eq('id', runId)
-    .eq('firm_id', firmId)
-    .single()
+  let firmId: string
+  let run: UnderwritingRun | null
+  if (workerContext === INTERNAL_UNDERWRITING_WORKER) {
+    const result = await admin.from('underwriting_runs').select('*').eq('id', runId).eq('run_type', 'preflight').single()
+    run = result.data
+    firmId = run?.firm_id ?? ''
+  } else {
+    const membership = await getMembership()
+    if ('error' in membership) return membership
+    firmId = membership.firmId
+    const result = await admin.from('underwriting_runs').select('*').eq('id', runId).eq('firm_id', firmId).eq('run_type', 'preflight').single()
+    run = result.data
+  }
   if (!run) return { error: 'Underwriting run not found.' }
 
   const { data: queued } = await admin
@@ -552,7 +557,6 @@ export async function processNextUnderwritingStep(
 
   const { data: assumptions } = await admin.from('underwriting_assumptions').select('*').eq('run_id', runId).order('created_at')
   revalidatePath(`/deals/${run.deal_id}`)
-  void user
   return { run: updatedRun ?? run, steps: steps ?? [], assumptions: assumptions ?? [] }
 }
 
