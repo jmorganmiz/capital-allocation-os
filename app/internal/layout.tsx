@@ -14,6 +14,7 @@ export default async function InternalLayout({ children }: { children: React.Rea
     { href: '/internal/dev', label: 'Dev', show: can(context, 'dev') },
     { href: '/internal/marketing', label: 'Marketing', show: can(context, 'marketing') },
     { href: '/internal/ownership', label: 'Ownership', show: can(context, 'ownership') },
+    { href: '/internal/feed', label: 'Feed', show: true },
   ].filter((item) => item.show)
 
   return (

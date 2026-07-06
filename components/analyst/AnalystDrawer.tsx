@@ -14,6 +14,7 @@ type Message = {
     feedbackType: 'saved' | 'correction' | 'firm_rule'
   }>
   feedback?: 'helpful' | 'not_helpful' | 'saved' | 'firm_rule'
+  upgradeRequired?: boolean
 }
 
 const SUGGESTED_PROMPTS = [
@@ -78,6 +79,13 @@ export default function AnalystDrawer() {
         body: JSON.stringify({ question: trimmed }),
       })
       const data = await res.json()
+      if (res.status === 402) {
+        setMessages((prev) => [
+          ...prev,
+          { id: makeId(), role: 'assistant', content: data.error ?? 'Your workspace subscription has lapsed.', upgradeRequired: true },
+        ])
+        return
+      }
       if (!res.ok) throw new Error(data.error ?? 'Analyst failed.')
       setMessages((prev) => [
         ...prev,
@@ -214,6 +222,16 @@ export default function AnalystDrawer() {
                   <div className="app-analyst-message" data-role={message.role}>
                     {formatMessage(message.content)}
                   </div>
+
+                  {message.upgradeRequired && (
+                    <a
+                      href="/settings#billing"
+                      className="mt-1 inline-block rounded-md px-3 py-1.5 text-xs font-semibold"
+                      style={{ background: '#6366f1', color: '#ffffff' }}
+                    >
+                      Restore access in Settings →
+                    </a>
+                  )}
 
                   {message.role === 'assistant' && (message.memoryReferences?.length ?? 0) > 0 && (
                     <div className="app-analyst-citations">
