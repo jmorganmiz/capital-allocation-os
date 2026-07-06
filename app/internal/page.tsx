@@ -3,7 +3,6 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { getInternalContext, can } from '@/lib/internal/auth'
 import { getAccessState } from '@/lib/workflow.mjs'
 import SalesAccountForm from '@/components/internal/SalesAccountForm'
-import CompToggle from '@/components/internal/CompToggle'
 
 const MONTHLY_PRICE = 149
 const QUIET_DAYS = 14
@@ -22,7 +21,7 @@ export default async function InternalOpsPage() {
   // Cross-tenant SaaS metrics require the service role; access was checked above.
   const admin = createAdminClient()
   const [{ data: firms }, { data: recentDeals }, { data: accounts }] = await Promise.all([
-    admin.from('firms').select('id, name, created_at, trial_ends_at, stripe_subscription_status, stripe_cancel_at_period_end, comp_access'),
+    admin.from('firms').select('id, name, created_at, trial_ends_at, stripe_subscription_status, stripe_cancel_at_period_end'),
     admin.from('deals').select('firm_id, updated_at').order('updated_at', { ascending: false }).limit(2000),
     context.supabase.from('sales_accounts').select('*, internal_users(full_name)').order('last_activity_at', { ascending: false }).limit(50),
   ])
@@ -107,7 +106,7 @@ export default async function InternalOpsPage() {
           <table className="w-full min-w-[560px] text-sm">
             <thead>
               <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
-                {['Firm', 'Status', 'Last deal activity', 'Health', ...(can(context, 'ops', 'write') ? ['Access'] : [])].map((h) => (
+                {['Firm', 'Status', 'Last deal activity', 'Health'].map((h) => (
                   <th key={h} className="px-4 py-2 text-left text-xs font-medium uppercase" style={{ color: '#8b8b9a', letterSpacing: '0.05em' }}>{h}</th>
                 ))}
               </tr>
@@ -116,7 +115,7 @@ export default async function InternalOpsPage() {
               {health.map((firm) => (
                 <tr key={firm.id} style={{ borderTop: '1px solid rgba(112,112,125,0.15)' }}>
                   <td className="px-4 py-3" style={{ color: '#f4f4f8' }}>{firm.name}</td>
-                  <td className="px-4 py-3" style={{ color: '#c3c3d0' }}>{firm.comp_access ? 'comped' : firm.stripe_subscription_status ?? 'trial'}</td>
+                  <td className="px-4 py-3" style={{ color: '#c3c3d0' }}>{firm.stripe_subscription_status ?? 'trial'}</td>
                   <td className="px-4 py-3" style={{ color: '#c3c3d0' }}>
                     {firm.daysQuiet === null ? 'never' : firm.daysQuiet === 0 ? 'today' : `${firm.daysQuiet}d ago`}
                   </td>
@@ -127,11 +126,6 @@ export default async function InternalOpsPage() {
                       {firm.quiet ? 'Going quiet' : 'Active'}
                     </span>
                   </td>
-                  {can(context, 'ops', 'write') && (
-                    <td className="px-4 py-3">
-                      <CompToggle firmId={firm.id} comped={Boolean(firm.comp_access)} />
-                    </td>
-                  )}
                 </tr>
               ))}
             </tbody>
