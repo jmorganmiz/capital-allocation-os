@@ -84,13 +84,8 @@ export function MappingStep({ uploadResult, onComplete, onBack }: Props) {
   const [loadingFirmData, setLoadingFirmData] = useState(true)
   const [firmDataError, setFirmDataError] = useState<string | null>(null)
 
-  // Editable column mappings — owner_user_id is always manual, so reset any AI guess
-  const [columnMappings, setColumnMappings] = useState<ColumnMapping[]>(() =>
-    initialMappings.map((m) => ({
-      ...m,
-      schema_field: m.schema_field === 'owner_user_id' ? null : m.schema_field,
-    })),
-  )
+  // Owner assignment is manual and intentionally outside the AI-mappable schema.
+  const [columnMappings, setColumnMappings] = useState<ColumnMapping[]>(initialMappings)
 
   const [stageResolutions, setStageResolutions] = useState<Record<string, string | null>>({})
   const [ownerUserId, setOwnerUserId] = useState<string | null>(null)
