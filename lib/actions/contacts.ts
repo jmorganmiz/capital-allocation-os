@@ -20,7 +20,7 @@ export async function getContacts() {
   if (!user) return { error: 'Not authenticated' }
 
   const { data: profile } = await supabase
-    .from('profiles').select('firm_id').single()
+    .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
 
   const { data, error } = await supabase
@@ -48,7 +48,7 @@ export async function createContact(data: ContactData) {
   if (!user) return { error: 'Not authenticated' }
 
   const { data: profile } = await supabase
-    .from('profiles').select('firm_id').single()
+    .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
 
   const { data: contact, error } = await supabase
@@ -78,7 +78,7 @@ export async function updateContact(id: string, data: ContactData) {
   if (!user) return { error: 'Not authenticated' }
 
   const { data: profile } = await supabase
-    .from('profiles').select('firm_id').single()
+    .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
 
   const { error } = await supabase
@@ -106,7 +106,7 @@ export async function deleteContact(id: string) {
   if (!user) return { error: 'Not authenticated' }
 
   const { data: profile } = await supabase
-    .from('profiles').select('firm_id').single()
+    .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
 
   const { error } = await supabase
@@ -131,7 +131,7 @@ export async function linkContactToDeal(
   if (!user) return { error: 'Not authenticated' }
 
   const { data: profile } = await supabase
-    .from('profiles').select('firm_id').single()
+    .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
 
   const { error } = await supabase
@@ -156,7 +156,7 @@ export async function unlinkContactFromDeal(contactId: string, dealId: string) {
   if (!user) return { error: 'Not authenticated' }
 
   const { data: profile } = await supabase
-    .from('profiles').select('firm_id').single()
+    .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
 
   const { error } = await supabase
@@ -183,7 +183,7 @@ export async function updateDealContactSource(
   if (!user) return { error: 'Not authenticated' }
 
   const { data: profile } = await supabase
-    .from('profiles').select('firm_id').single()
+    .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
 
   const { error } = await supabase
@@ -205,7 +205,7 @@ export async function getDealContacts(dealId: string) {
   if (!user) return { error: 'Not authenticated' }
 
   const { data: profile } = await supabase
-    .from('profiles').select('firm_id').single()
+    .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
 
   const { data, error } = await supabase
@@ -227,7 +227,7 @@ export async function getContactWithDeals(contactId: string) {
   if (!user) return { error: 'Not authenticated' }
 
   const { data: profile } = await supabase
-    .from('profiles').select('firm_id').single()
+    .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
 
   const [{ data: contact, error: cErr }, { data: dealContacts, error: dErr }] =

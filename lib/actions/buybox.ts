@@ -23,7 +23,7 @@ export async function getBuyBoxes(): Promise<{ buyBoxes?: BuyBoxWithCriteria[]; 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data: profile } = await supabase.from('profiles').select('firm_id').single()
+  const { data: profile } = await supabase.from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
 
   const { data, error } = await supabase
@@ -41,7 +41,7 @@ export async function createBuyBox(input: BuyBoxInput): Promise<{ buyBox?: BuyBo
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data: profile } = await supabase.from('profiles').select('firm_id, role').single()
+  const { data: profile } = await supabase.from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   const { criteria, ...fields } = input
@@ -84,7 +84,7 @@ export async function updateBuyBox(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data: profile } = await supabase.from('profiles').select('firm_id, role').single()
+  const { data: profile } = await supabase.from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   const { criteria, ...fields } = input
@@ -127,7 +127,7 @@ export async function deleteBuyBox(id: string): Promise<{ error?: string }> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data: profile } = await supabase.from('profiles').select('firm_id, role').single()
+  const { data: profile } = await supabase.from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   const { error } = await supabase

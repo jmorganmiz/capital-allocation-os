@@ -25,10 +25,11 @@ const MAX_ROWS = 5_000
 const MAX_BODY_BYTES = 5 * 1024 * 1024
 const MAX_CELL_LENGTH = 10_000
 const MAX_COLUMNS = 50
+// owner_user_id is deliberately not mappable from CSV cells — owner assignment
+// only flows through the validated top-level ownerUserId parameter
 const IMPORT_FIELDS = new Set([
   'title',
   'stage_id',
-  'owner_user_id',
   'market',
   'deal_type',
   'source_type',

@@ -2,14 +2,16 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
+import { inviteExpiryCutoff } from '@/lib/constants/invites'
 import { redirect } from 'next/navigation'
 
 export async function signUpAction(prevState: any, formData: FormData) {
-  const email = (formData.get('email') as string).trim().toLowerCase()
-  const password = formData.get('password') as string
-  const fullName = (formData.get('full_name') as string).trim()
-  const firmName = (formData.get('firm_name') as string).trim()
-  const inviteToken = formData.get('invite_token') as string | null
+  const email = String(formData.get('email') ?? '').trim().toLowerCase()
+  const password = String(formData.get('password') ?? '')
+  const fullName = String(formData.get('full_name') ?? '').trim()
+  const firmName = String(formData.get('firm_name') ?? '').trim()
+  const inviteTokenRaw = formData.get('invite_token')
+  const inviteToken = typeof inviteTokenRaw === 'string' && inviteTokenRaw ? inviteTokenRaw : null
 
   if (!email || !fullName || password.length < 8 || fullName.length > 120 || firmName.length > 160) {
     return { error: 'Please provide valid signup details.' }
@@ -24,6 +26,7 @@ export async function signUpAction(prevState: any, formData: FormData) {
       .select('firm_id, email')
       .eq('token', inviteToken)
       .is('accepted_at', null)
+      .gte('created_at', inviteExpiryCutoff())
       .single()
     if (!invite || invite.email.trim().toLowerCase() !== email) {
       return { error: 'Invalid, expired, or mismatched invite link.' }

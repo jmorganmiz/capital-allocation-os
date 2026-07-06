@@ -10,7 +10,7 @@ export async function createChecklistItem(stageId: string, name: string, positio
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data: profile } = await supabase.from('profiles').select('firm_id, role').single()
+  const { data: profile } = await supabase.from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   const { data, error } = await supabase
@@ -29,7 +29,7 @@ export async function updateChecklistItem(id: string, updates: { name?: string; 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data: profile } = await supabase.from('profiles').select('firm_id, role').single()
+  const { data: profile } = await supabase.from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   const { error } = await supabase
@@ -48,7 +48,7 @@ export async function deleteChecklistItem(id: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data: profile } = await supabase.from('profiles').select('firm_id, role').single()
+  const { data: profile } = await supabase.from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   const { error } = await supabase
@@ -68,7 +68,7 @@ export async function reorderChecklistItems(items: { id: string; position: numbe
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data: profile } = await supabase.from('profiles').select('firm_id, role').single()
+  const { data: profile } = await supabase.from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   for (const { id, position } of items) {
@@ -94,7 +94,7 @@ export async function toggleChecklistItem(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data: profile } = await supabase.from('profiles').select('firm_id').single()
+  const { data: profile } = await supabase.from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
 
   if (completed) {

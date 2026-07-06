@@ -3,13 +3,14 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { getResend } from '@/lib/resend'
+import { inviteExpiryCutoff } from '@/lib/constants/invites'
 
 export async function createDealStage(name: string, position: number) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data: profile } = await supabase.from('profiles').select('firm_id, role').single()
+  const { data: profile } = await supabase.from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   const { data, error } = await supabase
@@ -27,7 +28,7 @@ export async function updateDealStage(id: string, updates: { name?: string; posi
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data: profile } = await supabase.from('profiles').select('firm_id, role').single()
+  const { data: profile } = await supabase.from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   const { error } = await supabase
@@ -46,7 +47,7 @@ export async function deleteDealStage(id: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data: profile } = await supabase.from('profiles').select('firm_id, role').single()
+  const { data: profile } = await supabase.from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   const { error } = await supabase
@@ -65,7 +66,7 @@ export async function createKillReason(name: string, position: number) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data: profile } = await supabase.from('profiles').select('firm_id, role').single()
+  const { data: profile } = await supabase.from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   const { data, error } = await supabase
@@ -83,7 +84,7 @@ export async function updateKillReason(id: string, updates: { name?: string; pos
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data: profile } = await supabase.from('profiles').select('firm_id, role').single()
+  const { data: profile } = await supabase.from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   const { error } = await supabase
@@ -102,7 +103,7 @@ export async function deleteKillReason(id: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data: profile } = await supabase.from('profiles').select('firm_id, role').single()
+  const { data: profile } = await supabase.from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   const { error } = await supabase
@@ -138,13 +139,14 @@ export async function inviteTeamMember(email: string) {
 
   if (existing) return { error: 'This person is already on your team.' }
 
-  // Check if already invited
+  // Check if already invited (expired invites no longer block a re-invite)
   const { data: existingInvite } = await supabase
     .from('invites')
     .select('id, accepted_at')
     .eq('firm_id', profile.firm_id)
     .eq('email', email)
     .is('accepted_at', null)
+    .gte('created_at', inviteExpiryCutoff())
     .single()
 
   if (existingInvite) return { error: 'An invite is already pending for this email.' }

@@ -10,7 +10,6 @@ const anthropic = new Anthropic()
 const SCHEMA_FIELDS = [
   'title',
   'stage_id',
-  'owner_user_id',
   'market',
   'deal_type',
   'source_type',
@@ -28,8 +27,6 @@ const FIELD_DESCRIPTIONS: Record<SchemaField, string> = {
   title: 'Deal name or project name — the only required field for import',
   stage_id:
     'Pipeline stage name (e.g. "Initial Review", "LOI", "Under Contract") — will be resolved to an ID',
-  owner_user_id:
-    'Deal owner or assigned team member — map only if the column clearly represents ownership',
   market: 'Geographic market (e.g. "Austin", "Southeast", "NYC Metro")',
   deal_type: 'Property or deal type (e.g. "Multifamily", "Office", "Retail", "Industrial")',
   source_type: 'How the deal was sourced (e.g. "Broker", "Direct", "LoopNet")',

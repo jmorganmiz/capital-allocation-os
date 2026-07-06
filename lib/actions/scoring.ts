@@ -33,7 +33,7 @@ export async function getScoringCriteria() {
   if (!user) return { error: 'Not authenticated' }
 
   const { data: profile } = await supabase
-    .from('profiles').select('firm_id').single()
+    .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
 
   const { data, error } = await supabase
@@ -67,7 +67,7 @@ export async function getDealScores(dealId: string) {
   if (!user) return { error: 'Not authenticated' }
 
   const { data: profile } = await supabase
-    .from('profiles').select('firm_id').single()
+    .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
 
   const { data, error } = await supabase
@@ -95,7 +95,7 @@ export async function upsertDealScore(
   if (!user) return { error: 'Not authenticated' }
 
   const { data: profile } = await supabase
-    .from('profiles').select('firm_id').single()
+    .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
 
   const { data: existing } = await supabase
@@ -136,7 +136,7 @@ export async function createScoringCriteria(name: string, position: number) {
   if (!user) return { error: 'Not authenticated' }
 
   const { data: profile } = await supabase
-    .from('profiles').select('firm_id, role').single()
+    .from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   const { data, error } = await supabase
@@ -157,7 +157,7 @@ export async function updateScoringCriteria(id: string, updates: { name?: string
   if (!user) return { error: 'Not authenticated' }
 
   const { data: profile } = await supabase
-    .from('profiles').select('firm_id, role').single()
+    .from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   const { error } = await supabase
@@ -178,7 +178,7 @@ export async function deleteScoringCriteria(id: string) {
   if (!user) return { error: 'Not authenticated' }
 
   const { data: profile } = await supabase
-    .from('profiles').select('firm_id, role').single()
+    .from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
   const { error } = await supabase

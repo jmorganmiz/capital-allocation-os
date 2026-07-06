@@ -25,6 +25,7 @@ export async function createDeal(formData: FormData) {
   const { data: profile } = await supabase
     .from('profiles')
     .select('firm_id')
+    .eq('id', user.id)
     .single()
   if (!profile) return { error: 'Profile not found' }
 
@@ -126,7 +127,7 @@ export async function reactivateDeal(dealId: string): Promise<void> {
   if (!user) return
 
   const { data: profile } = await supabase
-    .from('profiles').select('firm_id').single()
+    .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return
 
   const [{ data: deal }, { data: firstActiveStage }] = await Promise.all([
@@ -182,7 +183,7 @@ export async function updateDealStage(
   if (!user) return { error: 'Not authenticated' }
 
   const { data: profile } = await supabase
-    .from('profiles').select('firm_id').single()
+    .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
 
   const [{ data: stage }, { data: currentDeal }] = await Promise.all([
@@ -234,7 +235,7 @@ export async function killDeal(
   if (!user) return { error: 'Not authenticated' }
 
   const { data: profile } = await supabase
-    .from('profiles').select('firm_id').single()
+    .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
 
   const [{ data: killedStage }, { data: killReason }, { data: currentDeal }] = await Promise.all([
@@ -310,7 +311,7 @@ export async function upsertDealNote(
   if (!user) return { error: 'Not authenticated' }
 
   const { data: profile } = await supabase
-    .from('profiles').select('firm_id').single()
+    .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
 
   const { data: existing } = await supabase
@@ -367,7 +368,7 @@ export async function uploadFileMetadata(params: {
   if (!user) return { error: 'Not authenticated' }
 
   const { data: profile } = await supabase
-    .from('profiles').select('firm_id').single()
+    .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
 
   const { data: file, error } = await supabase
@@ -792,7 +793,7 @@ export async function updateDealOwner(dealId: string, ownerUserId: string | null
   if (!user) return { error: 'Not authenticated' }
 
   const { data: profile } = await supabase
-    .from('profiles').select('firm_id').single()
+    .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
 
   if (ownerUserId) {
@@ -832,7 +833,7 @@ export async function updateDealFields(
   if (!user) return { error: 'Not authenticated' }
 
   const { data: profile } = await supabase
-    .from('profiles').select('firm_id').single()
+    .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
 
   const { error } = await supabase
