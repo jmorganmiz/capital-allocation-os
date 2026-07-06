@@ -76,6 +76,9 @@ export default function FullUnderwriteExecution({ dealId, preflightRun, initialR
   const refinance = record((output.refinance ?? null) as Json | null)
   const taxes = record((output.taxes ?? null) as Json | null)
   const waterfall = record((output.waterfall ?? null) as Json | null)
+  const waterfallClasses = Array.isArray(waterfall.classes)
+    ? waterfall.classes.map((value) => record(value as Json)).filter((value) => Object.keys(value).length > 0)
+    : []
   const documentStep = steps.find((step) => step.step_key === 'document_evidence')
   const documentArtifact = record(documentStep?.artifact ?? null)
   const extractionWarnings = Array.isArray(documentArtifact.extraction_warnings)
@@ -244,7 +247,7 @@ export default function FullUnderwriteExecution({ dealId, preflightRun, initialR
           )}
           {noiByYear.length > 0 && (
             <div className="app-monthly-model-summary">
-              <div><span>Model v0.3</span><h3>Monthly projection · annual rollup</h3><p>Calculated monthly; summarized here for IC review.</p></div>
+              <div><span>{String(output.modelVersion ?? 'Model v0.4')}</span><h3>Monthly projection · annual rollup</h3><p>Calculated monthly; summarized here for IC review.</p></div>
               <div className="app-monthly-model-table-wrap">
                 <table>
                   <thead><tr><th>Metric</th>{noiByYear.map((_, index) => <th key={index}>Year {index + 1}</th>)}</tr></thead>
@@ -257,6 +260,24 @@ export default function FullUnderwriteExecution({ dealId, preflightRun, initialR
                 </table>
               </div>
               <small>Tax estimates are optional and not tax advice. Waterfall uses a European whole-fund structure with return of capital, preferred return, catch-up, and promote tiers.</small>
+            </div>
+          )}
+          {waterfallClasses.length > 0 && (
+            <div className="app-waterfall-class-summary">
+              <div><span>Capital stack</span><h3>Equity-class waterfall</h3><p>Each class reconciles to its share of project cash flow before aggregate LP and GP returns are calculated.</p></div>
+              <div className="app-waterfall-class-grid">
+                {waterfallClasses.map((equityClass) => (
+                  <article key={String(equityClass.key)}>
+                    <div><strong>{String(equityClass.name)}</strong><span>{percent(equityClass.capitalShare)}</span></div>
+                    <dl>
+                      <div><dt>LP IRR</dt><dd>{percent(equityClass.lpIrr)}</dd></div>
+                      <div><dt>LP multiple</dt><dd>{multiple(equityClass.lpEquityMultiple)}</dd></div>
+                      <div><dt>GP IRR</dt><dd>{percent(equityClass.gpIrr)}</dd></div>
+                      <div><dt>GP multiple</dt><dd>{multiple(equityClass.gpEquityMultiple)}</dd></div>
+                    </dl>
+                  </article>
+                ))}
+              </div>
             </div>
           )}
           {exitShifts.length === 3 && growthShifts.length === 3 && (

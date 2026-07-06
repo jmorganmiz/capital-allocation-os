@@ -343,6 +343,32 @@
 .app-root .app-monthly-model-summary thead th { color: #777788; font-size: 9px; text-transform: uppercase; }
 .app-root .app-monthly-model-summary td { color: #ececf1; font-variant-numeric: tabular-nums; }
 
+.app-root .app-waterfall-class-summary {
+  margin: 24px 28px;
+  border: 1px solid rgba(112,112,125,0.18);
+  border-radius: 14px;
+  background: rgba(20,20,31,0.72);
+  padding: 20px;
+}
+.app-root .app-waterfall-class-summary > div:first-child > span {
+  color: #8290f4;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.app-root .app-waterfall-class-summary h3 { margin-top: 5px; color: #f3f3f5; font-size: 17px; }
+.app-root .app-waterfall-class-summary p { color: #777788; font-size: 11px; }
+.app-root .app-waterfall-class-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 16px; }
+.app-root .app-waterfall-class-grid article { border: 1px solid rgba(112,112,125,0.16); border-radius: 12px; background: #171721; padding: 15px; }
+.app-root .app-waterfall-class-grid article > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.app-root .app-waterfall-class-grid article > div strong { color: #f3f3f5; font-size: 13px; }
+.app-root .app-waterfall-class-grid article > div span { color: #8290f4; font-size: 12px; font-variant-numeric: tabular-nums; }
+.app-root .app-waterfall-class-grid dl { margin-top: 12px; }
+.app-root .app-waterfall-class-grid dl > div { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid rgba(112,112,125,0.1); }
+.app-root .app-waterfall-class-grid dt { color: #777788; font-size: 10px; }
+.app-root .app-waterfall-class-grid dd { margin: 0; color: #e6e6eb; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
 .app-root .app-uw-field {
   display: block;
   min-width: 0;

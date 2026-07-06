@@ -103,3 +103,63 @@ test('waterfall allocates every project cash flow between LP and GP', () => {
   assert.ok(Number.isFinite(output.waterfall.lpIrr))
   assert.ok(Number.isFinite(output.waterfall.gpIrr))
 })
+
+test('multi-class waterfalls reconcile every class and aggregate distribution to the project', () => {
+  const output = runMonthlyUnderwriting({
+    ...BASE,
+    waterfall: {
+      enabled: true,
+      classes: [
+        {
+          key: 'class-a', name: 'Class A', capitalShare: 0.33, lpEquityShare: 0.999,
+          preferredReturn: 0.12,
+          promoteTiers: [{ hurdleIrr: 0.12, promotePct: 0 }, { hurdleIrr: null, promotePct: 0.2 }],
+        },
+        {
+          key: 'class-c1', name: 'Class C1', capitalShare: 0.67, lpEquityShare: 0.95,
+          preferredReturn: 0.07,
+          promoteTiers: [
+            { hurdleIrr: 0.07, promotePct: 0 },
+            { hurdleIrr: 0.12, promotePct: 0.25 },
+            { hurdleIrr: 0.16, promotePct: 0.35 },
+            { hurdleIrr: null, promotePct: 0.45 },
+          ],
+        },
+      ],
+    },
+  })
+  assert.equal(output.waterfall.classes.length, 2)
+  for (let index = 0; index < output.projectCashflows.length; index += 1) {
+    const classTotal = output.waterfall.classes.reduce((sum, equityClass) => sum + equityClass.classCashflows[index], 0)
+    const investorTotal = output.waterfall.lpCashflows[index] + output.waterfall.gpCashflows[index]
+    assert.ok(Math.abs(classTotal - output.projectCashflows[index]) < 0.01)
+    assert.ok(Math.abs(investorTotal - output.projectCashflows[index]) < 0.01)
+  }
+  assert.ok(output.waterfall.classes.every(equityClass => Number.isFinite(equityClass.lpIrr)))
+  assert.equal(output.waterfall.classes[1].promoteTiers[0].hurdleType, 'irr')
+})
+
+test('higher residual promote increases sponsor distributions above the hurdle', () => {
+  const run = promotePct => runMonthlyUnderwriting({
+    ...BASE,
+    waterfall: {
+      enabled: true,
+      classes: [{
+        key: 'common', name: 'Common Equity', capitalShare: 1, lpEquityShare: 0.9,
+        preferredReturn: 0.08,
+        promoteTiers: [{ hurdleEquityMultiple: 1.25, promotePct: 0 }, { hurdleEquityMultiple: null, promotePct }],
+      }],
+    },
+  })
+  const noPromote = run(0)
+  const promoted = run(0.4)
+  const gpDistributions = output => output.waterfall.gpCashflows.slice(1).reduce((sum, value) => sum + Math.max(0, value), 0)
+  assert.ok(gpDistributions(promoted) > gpDistributions(noPromote))
+})
+
+test('multi-class waterfall requires capital shares to reconcile to 100%', () => {
+  assert.throws(() => runMonthlyUnderwriting({
+    ...BASE,
+    waterfall: { enabled: true, classes: [{ key: 'a', name: 'A', capitalShare: 0.6 }] },
+  }), /capital shares must total 1/)
+})

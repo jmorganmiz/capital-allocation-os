@@ -24,6 +24,14 @@ export interface AdvancedUnderwritingOutput {
     lpCashflows: number[]; gpCashflows: number[]
     lpIrr: number | null; gpIrr: number | null
     lpEquityMultiple: number | null; gpEquityMultiple: number | null
+    promoteTiers?: Array<{ hurdleType: 'irr' | 'equity_multiple'; hurdleIrr: number | null; hurdleEquityMultiple: number | null; promotePct: number }>
+    classes: Array<{
+      key: string; name: string; capitalShare: number
+      classCashflows: number[]; lpCashflows: number[]; gpCashflows: number[]
+      lpIrr: number | null; gpIrr: number | null
+      lpEquityMultiple: number | null; gpEquityMultiple: number | null
+      promoteTiers: Array<{ hurdleType: 'irr' | 'equity_multiple'; hurdleIrr: number | null; hurdleEquityMultiple: number | null; promotePct: number }>
+    }>
   } | null
   warnings: string[]
 }
