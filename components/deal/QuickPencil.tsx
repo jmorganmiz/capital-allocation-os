@@ -25,7 +25,16 @@ type Props = {
   initialRuns: UnderwritingRun[]
 }
 
-type FormState = Record<keyof QuickPencilInput, string>
+type FormState = Record<Exclude<keyof QuickPencilInput, 'equityClasses'>, string>
+type EquityTierForm = { id: string; hurdleIrr: string; promotePct: string }
+type EquityClassForm = {
+  id: string
+  name: string
+  capitalShare: string
+  lpEquityShare: string
+  preferredReturn: string
+  tiers: EquityTierForm[]
+}
 
 const scenarioOrder = { downside: 0, base: 1, upside: 2, custom: 3 }
 
@@ -155,7 +164,9 @@ export default function QuickPencil({ dealId, entitlementLabel, monthlyAllowance
     promotePct: '20',
     secondTierEquityMultiple: '2',
     secondTierPromotePct: '30',
+    operatingReserveAmount: '0',
   })
+  const [equityClasses, setEquityClasses] = useState<EquityClassForm[]>([])
 
   const orderedRuns = useMemo(
     () => [...runs].sort((a, b) => scenarioOrder[a.scenario_key] - scenarioOrder[b.scenario_key]),
@@ -164,6 +175,31 @@ export default function QuickPencil({ dealId, entitlementLabel, monthlyAllowance
 
   function update(key: keyof FormState, value: string) {
     setForm((current) => ({ ...current, [key]: value }))
+  }
+
+  function addEquityClass() {
+    setForm((current) => ({ ...current, waterfallEnabled: '1' }))
+    setEquityClasses((current) => [...current, {
+      id: crypto.randomUUID(),
+      name: `Class ${String.fromCharCode(65 + current.length)}`,
+      capitalShare: current.length ? '0' : '100',
+      lpEquityShare: '90',
+      preferredReturn: '8',
+      tiers: [
+        { id: crypto.randomUUID(), hurdleIrr: '8', promotePct: '0' },
+        { id: crypto.randomUUID(), hurdleIrr: '', promotePct: '20' },
+      ],
+    }])
+  }
+
+  function updateEquityClass(id: string, patch: Partial<EquityClassForm>) {
+    setEquityClasses((current) => current.map((equityClass) => equityClass.id === id ? { ...equityClass, ...patch } : equityClass))
+  }
+
+  function updateEquityTier(classId: string, tierId: string, patch: Partial<EquityTierForm>) {
+    setEquityClasses((current) => current.map((equityClass) => equityClass.id === classId
+      ? { ...equityClass, tiers: equityClass.tiers.map((tier) => tier.id === tierId ? { ...tier, ...patch } : tier) }
+      : equityClass))
   }
 
   function runPencil() {
@@ -207,6 +243,18 @@ export default function QuickPencil({ dealId, entitlementLabel, monthlyAllowance
       promotePct: asNumber(form.promotePct) / 100,
       secondTierEquityMultiple: asNumber(form.secondTierEquityMultiple),
       secondTierPromotePct: asNumber(form.secondTierPromotePct) / 100,
+      operatingReserveAmount: asNumber(form.operatingReserveAmount),
+      equityClasses: equityClasses.map((equityClass, classIndex) => ({
+        key: `class-${classIndex + 1}-${equityClass.id.slice(0, 8)}`,
+        name: equityClass.name,
+        capitalShare: asNumber(equityClass.capitalShare) / 100,
+        lpEquityShare: asNumber(equityClass.lpEquityShare) / 100,
+        preferredReturn: asNumber(equityClass.preferredReturn) / 100,
+        promoteTiers: equityClass.tiers.map((tier) => ({
+          hurdleIrr: tier.hurdleIrr.trim() ? asNumber(tier.hurdleIrr) / 100 : null,
+          promotePct: asNumber(tier.promotePct) / 100,
+        })),
+      })),
     }
 
     startTransition(async () => {
@@ -291,11 +339,12 @@ export default function QuickPencil({ dealId, entitlementLabel, monthlyAllowance
           </summary>
           <div className="app-uw-advanced-body">
             <div className="app-uw-advanced-group">
-              <div><strong>Monthly operations</strong><small>Timing assumptions used by model v0.3.</small></div>
+              <div><strong>Monthly operations</strong><small>Timing and liquidity assumptions used by model v0.4.</small></div>
               <div className="app-uw-form-grid three">
                 <InputField label="Renovation downtime" value={form.renovationDowntimeMonths} onChange={(value) => update('renovationDowntimeMonths', value)} suffix="months" />
                 <InputField label="Tax reassessment month" value={form.propertyTaxReassessmentMonth} onChange={(value) => update('propertyTaxReassessmentMonth', value)} suffix="month" />
                 <InputField label="Reassessed property taxes" value={form.reassessedAnnualPropertyTaxes} onChange={(value) => update('reassessedAnnualPropertyTaxes', value)} suffix="$/yr" format="currency" />
+                <InputField label="Operating reserve" value={form.operatingReserveAmount} onChange={(value) => update('operatingReserveAmount', value)} suffix="$" format="currency" />
               </div>
             </div>
             <div className="app-uw-advanced-group">
@@ -330,6 +379,38 @@ export default function QuickPencil({ dealId, entitlementLabel, monthlyAllowance
                 <InputField label="Second tier EM" value={form.secondTierEquityMultiple} onChange={(value) => update('secondTierEquityMultiple', value)} suffix="x" format="decimal" />
                 <InputField label="Second tier promote" value={form.secondTierPromotePct} onChange={(value) => update('secondTierPromotePct', value)} suffix="%" format="decimal" />
               </div>
+              <div className="app-equity-editor-heading">
+                <div><strong>Equity classes</strong><small>Optional. If used, class capital shares must total 100%. Blank final IRR hurdle means residual cash flow.</small></div>
+                <button type="button" onClick={addEquityClass}>+ Add class</button>
+              </div>
+              {equityClasses.length > 0 && (
+                <div className="app-equity-editor">
+                  {equityClasses.map((equityClass) => (
+                    <article key={equityClass.id}>
+                      <div className="app-equity-class-header">
+                        <input aria-label="Equity class name" value={equityClass.name} onChange={(event) => updateEquityClass(equityClass.id, { name: event.target.value })} />
+                        <button type="button" onClick={() => setEquityClasses((current) => current.filter((item) => item.id !== equityClass.id))}>Remove</button>
+                      </div>
+                      <div className="app-uw-form-grid three">
+                        <InputField label="Capital share" value={equityClass.capitalShare} onChange={(value) => updateEquityClass(equityClass.id, { capitalShare: value })} suffix="%" format="decimal" />
+                        <InputField label="LP equity share" value={equityClass.lpEquityShare} onChange={(value) => updateEquityClass(equityClass.id, { lpEquityShare: value })} suffix="%" format="decimal" />
+                        <InputField label="Preferred return" value={equityClass.preferredReturn} onChange={(value) => updateEquityClass(equityClass.id, { preferredReturn: value })} suffix="%" format="decimal" />
+                      </div>
+                      <div className="app-equity-tier-list">
+                        {equityClass.tiers.map((tier, index) => (
+                          <div key={tier.id}>
+                            <span>Tier {index + 1}</span>
+                            <InputField label="IRR hurdle" value={tier.hurdleIrr} onChange={(value) => updateEquityTier(equityClass.id, tier.id, { hurdleIrr: value })} suffix="%" format="decimal" />
+                            <InputField label="Promote" value={tier.promotePct} onChange={(value) => updateEquityTier(equityClass.id, tier.id, { promotePct: value })} suffix="%" format="decimal" />
+                            <button type="button" onClick={() => updateEquityClass(equityClass.id, { tiers: equityClass.tiers.filter((item) => item.id !== tier.id) })}>Remove tier</button>
+                          </div>
+                        ))}
+                        <button type="button" onClick={() => updateEquityClass(equityClass.id, { tiers: [...equityClass.tiers, { id: crypto.randomUUID(), hurdleIrr: '', promotePct: equityClass.tiers.at(-1)?.promotePct ?? '20' }] })}>+ Add tier</button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </details>

@@ -91,6 +91,24 @@ test('construction draws reconcile debt and equity funding', () => {
   assert.ok(draws[3].constructionInterest > 0)
 })
 
+test('operating reserve funds monthly deficits and releases only the unused balance at exit', () => {
+  const reserve = 750_000
+  const output = runMonthlyUnderwriting({
+    ...BASE,
+    currentRent: 700,
+    unitMix: [{ units: 100, unitsToRenovate: 100, currentRent: 700, marketRent: 1_500 }],
+    operatingReserveAmount: reserve,
+  })
+  const totalDrawn = output.monthly.slice(0, 60).reduce((sum, row) => sum + row.operatingReserveDraw, 0)
+  assert.ok(totalDrawn > 0)
+  assert.ok(totalDrawn <= reserve)
+  assert.equal(output.operatingReserve.drawn, totalDrawn)
+  assert.ok(Math.abs(output.operatingReserve.releasedAtExit + totalDrawn - reserve) < 0.01)
+  assert.ok(output.leaseUpDeficitByYear.some(value => value > 0))
+  for (const row of output.monthly) assert.ok(row.operatingReserveBalance >= 0)
+  assert.ok(output.monthly.slice(60).every(row => row.operatingReserveDraw === 0 && row.leaseUpDeficit === 0))
+})
+
 test('waterfall allocates every project cash flow between LP and GP', () => {
   const output = runMonthlyUnderwriting({
     ...BASE,

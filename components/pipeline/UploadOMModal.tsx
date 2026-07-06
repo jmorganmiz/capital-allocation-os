@@ -128,7 +128,7 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
       setStep('select')
       return
     }
-    const { data: profile } = await supabase.from('profiles').select('firm_id').single()
+    const { data: profile } = await supabase.from('profiles').select('firm_id').eq('id', user.id).single()
     if (!profile) {
       setParseError('Profile not found. Please refresh and try again.')
       setStep('select')
@@ -260,7 +260,7 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setError('Not authenticated'); setUploading(false); return }
 
-    const { data: profile } = await supabase.from('profiles').select('firm_id').single()
+    const { data: profile } = await supabase.from('profiles').select('firm_id').eq('id', user.id).single()
     if (!profile) { setError('Profile not found'); setUploading(false); return }
 
     // Reuse the temp path from analyzeFile if available — avoids a second upload
@@ -345,7 +345,7 @@ export default function UploadOMModal({ stages, existingDeals, onCreated, onCanc
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setError('Not authenticated'); setUploading(false); return }
 
-    const { data: profile } = await supabase.from('profiles').select('firm_id').single()
+    const { data: profile } = await supabase.from('profiles').select('firm_id').eq('id', user.id).single()
     if (!profile) { setError('Profile not found'); setUploading(false); return }
 
     const storagePath = `${profile.firm_id}/${existingDealId}/${Date.now()}_${file.name}`

@@ -72,10 +72,12 @@ export default function FullUnderwriteExecution({ dealId, preflightRun, initialR
   const noiByYear = Array.isArray(output.noiByYear) ? output.noiByYear : []
   const debtServiceByYear = Array.isArray(output.debtServiceByYear) ? output.debtServiceByYear : []
   const capexByYear = Array.isArray(output.capexByYear) ? output.capexByYear : []
+  const leaseUpDeficitByYear = Array.isArray(output.leaseUpDeficitByYear) ? output.leaseUpDeficitByYear : []
   const cashFlowByYear = Array.isArray(output.cashFlowBeforeTax) ? output.cashFlowBeforeTax : []
   const refinance = record((output.refinance ?? null) as Json | null)
   const taxes = record((output.taxes ?? null) as Json | null)
   const waterfall = record((output.waterfall ?? null) as Json | null)
+  const operatingReserve = record((output.operatingReserve ?? null) as Json | null)
   const waterfallClasses = Array.isArray(waterfall.classes)
     ? waterfall.classes.map((value) => record(value as Json)).filter((value) => Object.keys(value).length > 0)
     : []
@@ -241,6 +243,8 @@ export default function FullUnderwriteExecution({ dealId, preflightRun, initialR
               {Object.keys(refinance).length > 0 && <div><span>Refinance proceeds</span><strong>{money(refinance.proceeds)}</strong></div>}
               {Object.keys(waterfall).length > 0 && <div><span>LP IRR</span><strong>{percent(waterfall.lpIrr)}</strong></div>}
               {Object.keys(waterfall).length > 0 && <div><span>GP IRR</span><strong>{percent(waterfall.gpIrr)}</strong></div>}
+              {Number(operatingReserve.initial ?? 0) > 0 && <div><span>Reserve drawn</span><strong>{money(operatingReserve.drawn)}</strong></div>}
+              {Number(operatingReserve.initial ?? 0) > 0 && <div><span>Reserve released</span><strong>{money(operatingReserve.releasedAtExit)}</strong></div>}
               {Number(taxes.incomeTax ?? 0) > 0 && <div><span>Modeled income tax</span><strong>{money(taxes.incomeTax)}</strong></div>}
               {run?.status === 'completed' && <div><span>IC package</span><strong><a href={`/api/underwriting/${run.id}/memo`}>Download PDF</a></strong></div>}
             </div>
@@ -255,6 +259,7 @@ export default function FullUnderwriteExecution({ dealId, preflightRun, initialR
                     <tr><th>NOI</th>{noiByYear.map((value, index) => <td key={index}>{money(value as Json)}</td>)}</tr>
                     <tr><th>Debt service</th>{debtServiceByYear.map((value, index) => <td key={index}>{money(value as Json)}</td>)}</tr>
                     <tr><th>Capital spend</th>{capexByYear.map((value, index) => <td key={index}>{money(value as Json)}</td>)}</tr>
+                    <tr><th>Lease-up deficit</th>{leaseUpDeficitByYear.map((value, index) => <td key={index}>{money(value as Json)}</td>)}</tr>
                     <tr><th>Cash flow</th>{cashFlowByYear.map((value, index) => <td key={index}>{money(value as Json)}</td>)}</tr>
                   </tbody>
                 </table>

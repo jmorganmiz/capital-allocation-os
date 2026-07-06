@@ -37,7 +37,7 @@ export default function FilesSection({ dealId, files: initialFiles }: Props) {
       return
     }
 
-    const { data: profile } = await supabase.from('profiles').select('firm_id').single()
+    const { data: profile } = await supabase.from('profiles').select('firm_id').eq('id', user.id).single()
     if (!profile) {
       setError('Profile not found')
       setUploading(false)

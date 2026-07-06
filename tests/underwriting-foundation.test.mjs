@@ -84,6 +84,10 @@ test('Quick Pencil visibly distinguishes assumptions from approved underwriting'
   assert.match(action, /interestRate: 0\.0075/)
   assert.match(action, /operatingCosts: 1\.1/)
   assert.match(action, /marketRent: 0\.95/)
+  assert.match(quickPencil, /Equity classes/)
+  assert.match(quickPencil, /Operating reserve/)
+  assert.match(action, /Equity class capital shares must total 100%/)
+  assert.match(action, /classes: base\.equityClasses/)
 })
 
 test('Underwriting Room workstreams are persisted, tenant scoped, and client read-only', () => {

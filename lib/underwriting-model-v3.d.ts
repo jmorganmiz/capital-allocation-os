@@ -18,6 +18,8 @@ export interface AdvancedUnderwritingOutput {
   debtServiceByYear: number[]
   cashFlowBeforeTax: number[]
   capexByYear: number[]
+  leaseUpDeficitByYear: number[]
+  operatingReserve: { initial: number; drawn: number; releasedAtExit: number; endingBalanceBeforeRelease: number }
   refinance: { month: number; proceeds: number; endingBalance: number } | null
   taxes: { incomeTax: number; capitalGainsTax: number; recaptureTax: number; accumulatedDepreciation: number }
   waterfall: {

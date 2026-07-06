@@ -43,7 +43,7 @@ These cells cannot be used as authoritative reconciliation targets. Active headl
 
 ## Dealstash comparison
 
-Already represented in model v0.4:
+Already represented in model v0.5:
 
 - Monthly operating schedule.
 - Renovation timing and downtime.
@@ -54,6 +54,7 @@ Already represented in model v0.4:
 - Project, LP, and GP return outputs.
 - Multiple simultaneous equity classes whose capital shares reconcile to 100%.
 - Arbitrary ascending promote tiers per class.
+- Explicit operating-reserve funding, monthly lease-up-deficit draws, and unused-reserve release at exit.
 
 ## Recovered equity-class terms
 
@@ -70,7 +71,6 @@ These terms validate the need for a configurable class engine. They are referenc
 
 Still required for Cedars-level parity:
 
-- Lease-up deficit and operating-reserve funding schedules.
 - A self-contained formula-driven Excel export with no macros or external links.
 
 The Excel handoff remains blocked in this environment because the approved spreadsheet artifact runtime is unavailable. The attached `.xlsm` will not be copied or automated as a fallback because it contains VBA, external links, and cached formula errors.
