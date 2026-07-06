@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
+import { assertFirmAccess } from '@/lib/billing-access'
 
 function optionalNumber(value: string, min = -1_000_000_000, max = 1_000_000_000) {
   if (!value.trim()) return null
@@ -19,6 +20,9 @@ export async function savePortfolioActual(dealId: string, input: {
   if (!user) return { error: 'Not authenticated.' }
   const { data: profile } = await supabase.from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile?.firm_id) return { error: 'Profile not found.' }
+
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.periodDate)) return { error: 'Select a reporting period.' }
 
   try {

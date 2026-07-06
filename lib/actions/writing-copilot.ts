@@ -2,6 +2,7 @@
 
 import Anthropic from '@anthropic-ai/sdk'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
+import { assertFirmAccess } from '@/lib/billing-access'
 import { checkAiRateLimit } from '@/lib/rate-limit'
 import type { Json } from '@/lib/types/database'
 
@@ -77,6 +78,9 @@ async function membership(dealId: string) {
   if (!user) return { error: 'Not authenticated' as const }
   const { data: profile } = await supabase.from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' as const }
+
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
   const { data: deal } = await supabase.from('deals').select('*').eq('id', dealId).eq('firm_id', profile.firm_id).single()
   if (!deal) return { error: 'Deal not found' as const }
   return { supabase, user, firmId: profile.firm_id, deal }
@@ -235,6 +239,9 @@ export async function markDecisionDraftInserted(draftId: string, insertedText: s
   if (!user) return { error: 'Not authenticated' }
   const { data: profile } = await supabase.from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
+
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
   const admin = createAdminClient()
   const { error } = await admin.from('decision_writing_drafts').update({
     inserted_at: new Date().toISOString(), inserted_by: user.id, inserted_text: clean(insertedText, 12000),

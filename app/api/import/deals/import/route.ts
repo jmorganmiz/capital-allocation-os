@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { assertFirmAccess } from '@/lib/billing-access'
 import type { ColumnMapping } from '@/app/api/import/deals/map-columns/route'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -146,6 +147,9 @@ export async function POST(request: NextRequest) {
   }
 
   const firmId: string = profile.firm_id
+
+  const accessError = await assertFirmAccess(supabase, firmId)
+  if (accessError) return NextResponse.json({ error: accessError }, { status: 402 })
 
   let body: RequestBody
   try {

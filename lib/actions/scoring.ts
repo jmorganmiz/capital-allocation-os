@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { assertFirmAccess } from '@/lib/billing-access'
 import { revalidatePath } from 'next/cache'
 import Anthropic from '@anthropic-ai/sdk'
 import { approvedScoringRules } from '@/lib/firm-memory.mjs'
@@ -98,6 +99,9 @@ export async function upsertDealScore(
     .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
 
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
+
   const { data: existing } = await supabase
     .from('deal_scores')
     .select('id')
@@ -139,6 +143,9 @@ export async function createScoringCriteria(name: string, position: number) {
     .from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
+
   const { data, error } = await supabase
     .from('scoring_criteria')
     .insert({ firm_id: profile.firm_id, name, position, is_active: true })
@@ -160,6 +167,9 @@ export async function updateScoringCriteria(id: string, updates: { name?: string
     .from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
+
   const { error } = await supabase
     .from('scoring_criteria')
     .update(updates)
@@ -180,6 +190,9 @@ export async function deleteScoringCriteria(id: string) {
   const { data: profile } = await supabase
     .from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
+
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
 
   const { error } = await supabase
     .from('scoring_criteria')
@@ -212,6 +225,9 @@ export async function autoScoreDeal(dealId: string, firmId: string): Promise<Aut
     if (!rateLimit.allowed) {
       return { criteriaCount: 0, scoresWritten: 0, error: rateLimit.error }
     }
+
+    const accessError = await assertFirmAccess(supabase, firmId)
+    if (accessError) return { criteriaCount: 0, scoresWritten: 0, error: accessError }
 
     const { data: criteria, error: criteriaError } = await supabase
       .from('scoring_criteria')
@@ -455,6 +471,9 @@ export async function rescoreDeal(dealId: string): Promise<AutoScoreResult> {
 
   const { data: profile } = await supabase.from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { criteriaCount: 0, scoresWritten: 0, error: 'Profile not found' }
+
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { criteriaCount: 0, scoresWritten: 0, error: accessError }
 
   const result = await autoScoreDeal(dealId, profile.firm_id)
   if (!result.error) revalidatePath(`/deals/${dealId}`)

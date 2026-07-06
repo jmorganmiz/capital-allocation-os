@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getFirmContext } from '@/lib/auth'
 import { checkAiRateLimit } from '@/lib/rate-limit'
 
 const anthropic = new Anthropic()
@@ -102,15 +102,11 @@ export type MapColumnsResponse = {
 // ─── Route handler ────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const context = await getFirmContext()
+  if (!context.ok) {
+    return NextResponse.json({ error: context.error }, { status: context.status })
   }
-  const rateLimit = await checkAiRateLimit(supabase, 'map-columns', 10)
+  const rateLimit = await checkAiRateLimit(context.supabase, 'map-columns', 10)
   if (!rateLimit.allowed) {
     return NextResponse.json({ error: rateLimit.error }, { status: 429 })
   }

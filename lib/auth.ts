@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { assertFirmAccess } from '@/lib/billing-access'
 
 export async function getFirmContext() {
   const supabase = await createClient()
@@ -14,6 +15,10 @@ export async function getFirmContext() {
   if (error || !profile?.firm_id) {
     return { ok: false as const, error: 'Profile not found', status: 403 }
   }
+
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { ok: false as const, error: accessError, status: 402 }
+
   return { ok: true as const, supabase, user, profile }
 }
 

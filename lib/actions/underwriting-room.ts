@@ -3,6 +3,7 @@
 import { randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
+import { assertFirmAccess } from '@/lib/billing-access'
 import type { Json, UnderwritingAssumption, UnderwritingRun, UnderwritingStep } from '@/lib/types/database'
 
 const PREFLIGHT_VERSION = 'underwriting-preflight-0.1.0'
@@ -38,6 +39,7 @@ const ADVANCED_ASSUMPTION_DEFAULTS: Record<string, Json> = {
   promotePct: 0.2,
   secondTierEquityMultiple: 2,
   secondTierPromotePct: 0.3,
+  operatingReserveAmount: 0,
 }
 
 const TRACKED_ASSUMPTIONS = [
@@ -65,6 +67,7 @@ const TRACKED_ASSUMPTIONS = [
   { key: 'promotePct', label: 'First-tier promote', category: 'waterfall', unit: '%', confidence: 0.7 },
   { key: 'secondTierEquityMultiple', label: 'Second-tier equity multiple', category: 'waterfall', unit: 'x', confidence: 0.7 },
   { key: 'secondTierPromotePct', label: 'Second-tier promote', category: 'waterfall', unit: '%', confidence: 0.7 },
+  { key: 'operatingReserveAmount', label: 'Operating reserve', category: 'operations', unit: '$', confidence: 0.7 },
 ] as const
 
 type StepResult = {
@@ -94,6 +97,9 @@ async function getMembership(dealId?: string) {
     .eq('id', user.id)
     .single()
   if (!profile) return { error: 'Profile not found.' as const }
+
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
 
   if (dealId) {
     const { data: deal } = await supabase

@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { assertFirmAccess } from '@/lib/billing-access'
 import { revalidatePath } from 'next/cache'
 import { type BuyBoxWithCriteria } from '@/lib/constants/buybox'
 
@@ -43,6 +44,9 @@ export async function createBuyBox(input: BuyBoxInput): Promise<{ buyBox?: BuyBo
 
   const { data: profile } = await supabase.from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
+
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
 
   const { criteria, ...fields } = input
 
@@ -87,6 +91,9 @@ export async function updateBuyBox(
   const { data: profile } = await supabase.from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
+
   const { criteria, ...fields } = input
 
   const { error: boxErr } = await supabase
@@ -129,6 +136,9 @@ export async function deleteBuyBox(id: string): Promise<{ error?: string }> {
 
   const { data: profile } = await supabase.from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
+
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
 
   const { error } = await supabase
     .from('buy_boxes')

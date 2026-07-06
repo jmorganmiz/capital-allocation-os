@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { assertFirmAccess } from '@/lib/billing-access'
 import { revalidatePath } from 'next/cache'
 
 // ── Settings: manage checklist items per stage ────────────────────────────────
@@ -12,6 +13,9 @@ export async function createChecklistItem(stageId: string, name: string, positio
 
   const { data: profile } = await supabase.from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
+
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
 
   const { data, error } = await supabase
     .from('stage_checklist_items')
@@ -32,6 +36,9 @@ export async function updateChecklistItem(id: string, updates: { name?: string; 
   const { data: profile } = await supabase.from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
+
   const { error } = await supabase
     .from('stage_checklist_items')
     .update(updates)
@@ -50,6 +57,9 @@ export async function deleteChecklistItem(id: string) {
 
   const { data: profile } = await supabase.from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
+
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
 
   const { error } = await supabase
     .from('stage_checklist_items')
@@ -70,6 +80,9 @@ export async function reorderChecklistItems(items: { id: string; position: numbe
 
   const { data: profile } = await supabase.from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
+
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
 
   for (const { id, position } of items) {
     await supabase
@@ -96,6 +109,9 @@ export async function toggleChecklistItem(
 
   const { data: profile } = await supabase.from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
+
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
 
   if (completed) {
     const { error } = await supabase

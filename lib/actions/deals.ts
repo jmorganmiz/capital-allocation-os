@@ -1,6 +1,7 @@
 'use server'
 
 import { createAdminClient, createClient } from '@/lib/supabase/server'
+import { assertFirmAccess } from '@/lib/billing-access'
 import { revalidatePath } from 'next/cache'
 import { autoScoreDeal } from '@/lib/actions/scoring'
 
@@ -28,6 +29,9 @@ export async function createDeal(formData: FormData) {
     .eq('id', user.id)
     .single()
   if (!profile) return { error: 'Profile not found' }
+
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
 
   const { data: firstStage } = await supabase
     .from('deal_stages')
@@ -130,6 +134,9 @@ export async function reactivateDeal(dealId: string): Promise<void> {
     .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return
 
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return
+
   const [{ data: deal }, { data: firstActiveStage }] = await Promise.all([
     supabase
       .from('deals')
@@ -186,6 +193,9 @@ export async function updateDealStage(
     .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
 
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
+
   const [{ data: stage }, { data: currentDeal }] = await Promise.all([
     supabase
       .from('deal_stages')
@@ -237,6 +247,9 @@ export async function killDeal(
   const { data: profile } = await supabase
     .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
+
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
 
   const [{ data: killedStage }, { data: killReason }, { data: currentDeal }] = await Promise.all([
     supabase.from('deal_stages').select('id').eq('id', killedStageId)
@@ -314,6 +327,9 @@ export async function upsertDealNote(
     .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
 
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
+
   const { data: existing } = await supabase
     .from('deal_notes')
     .select('id')
@@ -371,6 +387,9 @@ export async function uploadFileMetadata(params: {
     .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
 
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
+
   const { data: file, error } = await supabase
     .from('deal_files')
     .insert({
@@ -427,6 +446,9 @@ export async function createDealFromUpload({
     .eq('id', user.id)
     .single()
   if (!profile) return { error: 'Profile not found' }
+
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
 
   let dealId = existingDealId
 
@@ -546,6 +568,9 @@ export async function createDealFromOM(params: {
     .eq('id', user.id)
     .single()
   if (!profile) return { error: 'Profile not found' }
+
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
 
   const { data: validStage } = await supabase
     .from('deal_stages')
@@ -796,6 +821,9 @@ export async function updateDealOwner(dealId: string, ownerUserId: string | null
     .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
 
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
+
   if (ownerUserId) {
     const { data: owner } = await supabase
       .from('profiles')
@@ -835,6 +863,9 @@ export async function updateDealFields(
   const { data: profile } = await supabase
     .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
+
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
 
   const { error } = await supabase
     .from('deals')

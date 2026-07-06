@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
+import { assertFirmAccess } from '@/lib/billing-access'
 import { autoScoreDeal } from '@/lib/actions/scoring'
 
 function normalize(value: string) {
@@ -38,6 +39,9 @@ export async function captureSourcingOpportunity(input: {
   if (!user) return { error: 'Not authenticated.' }
   const { data: profile } = await supabase.from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile?.firm_id) return { error: 'Profile not found.' }
+
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
 
   const propertyName = input.propertyName.trim().slice(0, 200)
   const address = input.address.trim().slice(0, 300)
@@ -111,6 +115,9 @@ export async function promoteSourcingOpportunity(id: string) {
   if (!user) return { error: 'Not authenticated.' }
   const { data: profile } = await supabase.from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile?.firm_id) return { error: 'Profile not found.' }
+
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
   const admin = createAdminClient()
   const { data: dealId, error } = await admin.rpc('promote_sourcing_opportunity', { p_opportunity_id: id, p_firm_id: profile.firm_id, p_user_id: user.id })
   if (error) {
@@ -131,6 +138,9 @@ export async function dismissSourcingOpportunity(id: string) {
   if (!user) return { error: 'Not authenticated.' }
   const { data: profile } = await supabase.from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile?.firm_id) return { error: 'Profile not found.' }
+
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
   const admin = createAdminClient()
   const { error } = await admin.from('sourcing_opportunities').update({ status: 'dismissed' }).eq('id', id).eq('firm_id', profile.firm_id).neq('status', 'promoted')
   if (error) return { error: error.message }

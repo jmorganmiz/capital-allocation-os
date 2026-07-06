@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
+import { assertFirmAccess } from '@/lib/billing-access'
 
 export async function requestUnderwritingAccess(input: {
   teamSize: number
@@ -14,7 +15,11 @@ export async function requestUnderwritingAccess(input: {
 
   const { data: profile } = await supabase.from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile?.firm_id) return { error: 'Profile not found.' }
+
   if (!['admin', 'partner'].includes(profile.role ?? '')) return { error: 'Administrator or partner access required.' }
+
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
 
   const teamSize = Math.round(Number(input.teamSize))
   const monthlyDealVolume = Math.round(Number(input.monthlyDealVolume))

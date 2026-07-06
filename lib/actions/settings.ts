@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { assertFirmAccess } from '@/lib/billing-access'
 import { revalidatePath } from 'next/cache'
 import { getResend } from '@/lib/resend'
 import { inviteExpiryCutoff } from '@/lib/constants/invites'
@@ -12,6 +13,9 @@ export async function createDealStage(name: string, position: number) {
 
   const { data: profile } = await supabase.from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
+
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
 
   const { data, error } = await supabase
     .from('deal_stages')
@@ -30,6 +34,9 @@ export async function updateDealStage(id: string, updates: { name?: string; posi
 
   const { data: profile } = await supabase.from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
+
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
 
   const { error } = await supabase
     .from('deal_stages')
@@ -50,6 +57,9 @@ export async function deleteDealStage(id: string) {
   const { data: profile } = await supabase.from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
+
   const { error } = await supabase
     .from('deal_stages')
     .delete()
@@ -69,6 +79,9 @@ export async function createKillReason(name: string, position: number) {
   const { data: profile } = await supabase.from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
 
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
+
   const { data, error } = await supabase
     .from('kill_reasons')
     .insert({ firm_id: profile.firm_id, name, position })
@@ -86,6 +99,9 @@ export async function updateKillReason(id: string, updates: { name?: string; pos
 
   const { data: profile } = await supabase.from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
+
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
 
   const { error } = await supabase
     .from('kill_reasons')
@@ -105,6 +121,9 @@ export async function deleteKillReason(id: string) {
 
   const { data: profile } = await supabase.from('profiles').select('firm_id, role').eq('id', user.id).single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
+
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
 
   const { error } = await supabase
     .from('kill_reasons')
@@ -128,6 +147,9 @@ export async function inviteTeamMember(email: string) {
     .eq('id', user.id)
     .single()
   if (!profile || profile.role !== 'admin') return { error: 'Administrator access required' }
+
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
 
   // Check if already a member
   const { data: existing } = await supabase

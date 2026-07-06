@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import { runUnderwriting, UNDERWRITING_MODEL_VERSION } from '@/lib/underwriting-model.mjs'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
+import { assertFirmAccess } from '@/lib/billing-access'
 import type { Json, UnderwritingRun } from '@/lib/types/database'
 
 export type QuickPencilInput = {
@@ -45,6 +46,15 @@ export type QuickPencilInput = {
   promotePct: number
   secondTierEquityMultiple: number
   secondTierPromotePct: number
+  operatingReserveAmount: number
+  equityClasses: Array<{
+    key: string
+    name: string
+    capitalShare: number
+    lpEquityShare: number
+    preferredReturn: number
+    promoteTiers: Array<{ hurdleIrr: number | null; promotePct: number }>
+  }>
 }
 
 type ScenarioKey = 'base' | 'downside' | 'upside'
@@ -58,6 +68,27 @@ function finite(name: string, value: unknown, min: number, max: number): number 
 }
 
 function validateInput(raw: QuickPencilInput): QuickPencilInput {
+  const equityClasses = (raw.equityClasses ?? []).map((equityClass, classIndex) => {
+    const name = String(equityClass.name ?? '').trim().slice(0, 80)
+    if (!name) throw new Error(`Equity class ${classIndex + 1} requires a name`)
+    const promoteTiers = (equityClass.promoteTiers ?? []).map((tier, tierIndex) => ({
+      hurdleIrr: tier.hurdleIrr == null ? null : finite(`${name} tier ${tierIndex + 1} IRR hurdle`, tier.hurdleIrr, 0, 1),
+      promotePct: finite(`${name} tier ${tierIndex + 1} promote`, tier.promotePct, 0, 1),
+    }))
+    if (!promoteTiers.length) throw new Error(`${name} requires at least one promote tier`)
+    return {
+      key: String(equityClass.key || `class-${classIndex + 1}`).replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 60),
+      name,
+      capitalShare: finite(`${name} capital share`, equityClass.capitalShare, 0, 1),
+      lpEquityShare: finite(`${name} LP equity share`, equityClass.lpEquityShare, 0, 1),
+      preferredReturn: finite(`${name} preferred return`, equityClass.preferredReturn, 0, 0.5),
+      promoteTiers,
+    }
+  })
+  if (equityClasses.length) {
+    const totalShare = equityClasses.reduce((sum, equityClass) => sum + equityClass.capitalShare, 0)
+    if (Math.abs(totalShare - 1) > 0.000001) throw new Error('Equity class capital shares must total 100%')
+  }
   return {
     purchasePrice: finite('Purchase price', raw.purchasePrice, 1, 10_000_000_000),
     totalUnits: Math.round(finite('Total units', raw.totalUnits, 1, 100_000)),
@@ -97,6 +128,8 @@ function validateInput(raw: QuickPencilInput): QuickPencilInput {
     promotePct: finite('Promote', raw.promotePct, 0, 1),
     secondTierEquityMultiple: finite('Second tier equity multiple', raw.secondTierEquityMultiple, 1, 10),
     secondTierPromotePct: finite('Second tier promote', raw.secondTierPromotePct, 0, 1),
+    operatingReserveAmount: finite('Operating reserve', raw.operatingReserveAmount, 0, 1_000_000_000),
+    equityClasses,
   }
 }
 
@@ -176,6 +209,7 @@ function scenarioInput(base: QuickPencilInput, scenario: ScenarioKey, projection
     incomeTaxRate: base.incomeTaxRate,
     capitalGainsTaxRate: base.capitalGainsTaxRate,
     depreciationRecaptureTaxRate: base.depreciationRecaptureTaxRate,
+    operatingReserveAmount: base.operatingReserveAmount,
     waterfall: {
       enabled: Boolean(base.waterfallEnabled),
       lpEquityShare: base.lpEquityShare,
@@ -184,6 +218,7 @@ function scenarioInput(base: QuickPencilInput, scenario: ScenarioKey, projection
       promotePct: base.promotePct,
       secondTierEquityMultiple: base.secondTierEquityMultiple,
       secondTierPromotePct: base.secondTierPromotePct,
+      classes: base.equityClasses,
     },
     waterfallEnabled: base.waterfallEnabled,
     lpEquityShare: base.lpEquityShare,
@@ -211,6 +246,9 @@ export async function saveQuickPencil(
       supabase.from('deals').select('id, firm_id').eq('id', dealId).single(),
     ])
     if (!profile || !deal || profile.firm_id !== deal.firm_id) return { error: 'Deal not found.' }
+
+    const accessError = await assertFirmAccess(supabase, profile.firm_id)
+    if (accessError) return { error: accessError }
 
     const { data: entitlement } = await supabase
       .from('firm_entitlements')

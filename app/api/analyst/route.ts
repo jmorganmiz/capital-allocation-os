@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { assertFirmAccess } from '@/lib/billing-access'
 import { rankRelevantMemories } from '@/lib/firm-memory.mjs'
 
 type DealRow = {
@@ -275,6 +276,9 @@ export async function POST(request: Request) {
     .single()
 
   if (!profile?.firm_id) return NextResponse.json({ error: 'Firm not found' }, { status: 403 })
+
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return NextResponse.json({ error: accessError }, { status: 402 })
 
   const body = await request.json().catch(() => ({}))
   const question = typeof body.question === 'string' ? body.question.slice(0, 500) : ''

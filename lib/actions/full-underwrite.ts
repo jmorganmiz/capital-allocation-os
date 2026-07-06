@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { runMonthlyUnderwriting, ADVANCED_UNDERWRITING_MODEL_VERSION } from '@/lib/underwriting-model-v3.mjs'
 import { extractUnderwritingFacts, type ExtractedUnderwritingFact, type UnderwritingDocumentType } from '@/lib/underwriting-extraction'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
+import { assertFirmAccess } from '@/lib/billing-access'
 import type { Json, UnderwritingAssumption, UnderwritingRun, UnderwritingStep } from '@/lib/types/database'
 
 const EXECUTION_VERSION = `full-underwrite-billable-${ADVANCED_UNDERWRITING_MODEL_VERSION}`
@@ -51,6 +52,9 @@ async function membership() {
   if (!user) return { error: 'Not authenticated.' as const }
   const { data: profile } = await supabase.from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found.' as const }
+
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
   return { user, firmId: profile.firm_id }
 }
 
@@ -85,6 +89,7 @@ function applyApprovedFacts(base: Record<string, Json>, facts: Array<{ assumptio
   input.constructionDraws = drawAmount > 0 && Number.isFinite(drawMonth)
     ? [{ month: Math.round(drawMonth), amount: drawAmount }]
     : []
+  const existingWaterfall = record((input.waterfall ?? null) as Json | null)
   input.waterfall = {
     enabled: Boolean(Number(input.waterfallEnabled)),
     lpEquityShare: Number(input.lpEquityShare),
@@ -93,6 +98,7 @@ function applyApprovedFacts(base: Record<string, Json>, facts: Array<{ assumptio
     promotePct: Number(input.promotePct),
     secondTierEquityMultiple: Number(input.secondTierEquityMultiple),
     secondTierPromotePct: Number(input.secondTierPromotePct),
+    classes: Array.isArray(existingWaterfall.classes) ? existingWaterfall.classes : [],
   }
   input.refinanceEnabled = Boolean(Number(input.refinanceEnabled))
   return input

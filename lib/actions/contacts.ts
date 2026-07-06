@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { assertFirmAccess } from '@/lib/billing-access'
 import { revalidatePath } from 'next/cache'
 
 export type ContactType = 'broker' | 'seller' | 'lender'
@@ -51,6 +52,9 @@ export async function createContact(data: ContactData) {
     .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
 
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
+
   const { data: contact, error } = await supabase
     .from('contacts')
     .insert({
@@ -81,6 +85,9 @@ export async function updateContact(id: string, data: ContactData) {
     .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
 
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
+
   const { error } = await supabase
     .from('contacts')
     .update({
@@ -109,6 +116,9 @@ export async function deleteContact(id: string) {
     .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
 
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
+
   const { error } = await supabase
     .from('contacts')
     .delete()
@@ -134,6 +144,9 @@ export async function linkContactToDeal(
     .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
 
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
+
   const { error } = await supabase
     .from('deal_contacts')
     .insert({
@@ -158,6 +171,9 @@ export async function unlinkContactFromDeal(contactId: string, dealId: string) {
   const { data: profile } = await supabase
     .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
+
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
 
   const { error } = await supabase
     .from('deal_contacts')
@@ -185,6 +201,9 @@ export async function updateDealContactSource(
   const { data: profile } = await supabase
     .from('profiles').select('firm_id').eq('id', user.id).single()
   if (!profile) return { error: 'Profile not found' }
+
+  const accessError = await assertFirmAccess(supabase, profile.firm_id)
+  if (accessError) return { error: accessError }
 
   const { error } = await supabase
     .from('deal_contacts')
