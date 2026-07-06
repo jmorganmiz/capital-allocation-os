@@ -2,12 +2,12 @@
 
 import { randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
-import { runUnderwriting, UNDERWRITING_MODEL_VERSION } from '@/lib/underwriting-model.mjs'
+import { runMonthlyUnderwriting, ADVANCED_UNDERWRITING_MODEL_VERSION } from '@/lib/underwriting-model-v3.mjs'
 import { extractUnderwritingFacts, type ExtractedUnderwritingFact, type UnderwritingDocumentType } from '@/lib/underwriting-extraction'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
 import type { Json, UnderwritingAssumption, UnderwritingRun, UnderwritingStep } from '@/lib/types/database'
 
-const EXECUTION_VERSION = `full-underwrite-billable-${UNDERWRITING_MODEL_VERSION}`
+const EXECUTION_VERSION = `full-underwrite-billable-${ADVANCED_UNDERWRITING_MODEL_VERSION}`
 
 const EXECUTION_STEPS = [
   ['document_evidence', 'Document evidence'],
@@ -80,6 +80,21 @@ function applyApprovedFacts(base: Record<string, Json>, facts: Array<{ assumptio
     }
     input[key === 'fixedOperatingExpenses' ? 'payroll' : key] = value
   }
+  const drawAmount = Number(input.constructionDrawAmount)
+  const drawMonth = Number(input.constructionDrawMonth)
+  input.constructionDraws = drawAmount > 0 && Number.isFinite(drawMonth)
+    ? [{ month: Math.round(drawMonth), amount: drawAmount }]
+    : []
+  input.waterfall = {
+    enabled: Boolean(Number(input.waterfallEnabled)),
+    lpEquityShare: Number(input.lpEquityShare),
+    preferredReturn: Number(input.preferredReturn),
+    gpCatchUpPct: 1,
+    promotePct: Number(input.promotePct),
+    secondTierEquityMultiple: Number(input.secondTierEquityMultiple),
+    secondTierPromotePct: Number(input.secondTierPromotePct),
+  }
+  input.refinanceEnabled = Boolean(Number(input.refinanceEnabled))
   return input
 }
 
@@ -253,7 +268,7 @@ async function buildResult(
     if (!modelInput || typeof modelInput !== 'object' || Array.isArray(modelInput)) throw new Error('Locked Quick Pencil model input is missing.')
     const { data: approvedFacts } = await admin.from('underwriting_assumptions').select('assumption_key, value').eq('run_id', run.id).eq('approval_status', 'approved')
     const approvedInput = applyApprovedFacts(modelInput as Record<string, Json>, approvedFacts ?? [])
-    const output = runUnderwriting(approvedInput)
+    const output = runMonthlyUnderwriting(approvedInput)
     return {
       summary: `Deterministic model completed with ${approvedFacts?.length ?? 0} approved document fact${approvedFacts?.length === 1 ? '' : 's'}`,
       artifact: {
@@ -295,7 +310,7 @@ async function buildResult(
           rentGrowthInPlace: Number(approvedInput.rentGrowthInPlace) + growthShift,
           rentGrowthRenovated: Number(approvedInput.rentGrowthRenovated) + growthShift,
         }
-        return runUnderwriting(stressed).leveredIrr
+        return runMonthlyUnderwriting(stressed).leveredIrr
       })),
     } : null
     const attribution = {

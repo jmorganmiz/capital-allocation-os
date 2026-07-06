@@ -134,6 +134,27 @@ export default function QuickPencil({ dealId, entitlementLabel, monthlyAllowance
     holdPeriodYears: '5',
     exitCapRate: '5.75',
     rentGrowth: '3',
+    renovationDowntimeMonths: '1',
+    propertyTaxReassessmentMonth: '13',
+    reassessedAnnualPropertyTaxes: String(Math.round((defaults.propertyTaxes || 0) * 1.1)),
+    refinanceEnabled: '0',
+    refinanceMonth: '36',
+    refinanceLtv: '65',
+    refinanceInterestRate: '6.5',
+    refinanceCostsPct: '1',
+    constructionDrawAmount: '0',
+    constructionDrawMonth: '6',
+    constructionLoanPct: '0',
+    constructionLoanInterestRate: '8',
+    incomeTaxRate: '0',
+    capitalGainsTaxRate: '0',
+    depreciationRecaptureTaxRate: '0',
+    waterfallEnabled: '0',
+    lpEquityShare: '90',
+    preferredReturn: '8',
+    promotePct: '20',
+    secondTierEquityMultiple: '2',
+    secondTierPromotePct: '30',
   })
 
   const orderedRuns = useMemo(
@@ -165,6 +186,27 @@ export default function QuickPencil({ dealId, entitlementLabel, monthlyAllowance
       holdPeriodYears: asNumber(form.holdPeriodYears),
       exitCapRate: asNumber(form.exitCapRate) / 100,
       rentGrowth: asNumber(form.rentGrowth) / 100,
+      renovationDowntimeMonths: asNumber(form.renovationDowntimeMonths),
+      propertyTaxReassessmentMonth: asNumber(form.propertyTaxReassessmentMonth),
+      reassessedAnnualPropertyTaxes: asNumber(form.reassessedAnnualPropertyTaxes),
+      refinanceEnabled: asNumber(form.refinanceEnabled),
+      refinanceMonth: asNumber(form.refinanceMonth),
+      refinanceLtv: asNumber(form.refinanceLtv) / 100,
+      refinanceInterestRate: asNumber(form.refinanceInterestRate) / 100,
+      refinanceCostsPct: asNumber(form.refinanceCostsPct) / 100,
+      constructionDrawAmount: asNumber(form.constructionDrawAmount),
+      constructionDrawMonth: asNumber(form.constructionDrawMonth),
+      constructionLoanPct: asNumber(form.constructionLoanPct) / 100,
+      constructionLoanInterestRate: asNumber(form.constructionLoanInterestRate) / 100,
+      incomeTaxRate: asNumber(form.incomeTaxRate) / 100,
+      capitalGainsTaxRate: asNumber(form.capitalGainsTaxRate) / 100,
+      depreciationRecaptureTaxRate: asNumber(form.depreciationRecaptureTaxRate) / 100,
+      waterfallEnabled: asNumber(form.waterfallEnabled),
+      lpEquityShare: asNumber(form.lpEquityShare) / 100,
+      preferredReturn: asNumber(form.preferredReturn) / 100,
+      promotePct: asNumber(form.promotePct) / 100,
+      secondTierEquityMultiple: asNumber(form.secondTierEquityMultiple),
+      secondTierPromotePct: asNumber(form.secondTierPromotePct) / 100,
     }
 
     startTransition(async () => {
@@ -240,6 +282,57 @@ export default function QuickPencil({ dealId, entitlementLabel, monthlyAllowance
             <InputField label="Exit cap" value={form.exitCapRate} onChange={(value) => update('exitCapRate', value)} suffix="%" step="0.05" format="decimal" />
           </div>
         </div>
+
+        <details className="app-uw-advanced">
+          <summary>
+            <span>04</span>
+            <div><strong>Full Underwrite assumptions</strong><small>Monthly timing, refinance, capital draws, taxes, and sponsor economics.</small></div>
+            <b>Optional</b>
+          </summary>
+          <div className="app-uw-advanced-body">
+            <div className="app-uw-advanced-group">
+              <div><strong>Monthly operations</strong><small>Timing assumptions used by model v0.3.</small></div>
+              <div className="app-uw-form-grid three">
+                <InputField label="Renovation downtime" value={form.renovationDowntimeMonths} onChange={(value) => update('renovationDowntimeMonths', value)} suffix="months" />
+                <InputField label="Tax reassessment month" value={form.propertyTaxReassessmentMonth} onChange={(value) => update('propertyTaxReassessmentMonth', value)} suffix="month" />
+                <InputField label="Reassessed property taxes" value={form.reassessedAnnualPropertyTaxes} onChange={(value) => update('reassessedAnnualPropertyTaxes', value)} suffix="$/yr" format="currency" />
+              </div>
+            </div>
+            <div className="app-uw-advanced-group">
+              <div><strong>Refinance</strong><small>Set enabled to 1 to model a refinance constrained by LTV and DSCR.</small></div>
+              <div className="app-uw-form-grid three">
+                <InputField label="Refinance enabled (0/1)" value={form.refinanceEnabled} onChange={(value) => update('refinanceEnabled', value)} />
+                <InputField label="Refinance month" value={form.refinanceMonth} onChange={(value) => update('refinanceMonth', value)} />
+                <InputField label="Refinance LTV" value={form.refinanceLtv} onChange={(value) => update('refinanceLtv', value)} suffix="%" format="decimal" />
+                <InputField label="Refinance rate" value={form.refinanceInterestRate} onChange={(value) => update('refinanceInterestRate', value)} suffix="%" format="decimal" />
+                <InputField label="Refinance costs" value={form.refinanceCostsPct} onChange={(value) => update('refinanceCostsPct', value)} suffix="%" format="decimal" />
+              </div>
+            </div>
+            <div className="app-uw-advanced-group">
+              <div><strong>Capital draws</strong><small>One scheduled draw in this release; the workbook supports a monthly draw schedule.</small></div>
+              <div className="app-uw-form-grid three">
+                <InputField label="Draw amount" value={form.constructionDrawAmount} onChange={(value) => update('constructionDrawAmount', value)} suffix="$" format="currency" />
+                <InputField label="Draw month" value={form.constructionDrawMonth} onChange={(value) => update('constructionDrawMonth', value)} />
+                <InputField label="Debt-funded share" value={form.constructionLoanPct} onChange={(value) => update('constructionLoanPct', value)} suffix="%" format="decimal" />
+                <InputField label="Construction loan rate" value={form.constructionLoanInterestRate} onChange={(value) => update('constructionLoanInterestRate', value)} suffix="%" format="decimal" />
+              </div>
+            </div>
+            <div className="app-uw-advanced-group">
+              <div><strong>Taxes and waterfall</strong><small>Optional estimates. Keep tax rates at zero for pre-tax underwriting.</small></div>
+              <div className="app-uw-form-grid three">
+                <InputField label="Income tax rate" value={form.incomeTaxRate} onChange={(value) => update('incomeTaxRate', value)} suffix="%" format="decimal" />
+                <InputField label="Capital gains rate" value={form.capitalGainsTaxRate} onChange={(value) => update('capitalGainsTaxRate', value)} suffix="%" format="decimal" />
+                <InputField label="Recapture rate" value={form.depreciationRecaptureTaxRate} onChange={(value) => update('depreciationRecaptureTaxRate', value)} suffix="%" format="decimal" />
+                <InputField label="Waterfall enabled (0/1)" value={form.waterfallEnabled} onChange={(value) => update('waterfallEnabled', value)} />
+                <InputField label="LP equity share" value={form.lpEquityShare} onChange={(value) => update('lpEquityShare', value)} suffix="%" format="decimal" />
+                <InputField label="Preferred return" value={form.preferredReturn} onChange={(value) => update('preferredReturn', value)} suffix="%" format="decimal" />
+                <InputField label="Promote" value={form.promotePct} onChange={(value) => update('promotePct', value)} suffix="%" format="decimal" />
+                <InputField label="Second tier EM" value={form.secondTierEquityMultiple} onChange={(value) => update('secondTierEquityMultiple', value)} suffix="x" format="decimal" />
+                <InputField label="Second tier promote" value={form.secondTierPromotePct} onChange={(value) => update('secondTierPromotePct', value)} suffix="%" format="decimal" />
+              </div>
+            </div>
+          </div>
+        </details>
       </div>
 
       <div className="app-uw-run-row">

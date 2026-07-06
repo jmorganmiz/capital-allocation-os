@@ -145,7 +145,7 @@ test('Full Underwrite execution accepts only locked preflight packages', () => {
   assert.match(fullAction, /preflight\?\.approved_at/)
   assert.match(fullAction, /p_preflight_run_id: preflightRunId/)
   assert.match(fullAction, /locked_preflight: preflight\.output_snapshot/)
-  assert.match(fullAction, /runUnderwriting\(approvedInput\)/)
+  assert.match(fullAction, /runMonthlyUnderwriting\(approvedInput\)/)
 })
 
 test('Full Underwrite allowance reservation is atomic and revisions are bounded', () => {

@@ -69,6 +69,13 @@ export default function FullUnderwriteExecution({ dealId, preflightRun, initialR
   const exitShifts = Array.isArray(sensitivity.exit_cap_shifts) ? sensitivity.exit_cap_shifts : []
   const growthShifts = Array.isArray(sensitivity.rent_growth_shifts) ? sensitivity.rent_growth_shifts : []
   const sensitivityValues = Array.isArray(sensitivity.levered_irr) ? sensitivity.levered_irr : []
+  const noiByYear = Array.isArray(output.noiByYear) ? output.noiByYear : []
+  const debtServiceByYear = Array.isArray(output.debtServiceByYear) ? output.debtServiceByYear : []
+  const capexByYear = Array.isArray(output.capexByYear) ? output.capexByYear : []
+  const cashFlowByYear = Array.isArray(output.cashFlowBeforeTax) ? output.cashFlowBeforeTax : []
+  const refinance = record((output.refinance ?? null) as Json | null)
+  const taxes = record((output.taxes ?? null) as Json | null)
+  const waterfall = record((output.waterfall ?? null) as Json | null)
   const documentStep = steps.find((step) => step.step_key === 'document_evidence')
   const documentArtifact = record(documentStep?.artifact ?? null)
   const extractionWarnings = Array.isArray(documentArtifact.extraction_warnings)
@@ -228,7 +235,28 @@ export default function FullUnderwriteExecution({ dealId, preflightRun, initialR
               <div><span>Year 1 DSCR</span><strong>{multiple(output.yearOneDscr)}</strong></div>
               <div><span>Required equity</span><strong>{money(output.totalEquityInvested)}</strong></div>
               <div><span>Exit value</span><strong>{money(output.grossExitValue)}</strong></div>
+              {Object.keys(refinance).length > 0 && <div><span>Refinance proceeds</span><strong>{money(refinance.proceeds)}</strong></div>}
+              {Object.keys(waterfall).length > 0 && <div><span>LP IRR</span><strong>{percent(waterfall.lpIrr)}</strong></div>}
+              {Object.keys(waterfall).length > 0 && <div><span>GP IRR</span><strong>{percent(waterfall.gpIrr)}</strong></div>}
+              {Number(taxes.incomeTax ?? 0) > 0 && <div><span>Modeled income tax</span><strong>{money(taxes.incomeTax)}</strong></div>}
               {run?.status === 'completed' && <div><span>IC package</span><strong><a href={`/api/underwriting/${run.id}/memo`}>Download PDF</a></strong></div>}
+            </div>
+          )}
+          {noiByYear.length > 0 && (
+            <div className="app-monthly-model-summary">
+              <div><span>Model v0.3</span><h3>Monthly projection · annual rollup</h3><p>Calculated monthly; summarized here for IC review.</p></div>
+              <div className="app-monthly-model-table-wrap">
+                <table>
+                  <thead><tr><th>Metric</th>{noiByYear.map((_, index) => <th key={index}>Year {index + 1}</th>)}</tr></thead>
+                  <tbody>
+                    <tr><th>NOI</th>{noiByYear.map((value, index) => <td key={index}>{money(value as Json)}</td>)}</tr>
+                    <tr><th>Debt service</th>{debtServiceByYear.map((value, index) => <td key={index}>{money(value as Json)}</td>)}</tr>
+                    <tr><th>Capital spend</th>{capexByYear.map((value, index) => <td key={index}>{money(value as Json)}</td>)}</tr>
+                    <tr><th>Cash flow</th>{cashFlowByYear.map((value, index) => <td key={index}>{money(value as Json)}</td>)}</tr>
+                  </tbody>
+                </table>
+              </div>
+              <small>Tax estimates are optional and not tax advice. Waterfall uses a European whole-fund structure with return of capital, preferred return, catch-up, and promote tiers.</small>
             </div>
           )}
           {exitShifts.length === 3 && growthShifts.length === 3 && (

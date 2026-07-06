@@ -24,6 +24,27 @@ export type QuickPencilInput = {
   holdPeriodYears: number
   exitCapRate: number
   rentGrowth: number
+  renovationDowntimeMonths: number
+  propertyTaxReassessmentMonth: number
+  reassessedAnnualPropertyTaxes: number
+  refinanceEnabled: number
+  refinanceMonth: number
+  refinanceLtv: number
+  refinanceInterestRate: number
+  refinanceCostsPct: number
+  constructionDrawAmount: number
+  constructionDrawMonth: number
+  constructionLoanPct: number
+  constructionLoanInterestRate: number
+  incomeTaxRate: number
+  capitalGainsTaxRate: number
+  depreciationRecaptureTaxRate: number
+  waterfallEnabled: number
+  lpEquityShare: number
+  preferredReturn: number
+  promotePct: number
+  secondTierEquityMultiple: number
+  secondTierPromotePct: number
 }
 
 type ScenarioKey = 'base' | 'downside' | 'upside'
@@ -55,6 +76,27 @@ function validateInput(raw: QuickPencilInput): QuickPencilInput {
     holdPeriodYears: Math.round(finite('Hold period', raw.holdPeriodYears, 1, 15)),
     exitCapRate: finite('Exit cap rate', raw.exitCapRate, 0.01, 0.2),
     rentGrowth: finite('Rent growth', raw.rentGrowth, -0.1, 0.2),
+    renovationDowntimeMonths: Math.round(finite('Renovation downtime', raw.renovationDowntimeMonths, 0, 24)),
+    propertyTaxReassessmentMonth: Math.round(finite('Property tax reassessment month', raw.propertyTaxReassessmentMonth, 0, 180)),
+    reassessedAnnualPropertyTaxes: finite('Reassessed property taxes', raw.reassessedAnnualPropertyTaxes, 0, 1_000_000_000),
+    refinanceEnabled: Math.round(finite('Refinance enabled', raw.refinanceEnabled, 0, 1)),
+    refinanceMonth: Math.round(finite('Refinance month', raw.refinanceMonth, 1, 179)),
+    refinanceLtv: finite('Refinance LTV', raw.refinanceLtv, 0, 1),
+    refinanceInterestRate: finite('Refinance rate', raw.refinanceInterestRate, 0, 0.3),
+    refinanceCostsPct: finite('Refinance costs', raw.refinanceCostsPct, 0, 0.2),
+    constructionDrawAmount: finite('Construction draw', raw.constructionDrawAmount, 0, 1_000_000_000),
+    constructionDrawMonth: Math.round(finite('Construction draw month', raw.constructionDrawMonth, 1, 180)),
+    constructionLoanPct: finite('Construction loan funding', raw.constructionLoanPct, 0, 1),
+    constructionLoanInterestRate: finite('Construction loan rate', raw.constructionLoanInterestRate, 0, 0.3),
+    incomeTaxRate: finite('Income tax rate', raw.incomeTaxRate, 0, 0.6),
+    capitalGainsTaxRate: finite('Capital gains tax rate', raw.capitalGainsTaxRate, 0, 0.6),
+    depreciationRecaptureTaxRate: finite('Depreciation recapture rate', raw.depreciationRecaptureTaxRate, 0, 0.6),
+    waterfallEnabled: Math.round(finite('Waterfall enabled', raw.waterfallEnabled, 0, 1)),
+    lpEquityShare: finite('LP equity share', raw.lpEquityShare, 0, 1),
+    preferredReturn: finite('Preferred return', raw.preferredReturn, 0, 0.5),
+    promotePct: finite('Promote', raw.promotePct, 0, 1),
+    secondTierEquityMultiple: finite('Second tier equity multiple', raw.secondTierEquityMultiple, 1, 10),
+    secondTierPromotePct: finite('Second tier promote', raw.secondTierPromotePct, 0, 1),
   }
 }
 
@@ -118,6 +160,37 @@ function scenarioInput(base: QuickPencilInput, scenario: ScenarioKey, projection
     exitCapRate: Math.max(0.01, base.exitCapRate + adjustment.exitCap),
     projectionStartDate,
     exitNoiConvention: 'trailing',
+    renovationDowntimeMonths: base.renovationDowntimeMonths,
+    propertyTaxReassessmentMonth: base.propertyTaxReassessmentMonth,
+    reassessedAnnualPropertyTaxes: base.reassessedAnnualPropertyTaxes || null,
+    refinanceEnabled: Boolean(base.refinanceEnabled),
+    refinanceMonth: Math.min(base.holdPeriodYears * 12 - 1, base.refinanceMonth),
+    refinanceLtv: base.refinanceLtv,
+    refinanceInterestRate: base.refinanceInterestRate + adjustment.interestRate,
+    refinanceCostsPct: base.refinanceCostsPct,
+    constructionDraws: base.constructionDrawAmount > 0 ? [{ month: base.constructionDrawMonth, amount: base.constructionDrawAmount }] : [],
+    constructionDrawAmount: base.constructionDrawAmount,
+    constructionDrawMonth: base.constructionDrawMonth,
+    constructionLoanPct: base.constructionLoanPct,
+    constructionLoanInterestRate: base.constructionLoanInterestRate + adjustment.interestRate,
+    incomeTaxRate: base.incomeTaxRate,
+    capitalGainsTaxRate: base.capitalGainsTaxRate,
+    depreciationRecaptureTaxRate: base.depreciationRecaptureTaxRate,
+    waterfall: {
+      enabled: Boolean(base.waterfallEnabled),
+      lpEquityShare: base.lpEquityShare,
+      preferredReturn: base.preferredReturn,
+      gpCatchUpPct: 1,
+      promotePct: base.promotePct,
+      secondTierEquityMultiple: base.secondTierEquityMultiple,
+      secondTierPromotePct: base.secondTierPromotePct,
+    },
+    waterfallEnabled: base.waterfallEnabled,
+    lpEquityShare: base.lpEquityShare,
+    preferredReturn: base.preferredReturn,
+    promotePct: base.promotePct,
+    secondTierEquityMultiple: base.secondTierEquityMultiple,
+    secondTierPromotePct: base.secondTierPromotePct,
   }
 }
 
