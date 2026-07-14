@@ -52,6 +52,8 @@ export default async function InternalDevPage() {
   ])
 
   const runs = agentRuns ?? []
+  // Server-rendered internal metrics window; recalculated once per request.
+  // eslint-disable-next-line react-hooks/purity
   const dayAgo = Date.now() - 86_400_000
   const recentRuns = runs.filter((run) => new Date(run.created_at).getTime() > dayAgo)
   const failed24h = recentRuns.filter((run) => run.status === 'failed').length

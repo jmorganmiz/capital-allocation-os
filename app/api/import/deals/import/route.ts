@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { assertFirmAccess } from '@/lib/billing-access'
 import type { ColumnMapping } from '@/app/api/import/deals/map-columns/route'
+import { createHash } from 'node:crypto'
+import { recordDealCreatedUsage } from '@/lib/usage-events'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -260,6 +262,7 @@ export async function POST(request: NextRequest) {
   }
 
   let imported = 0
+  const importedTitles: string[] = []
   for (let i = 0; i < toInsert.length; i += BATCH_SIZE) {
     const batch = toInsert.slice(i, i + BATCH_SIZE)
     const { error } = await supabase.from('deals').insert(batch)
@@ -276,7 +279,27 @@ export async function POST(request: NextRequest) {
     }
 
     imported += batch.length
+    importedTitles.push(...batch.map(deal => String(deal.title ?? '')).filter(Boolean))
     console.log('[import] Batch inserted OK, running total:', imported)
+  }
+
+  if (imported > 0) {
+    const importHash = createHash('sha256')
+      .update(JSON.stringify(importedTitles))
+      .digest('hex')
+      .slice(0, 24)
+    await recordDealCreatedUsage({
+      firmId,
+      userId: user.id,
+      source: 'csv_import',
+      quantity: imported,
+      idempotencyKey: `deal_created:csv_import:${firmId}:${user.id}:${importHash}`,
+      metadata: {
+        imported,
+        skipped,
+        title_sample: importedTitles.slice(0, 10),
+      },
+    })
   }
 
   return NextResponse.json({ imported, skipped } satisfies ImportResponse)

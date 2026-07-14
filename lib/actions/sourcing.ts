@@ -5,6 +5,7 @@ import { createAdminClient, createClient } from '@/lib/supabase/server'
 import { assertFirmAccess } from '@/lib/billing-access'
 import { autoScoreDeal } from '@/lib/actions/scoring'
 import { matchAgainstBuyBoxes, normalizeKey as normalize } from '@/lib/sourcing-match.mjs'
+import { recordDealCreatedUsage } from '@/lib/usage-events'
 
 function sourceKey(url: string, address: string, name: string) {
   if (url) {
@@ -105,6 +106,13 @@ export async function promoteSourcingOpportunity(id: string) {
     return { error: error.message }
   }
   if (!dealId) return { error: 'Could not create deal.' }
+  await recordDealCreatedUsage({
+    firmId: profile.firm_id,
+    userId: user.id,
+    dealId,
+    source: 'property_finder',
+    metadata: { sourcing_opportunity_id: id },
+  })
   await autoScoreDeal(dealId, profile.firm_id)
   revalidatePath('/sourcing')
   revalidatePath('/pipeline')

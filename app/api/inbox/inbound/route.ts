@@ -4,6 +4,7 @@ import { parseOMBuffer } from '@/lib/parse-om-core'
 import { getResend } from '@/lib/resend'
 import { createHash } from 'node:crypto'
 import { scoreInboundDeal } from '@/lib/score-inbound'
+import { recordDealCreatedUsage } from '@/lib/usage-events'
 
 export const runtime = 'nodejs'
 export const maxDuration = 120
@@ -421,6 +422,18 @@ async function processAttachment({
     event_type:    'deal_created',
     to_stage_id:   stageId,
     notes:         `Auto-created from email inbox (from: ${payload.from})`,
+  })
+  await recordDealCreatedUsage({
+    firmId,
+    userId: actorId,
+    dealId,
+    source: 'email',
+    metadata: {
+      title: dealTitle,
+      sender: payload.from,
+      subject: payload.subject ?? null,
+      filename: attachment.filename ?? safeFilename,
+    },
   })
 
   // Financial snapshot — only if at least one numeric field was extracted

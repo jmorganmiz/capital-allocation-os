@@ -4,6 +4,7 @@ import { createAdminClient, createClient } from '@/lib/supabase/server'
 import { assertFirmAccess } from '@/lib/billing-access'
 import { revalidatePath } from 'next/cache'
 import { autoScoreDeal } from '@/lib/actions/scoring'
+import { recordDealCreatedUsage } from '@/lib/usage-events'
 
 function parseSourceContact(sourceName: string) {
   const raw = sourceName.trim()
@@ -114,6 +115,13 @@ export async function createDeal(formData: FormData) {
     event_type:    'deal_created',
     to_stage_id:   firstStage?.id ?? null,
     actor_user_id: user.id,
+  })
+  await recordDealCreatedUsage({
+    firmId: profile.firm_id,
+    userId: user.id,
+    dealId: deal.id,
+    source: 'manual',
+    metadata: { title: deal.title },
   })
 
   console.log('[createDeal] calling autoScoreDeal for deal:', deal.id, '| firm:', profile.firm_id)
@@ -494,6 +502,13 @@ export async function createDealFromUpload({
       event_type: 'deal_created',
       notes: `Deal created via OM upload: ${filename}`,
     })
+    await recordDealCreatedUsage({
+      firmId: profile.firm_id,
+      userId: user.id,
+      dealId,
+      source: 'upload',
+      metadata: { title: dealName, filename },
+    })
   }
 
   const { error: fileError } = await supabase.from('deal_files').insert({
@@ -608,6 +623,13 @@ export async function createDealFromOM(params: {
     actor_user_id: user.id,
     event_type:    'deal_created',
     notes:         `Deal created via OM upload: ${params.filename}`,
+  })
+  await recordDealCreatedUsage({
+    firmId: profile.firm_id,
+    userId: user.id,
+    dealId: deal.id,
+    source: 'upload',
+    metadata: { title: deal.title, filename: params.filename },
   })
 
   // Create financial snapshot if any data was extracted

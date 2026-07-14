@@ -22,7 +22,7 @@ export default async function IntakePage() {
 
   const firm = profile?.firms as { name?: string; inbox_email?: string | null } | null
   const firmId = profile?.firm_id ?? ''
-  const [{ data: recentDeals }, { data: recentEvents }, { count: buyBoxCount }, { count: memberCount }, { count: dealCount }] = await Promise.all([
+  const [{ data: recentDeals }, { data: recentEvents }, { data: usageEvents }, { count: buyBoxCount }, { count: memberCount }, { count: dealCount }] = await Promise.all([
     supabase
       .from('deals')
       .select('id, title, market, deal_type, created_at, stage_id, deal_stages(name), deal_scores(score)')
@@ -35,6 +35,13 @@ export default async function IntakePage() {
       .select('id, status, attempts, last_error, received_at, processed_at, sender, subject, attachment_count, deal_ids')
       .eq('firm_id', firmId)
       .order('received_at', { ascending: false })
+      .limit(100),
+    supabase
+      .from('usage_events')
+      .select('event_type, quantity, metadata, created_at')
+      .eq('firm_id', firmId)
+      .eq('event_type', 'deal_created')
+      .order('created_at', { ascending: false })
       .limit(100),
     supabase.from('buy_boxes').select('id', { count: 'exact', head: true }).eq('firm_id', firmId),
     supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('firm_id', firmId),
@@ -50,6 +57,11 @@ export default async function IntakePage() {
   const failedCount = weekEvents.filter(event => event.status === 'failed').length
   const completedCount = processedCount + failedCount
   const successRate = completedCount > 0 ? Math.round((processedCount / completedCount) * 100) : 100
+  const dealEvents = usageEvents ?? []
+  const parsedThisWeek = dealEvents
+    .filter(event => new Date(event.created_at).getTime() >= weekStart)
+    .reduce((sum, event) => sum + Number(event.quantity ?? 0), 0)
+  const latestParsedAt = dealEvents[0]?.created_at ?? null
 
   return (
     <div className="app-page app-intake-page">
@@ -84,9 +96,11 @@ export default async function IntakePage() {
 
       <div className="app-intake-metrics">
         {[
-          { value: weekEvents.length, label: 'Emails received · 7 days', alert: false },
+          { value: weekEvents.length, label: 'Emails received / 7 days', alert: false },
+          { value: parsedThisWeek, label: 'Deals parsed / 7 days', alert: parsedThisWeek === 0 && (dealCount ?? 0) > 0 },
           { value: `${successRate}%`, label: 'Intake success rate', alert: successRate < 95 },
           { value: processedCount, label: 'Delivered to pipeline', alert: false },
+          { value: latestParsedAt ? formatDate(latestParsedAt) : '?', label: 'Last deal added', alert: false },
           { value: failedCount, label: 'Needs attention', alert: failedCount > 0 },
         ].map(({ value, label, alert }) => (
           <div key={label} className="app-intake-metric" data-alert={alert ? 'true' : 'false'}>

@@ -26,6 +26,8 @@ export default async function InternalOpsPage() {
     context.supabase.from('sales_accounts').select('*, internal_users(full_name)').order('last_activity_at', { ascending: false }).limit(50),
   ])
 
+  // Server-rendered internal metrics window; recalculated once per request.
+  // eslint-disable-next-line react-hooks/purity
   const now = Date.now()
   const paying = (firms ?? []).filter((firm) => firm.stripe_subscription_status === 'active')
   const trialing = (firms ?? []).filter((firm) => {

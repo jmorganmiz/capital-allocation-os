@@ -42,6 +42,32 @@ test('email intake exposes firm-scoped health, safe retries, and operational met
   assert.match(migration, /inbound_email_events_firm_status_received_idx/)
 })
 
+
+test('deal creation usage events power firm activation pulse', async () => {
+  const [dashboard, intake, helper, deals, inbound, imports, sourcing, migration] = await Promise.all([
+    read('app/(app)/dashboard/page.tsx'),
+    read('app/(app)/intake/page.tsx'),
+    read('lib/usage-events.ts'),
+    read('lib/actions/deals.ts'),
+    read('app/api/inbox/inbound/route.ts'),
+    read('app/api/import/deals/import/route.ts'),
+    read('lib/actions/sourcing.ts'),
+    read('supabase/migrations/034_deal_usage_events.sql'),
+  ])
+
+  assert.match(helper, /recordDealCreatedUsage/)
+  assert.match(helper, /event_type: 'deal_created'/)
+  assert.match(dashboard, /Activation pulse/)
+  assert.match(dashboard, /Deals parsed per firm per week/)
+  assert.match(intake, /Deals parsed/)
+  assert.match(deals, /source: 'manual'/)
+  assert.match(deals, /source: 'upload'/)
+  assert.match(inbound, /source: 'email'/)
+  assert.match(imports, /source: 'csv_import'/)
+  assert.match(sourcing, /source: 'property_finder'/)
+  assert.match(migration, /usage_events_firm_event_created_idx/)
+})
+
 test('trial lifecycle is enforced by the application shell', async () => {
   const [layout, gate, migration] = await Promise.all([
     read('app/(app)/layout.tsx'),
