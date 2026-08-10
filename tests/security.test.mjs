@@ -30,6 +30,8 @@ test('billing lifecycle failures remain retryable', async () => {
   const checkout = await read('app/api/stripe/checkout/route.ts')
   const webhook = await read('app/api/stripe/webhook/route.ts')
   assert.match(checkout, /subscription_data: \{ metadata: \{ firm_id: firmId \} \}/)
+  assert.match(checkout, /stripeCustomerId\s*\? \{ customer: stripeCustomerId \}\s*:\s*\{ customer_email: user\.email \}/s)
+  assert.doesNotMatch(checkout, /customer_email: user\.email,\s*\.\.\.\(stripeCustomerId/s)
   assert.match(webhook, /customer\.subscription\.deleted/)
   assert.match(webhook, /stripe_subscription_id: deleted \? null/)
   assert.match(webhook, /Webhook processing failed.*status: 500/s)

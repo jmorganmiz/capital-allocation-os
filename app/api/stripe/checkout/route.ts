@@ -41,8 +41,9 @@ export async function POST() {
     cancel_url: `${siteUrl}/settings`,
     metadata: { firm_id: firmId },
     subscription_data: { metadata: { firm_id: firmId } },
-    customer_email: user.email,
-    ...(stripeCustomerId ? { customer: stripeCustomerId } : {}),
+    ...(stripeCustomerId
+      ? { customer: stripeCustomerId }
+      : { customer_email: user.email }),
   })
 
   return NextResponse.json({ url: session.url })
