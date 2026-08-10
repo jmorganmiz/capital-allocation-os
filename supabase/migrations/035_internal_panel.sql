@@ -1,3 +1,16 @@
+-- Reconcile the inbound email observability schema first. This migration was
+-- originally released alongside the internal panel with the same 033 version,
+-- so an existing database may have recorded either file as applied.
+ALTER TABLE public.inbound_email_events
+  ADD COLUMN IF NOT EXISTS sender text,
+  ADD COLUMN IF NOT EXISTS recipient text,
+  ADD COLUMN IF NOT EXISTS subject text,
+  ADD COLUMN IF NOT EXISTS attachment_count integer NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS deal_ids uuid[] NOT NULL DEFAULT '{}';
+
+CREATE INDEX IF NOT EXISTS inbound_email_events_firm_status_received_idx
+  ON public.inbound_email_events(firm_id, status, received_at DESC);
+
 -- Internal operations panel: foundation schema.
 -- Internal team users are separate from Dealstash customer profiles and are
 -- gated by a role -> module permission lookup instead of per-page checks.
