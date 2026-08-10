@@ -5,7 +5,7 @@ import fs from 'node:fs'
 const action = fs.readFileSync('lib/actions/writing-copilot.ts', 'utf8')
 const component = fs.readFileSync('components/deal/DecisionWritingCopilot.tsx', 'utf8')
 const migration = fs.readFileSync('supabase/migrations/029_decision_writing_copilot.sql', 'utf8')
-const notesMigration = fs.readFileSync('supabase/migrations/035_decision_writing_notes_section.sql', 'utf8')
+const notesMigration = fs.readFileSync('supabase/migrations/036_decision_writing_notes_section.sql', 'utf8')
 const notes = fs.readFileSync('components/deal/NotesSection.tsx', 'utf8')
 
 test('draft records are firm scoped and client read-only', () => {
