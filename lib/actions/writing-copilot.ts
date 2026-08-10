@@ -6,7 +6,7 @@ import { assertFirmAccess } from '@/lib/billing-access'
 import { checkAiRateLimit } from '@/lib/rate-limit'
 import type { Json } from '@/lib/types/database'
 
-export type DecisionSection = 'overview' | 'risks'
+export type DecisionSection = 'overview' | 'risks' | 'notes'
 export type WritingMode = 'guided' | 'evidence'
 
 export interface WritingEvidence {
@@ -64,11 +64,19 @@ function guidedDraft(section: DecisionSection, answers: Record<string, string>) 
       values[3] && `The thesis depends on ${values[3].replace(/^the thesis depends on\s*/i, '')}`,
     ].filter(Boolean).join(' ')
   }
+  if (section === 'risks') {
+    return [
+      values[0],
+      values[1] && `The potential impact is ${values[1].replace(/^the potential impact is\s*/i, '')}`,
+      values[2] && `Current mitigants include ${values[2].replace(/^current mitigants include\s*/i, '')}`,
+      values[3] && `Remaining diligence should confirm ${values[3].replace(/^remaining diligence should confirm\s*/i, '')}`,
+    ].filter(Boolean).join(' ')
+  }
   return [
-    values[0],
-    values[1] && `The potential impact is ${values[1].replace(/^the potential impact is\s*/i, '')}`,
-    values[2] && `Current mitigants include ${values[2].replace(/^current mitigants include\s*/i, '')}`,
-    values[3] && `Remaining diligence should confirm ${values[3].replace(/^remaining diligence should confirm\s*/i, '')}`,
+    values[0] && `Key observation: ${values[0].replace(/^key observation:\s*/i, '')}`,
+    values[1] && `Open question: ${values[1].replace(/^open question:\s*/i, '')}`,
+    values[2] && `Next step: ${values[2].replace(/^next step:\s*/i, '')}`,
+    values[3] && `Decision context: ${values[3].replace(/^decision context:\s*/i, '')}`,
   ].filter(Boolean).join(' ')
 }
 
@@ -87,7 +95,7 @@ async function membership(dealId: string) {
 }
 
 export async function generateDecisionDraft(input: DraftInput): Promise<DraftOutput> {
-  if (!['overview', 'risks'].includes(input.section)) return { error: 'Unsupported section' }
+  if (!['overview', 'risks', 'notes'].includes(input.section)) return { error: 'Unsupported section' }
   if (!['guided', 'evidence'].includes(input.mode)) return { error: 'Unsupported writing mode' }
   const context = await membership(input.dealId)
   if ('error' in context) return { error: context.error }
@@ -170,7 +178,9 @@ export async function generateDecisionDraft(input: DraftInput): Promise<DraftOut
   const client = new Anthropic({ apiKey, timeout: 25_000 })
   const sectionInstruction = input.section === 'overview'
     ? 'Write a concise investment thesis: opportunity, strategy, fit, and the conditions required for success.'
-    : 'Write a concise risk narrative: principal risks, potential impact, existing mitigants, and unresolved diligence.'
+    : input.section === 'risks'
+      ? 'Write a concise risk narrative: principal risks, potential impact, existing mitigants, and unresolved diligence.'
+      : 'Write concise analyst notes: key observations, open questions, next diligence steps, and decision context the firm should remember later.'
   const prompt = `You are an institutional CRE decision-writing assistant. ${sectionInstruction}
 
 Hard rules:

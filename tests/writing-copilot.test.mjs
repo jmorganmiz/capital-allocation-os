@@ -5,11 +5,13 @@ import fs from 'node:fs'
 const action = fs.readFileSync('lib/actions/writing-copilot.ts', 'utf8')
 const component = fs.readFileSync('components/deal/DecisionWritingCopilot.tsx', 'utf8')
 const migration = fs.readFileSync('supabase/migrations/029_decision_writing_copilot.sql', 'utf8')
+const notesMigration = fs.readFileSync('supabase/migrations/035_decision_writing_notes_section.sql', 'utf8')
 const notes = fs.readFileSync('components/deal/NotesSection.tsx', 'utf8')
 
 test('draft records are firm scoped and client read-only', () => {
   assert.match(migration, /ENABLE ROW LEVEL SECURITY/)
   assert.match(migration, /FOR SELECT USING \(firm_id = public\.current_firm_id\(\)\)/)
+  assert.match(notesMigration, /CHECK \(section IN \('overview', 'risks', 'notes'\)\)/)
   assert.doesNotMatch(migration, /CREATE POLICY[^;]+FOR (INSERT|UPDATE|DELETE)/s)
 })
 
@@ -27,4 +29,12 @@ test('writing UI requires explicit insertion and preserves the saved edit', () =
   assert.match(component, /Append draft/)
   assert.match(notes, /activeDraftIdRef/)
   assert.match(notes, /upsertDealNote\(dealId, section, value, activeDraftIdRef\.current\)/)
+})
+
+test('copilot supports analyst notes without bypassing explicit insertion', () => {
+  assert.match(action, /DecisionSection = 'overview' \| 'risks' \| 'notes'/)
+  assert.match(action, /Write concise analyst notes/)
+  assert.match(component, /notes: \[/)
+  assert.match(component, /Capture analyst notes/)
+  assert.doesNotMatch(notes, /section === 'overview' \|\| section === 'risks'/)
 })

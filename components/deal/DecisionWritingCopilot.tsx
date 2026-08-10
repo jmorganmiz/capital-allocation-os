@@ -22,7 +22,19 @@ const prompts = {
     ['mitigants', 'What mitigants exist today?'],
     ['diligence', 'What still needs to be verified?'],
   ],
+  notes: [
+    ['observations', 'What should the team remember?'],
+    ['questions', 'What questions are still open?'],
+    ['nextSteps', 'What should happen next?'],
+    ['decisionContext', 'What decision context matters later?'],
+  ],
 } as const
+
+const sectionTitles: Record<DecisionSection, string> = {
+  overview: 'Build the investment thesis',
+  risks: 'Frame the risk narrative',
+  notes: 'Capture analyst notes',
+}
 
 interface Props {
   dealId: string
@@ -83,7 +95,7 @@ export default function DecisionWritingCopilot({ dealId, section, currentText, o
           <div className="app-writing-panel-head">
             <div>
               <p>Decision writing copilot</p>
-              <h3>{section === 'overview' ? 'Build the investment thesis' : 'Frame the risk narrative'}</h3>
+              <h3>{sectionTitles[section]}</h3>
             </div>
             <div className="app-writing-modes" role="tablist" aria-label="Writing mode">
               <button type="button" data-active={mode === 'evidence'} onClick={() => setMode('evidence')}>Draft from evidence</button>

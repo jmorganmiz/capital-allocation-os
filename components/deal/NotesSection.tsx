@@ -80,9 +80,7 @@ export default function NotesSection({ dealId, section, title, initialContent, p
           </h2>
         </div>
         <div className="app-deal-note-actions" aria-live="polite">
-          {(section === 'overview' || section === 'risks') && (
-            <DecisionWritingCopilot dealId={dealId} section={section} currentText={content} onInsert={handleDraftInsert} />
-          )}
+          <DecisionWritingCopilot dealId={dealId} section={section} currentText={content} onInsert={handleDraftInsert} />
           <span data-error={Boolean(error)}>{isPending ? 'Saving...' : error ? `Save failed: ${error}` : saved ? 'Saved' : 'Unsaved'}</span>
           <button
             type="button"

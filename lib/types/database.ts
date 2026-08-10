@@ -77,7 +77,7 @@ export interface Database {
       decision_writing_drafts: {
         Row: {
           id: string; firm_id: string; deal_id: string; user_id: string
-          section: 'overview' | 'risks'; mode: 'guided' | 'evidence'
+          section: 'overview' | 'risks' | 'notes'; mode: 'guided' | 'evidence'
           prompt_answers: Json; input_text: string | null; draft_text: string
           evidence: Json; missing_questions: Json; warnings: Json
           source_run_id: string | null; model: string | null
@@ -86,7 +86,7 @@ export interface Database {
         }
         Insert: {
           id?: string; firm_id: string; deal_id: string; user_id: string
-          section: 'overview' | 'risks'; mode: 'guided' | 'evidence'
+          section: 'overview' | 'risks' | 'notes'; mode: 'guided' | 'evidence'
           prompt_answers?: Json; input_text?: string | null; draft_text: string
           evidence?: Json; missing_questions?: Json; warnings?: Json
           source_run_id?: string | null; model?: string | null
