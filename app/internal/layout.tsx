@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getInternalContext, can } from '@/lib/internal/auth'
 
-// Internal team panel. Non-members get a 404 — the panel should not
+// Internal team panel. Non-members get a 404 - the panel should not
 // advertise its existence to customers or logged-out visitors.
 export default async function InternalLayout({ children }: { children: React.ReactNode }) {
   const context = await getInternalContext()
@@ -10,6 +10,7 @@ export default async function InternalLayout({ children }: { children: React.Rea
 
   const nav = [
     { href: '/internal', label: 'Ops', show: can(context, 'ops') },
+    { href: '/internal/pilot', label: 'Pilot', show: can(context, 'ops') },
     { href: '/internal/team', label: 'Team', show: can(context, 'team') },
     { href: '/internal/dev', label: 'Dev', show: can(context, 'dev') },
     { href: '/internal/marketing', label: 'Marketing', show: can(context, 'marketing') },
@@ -34,7 +35,7 @@ export default async function InternalLayout({ children }: { children: React.Rea
             </nav>
           </div>
           <p className="text-xs" style={{ color: '#8b8b9a' }}>
-            {context.fullName} · {context.role}
+            {context.fullName} / {context.role}
           </p>
         </div>
       </header>

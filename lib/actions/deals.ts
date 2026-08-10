@@ -897,6 +897,14 @@ export async function updateDealFields(
 
   if (error) return { error: error.message }
 
+  await supabase.from('deal_events').insert({
+    firm_id: profile.firm_id,
+    deal_id: dealId,
+    event_type: 'deal_fields_updated',
+    notes: `Fields: ${Object.keys(fields).join(', ')}`,
+    actor_user_id: user.id,
+  })
+
   revalidatePath(`/deals/${dealId}`)
   return { success: true }
 }
