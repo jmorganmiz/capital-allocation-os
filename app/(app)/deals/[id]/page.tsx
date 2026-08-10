@@ -10,6 +10,7 @@ import DealInfo from '@/components/deal/DealInfo'
 import ContactsSection from '@/components/deal/ContactsSection'
 import ScoringSection from '@/components/deal/ScoringSection'
 import SimilarDeals from '@/components/deal/SimilarDeals'
+import YardiReadyCard from '@/components/deal/YardiReadyCard'
 import QuickPencil from '@/components/deal/QuickPencil'
 import UnderwritingRoom from '@/components/deal/UnderwritingRoom'
 import FullUnderwriteExecution from '@/components/deal/FullUnderwriteExecution'
@@ -195,6 +196,12 @@ export default async function DealPage({ params }: Props) {
   const getNote = (section: string) => notes?.find((note) => note.section === section)?.content ?? ''
   const hasAnyNotes = (notes ?? []).some((note) => note.content?.trim().length > 0)
   const latestSnapshot = snapshots?.[0]
+  const dealScoreValues = (dealScoresResult.scores ?? [])
+    .map((score) => Number(score.score))
+    .filter((score) => Number.isFinite(score))
+  const yardiBuyBoxScore = dealScoreValues.length
+    ? Math.round((dealScoreValues.reduce((sum, score) => sum + score, 0) / dealScoreValues.length) * 20)
+    : null
   const purchasePrice = Number(latestSnapshot?.purchase_price ?? deal.asking_price ?? 0)
   const totalUnits = Number(latestSnapshot?.num_units ?? 0)
   const statedNoi = Number(latestSnapshot?.noi ?? 0)
@@ -309,6 +316,29 @@ export default async function DealPage({ params }: Props) {
         </div>
 
         <aside id="section-similar" className="app-deal-rail">
+          <YardiReadyCard
+            dealId={deal.id}
+            title={deal.title}
+            market={deal.market}
+            address={deal.address}
+            dealType={deal.deal_type}
+            sourceName={deal.source_name}
+            askingPrice={deal.asking_price}
+            stage={currentStage ? { name: currentStage.name, position: currentStage.position, is_terminal: currentStage.is_terminal } : null}
+            isArchived={deal.is_archived}
+            purchasePrice={latestSnapshot?.purchase_price ?? null}
+            noi={latestSnapshot?.noi ?? null}
+            capRate={latestSnapshot?.cap_rate ?? null}
+            buyBoxScore={yardiBuyBoxScore}
+            notes={(notes ?? []).map((note) => ({ section: note.section, content: note.content }))}
+            files={files ?? []}
+            events={(events ?? []).map((event) => ({
+              event_type: event.event_type,
+              notes: event.notes,
+              kill_reason_id: event.kill_reason_id,
+              kill_reasons: event.kill_reasons,
+            }))}
+          />
           <div className="app-deal-rail-card">
             <div className="app-deal-rail-header">
               <div>

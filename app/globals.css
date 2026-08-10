@@ -3823,6 +3823,9 @@ body {
 .app-root .app-deal-rail {
   position: sticky;
   top: 86px;
+  display: grid;
+  gap: 14px;
+  align-content: start;
 }
 
 .app-root .app-deal-rail-card {
@@ -3867,6 +3870,98 @@ body {
   padding: 3px 8px;
 }
 
+
+.app-root .app-yardi-card[data-ready="true"] {
+  border-color: rgba(44,210,132,0.26);
+}
+
+.app-root .app-yardi-meter {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(112,112,125,0.14);
+  overflow: hidden;
+  margin: 8px 0 12px;
+}
+
+.app-root .app-yardi-meter div {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--app-blue), #7e8cff);
+}
+
+.app-root .app-yardi-summary {
+  color: var(--app-muted);
+  font-size: 12px;
+  line-height: 1.45;
+  margin-bottom: 14px;
+}
+
+.app-root .app-yardi-list {
+  display: grid;
+  gap: 8px;
+}
+
+.app-root .app-yardi-list > div {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 10px;
+  align-items: flex-start;
+  border: 1px solid rgba(112,112,125,0.14);
+  border-radius: 12px;
+  background: rgba(12,12,20,0.22);
+  padding: 10px;
+}
+
+.app-root .app-yardi-list > div > span {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: rgba(255,193,7,0.1);
+  color: #ffc107;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.app-root .app-yardi-list > div[data-complete="true"] > span {
+  background: rgba(44,210,132,0.12);
+  color: #2cd284;
+}
+
+.app-root .app-yardi-list strong {
+  display: block;
+  color: var(--app-text);
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+.app-root .app-yardi-list small {
+  display: block;
+  color: var(--app-faint);
+  font-size: 11px;
+  line-height: 1.35;
+  margin-top: 3px;
+}
+
+.app-root .app-yardi-export {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 34px;
+  border: 1px solid rgba(82,102,235,0.42);
+  border-radius: 999px;
+  background: rgba(82,102,235,0.12);
+  color: var(--app-text);
+  font-size: 12px;
+  font-weight: 800;
+  margin-top: 14px;
+}
+
+.app-root .app-yardi-export:hover {
+  background: rgba(82,102,235,0.2);
+}
 .app-root .app-similar-empty {
   border: 1px dashed rgba(112,112,125,0.18);
   border-radius: 13px;
