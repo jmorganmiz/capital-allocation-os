@@ -14,6 +14,7 @@ import YardiReadyCard from '@/components/deal/YardiReadyCard'
 import QuickPencil from '@/components/deal/QuickPencil'
 import UnderwritingRoom from '@/components/deal/UnderwritingRoom'
 import FullUnderwriteExecution from '@/components/deal/FullUnderwriteExecution'
+import UnderwritingReliabilityPanel from '@/components/deal/UnderwritingReliabilityPanel'
 import PortfolioActuals from '@/components/deal/PortfolioActuals'
 import { getScoringCriteria, getDealScores } from '@/lib/actions/scoring'
 import { createClient } from '@/lib/supabase/server'
@@ -248,6 +249,16 @@ export default async function DealPage({ params }: Props) {
 
           {entitlement?.underwriting_enabled && (
             <section id="section-underwriting" className="app-underwriting-section app-underwriting-stack">
+              <UnderwritingReliabilityPanel
+                notes={(notes ?? []).map((note) => ({ section: note.section, content: note.content }))}
+                files={(files ?? []).map((file) => ({ id: file.id }))}
+                quickRuns={underwritingRuns ?? []}
+                preflightRun={latestFullRun}
+                preflightSteps={initialUnderwritingSteps ?? []}
+                preflightAssumptions={initialUnderwritingAssumptions ?? []}
+                fullRun={latestExecutionRun}
+                fullSteps={initialExecutionSteps ?? []}
+              />
               <QuickPencil
                 dealId={deal.id}
                 entitlementLabel={entitlement.plan_key === 'underwriting_beta' ? 'Early Access' : 'Active'}

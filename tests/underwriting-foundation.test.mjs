@@ -29,6 +29,9 @@ const fullAction = fs.readFileSync(path.join(ROOT, 'lib/actions/full-underwrite.
 const fullRoom = fs.readFileSync(path.join(ROOT, 'components/deal/FullUnderwriteExecution.tsx'), 'utf8')
 const extraction = fs.readFileSync(path.join(ROOT, 'lib/underwriting-extraction.ts'), 'utf8')
 const memo = fs.readFileSync(path.join(ROOT, 'lib/ic-memo-pdf.ts'), 'utf8')
+const readiness = fs.readFileSync(path.join(ROOT, 'lib/underwriting-readiness.ts'), 'utf8')
+const reliabilityPanel = fs.readFileSync(path.join(ROOT, 'components/deal/UnderwritingReliabilityPanel.tsx'), 'utf8')
+const dealPage = fs.readFileSync(path.join(ROOT, 'app/(app)/deals/[id]/page.tsx'), 'utf8')
 
 test('underwriting records and usage are tenant scoped', () => {
   for (const table of [
@@ -77,7 +80,7 @@ test('Quick Pencil is recalculated authoritatively and does not consume credits'
 
 test('Quick Pencil visibly distinguishes assumptions from approved underwriting', () => {
   assert.match(quickPencil, /No AI assumptions and no credits consumed/)
-  assert.match(quickPencil, /saved outputs remain “needs review.”/)
+  assert.match(quickPencil, /saved outputs remain .+needs review/)
   assert.match(quickPencil, /Needs review/)
   assert.match(quickPencil, /Downside stresses vacancy, rent growth, renovation cost, and exit cap/)
   assert.match(quickPencil, /Every scenario definition is saved with its result/)
@@ -243,4 +246,34 @@ test('Agent visuals expose status and artifacts without pretending to show reaso
   assert.match(room, /className="review"/)
   assert.match(room, /Run fresh preflight/)
   assert.doesNotMatch(room, /chain.of.thought/i)
+})
+
+test('Deal page exposes customer-visible underwriting reliability state', () => {
+  assert.match(dealPage, /UnderwritingReliabilityPanel/)
+  assert.match(reliabilityPanel, /Underwriting status and readiness/)
+  assert.match(reliabilityPanel, /Run health/)
+  assert.match(reliabilityPanel, /Preflight/)
+  assert.match(reliabilityPanel, /Full Underwrite/)
+  assert.match(readiness, /This run hit an issue/)
+  assert.match(readiness, /support the code below/i)
+  assert.match(readiness, /underwritingSupportCode/)
+  assert.match(readiness, /UW-/)
+})
+
+test('Underwriting readiness checklist keeps IC blockers visible after refresh', () => {
+  for (const label of [
+    'Investment thesis present',
+    'Risk narrative present',
+    'Documents attached',
+    'Quick Pencil complete',
+    'Assumptions approved',
+    'Preflight locked',
+    'Full underwrite complete',
+    'IC memo available',
+  ]) {
+    assert.match(readiness, new RegExp(label))
+  }
+  assert.match(readiness, /Add the investment thesis in Notes/)
+  assert.match(readiness, /Add risk narrative before IC readiness/)
+  assert.match(readiness, /Approve and lock the preflight package/)
 })

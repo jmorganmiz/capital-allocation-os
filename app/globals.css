@@ -8318,3 +8318,207 @@ select.border-blue-300 {
 }
 input.border-blue-300::placeholder { color: #70707d; }
 .reveal-stagger.visible > *:nth-child(6) { opacity:1; transform:none; transition-delay:0.40s; }
+
+.app-root .app-uw-health {
+  overflow: hidden;
+  border: 1px solid rgba(112, 112, 125, 0.2);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(30, 30, 42, 0.96), rgba(18, 18, 27, 0.98));
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+}
+
+.app-root .app-uw-health-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 26px 30px;
+  border-bottom: 1px solid rgba(112, 112, 125, 0.16);
+}
+
+.app-root .app-uw-health-header p {
+  margin: 0 0 10px;
+  color: #5266eb;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.app-root .app-uw-health-header h2 {
+  margin: 0 0 7px;
+  color: #f2f2f5;
+  font-size: 25px;
+  letter-spacing: -0.04em;
+}
+
+.app-root .app-uw-health-header small {
+  display: block;
+  color: #8a8a99;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.app-root .app-uw-health-header > strong {
+  max-width: 360px;
+  padding: 10px 13px;
+  border: 1px solid rgba(82, 102, 235, 0.28);
+  border-radius: 999px;
+  background: rgba(82, 102, 235, 0.08);
+  color: #dfe3ff;
+  font-size: 11px;
+  line-height: 1.35;
+  text-align: right;
+}
+
+.app-root .app-uw-health-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 22px 30px 0;
+}
+
+.app-root .app-uw-health-card {
+  min-height: 126px;
+  padding: 18px;
+  border: 1px solid rgba(112, 112, 125, 0.18);
+  border-radius: 14px;
+  background: #171721;
+}
+
+.app-root .app-uw-health-card span {
+  display: block;
+  color: #858596;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.app-root .app-uw-health-card strong {
+  display: block;
+  margin-top: 12px;
+  color: #f4f4f6;
+  font-size: 22px;
+  letter-spacing: -0.04em;
+}
+
+.app-root .app-uw-health-card p {
+  margin: 9px 0 0;
+  max-width: 420px;
+  color: #858596;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.app-root .app-uw-health-card[data-status="running"] { border-color: rgba(82, 102, 235, 0.42); background: rgba(82, 102, 235, 0.07); }
+.app-root .app-uw-health-card[data-status="needs_review"] { border-color: rgba(255, 184, 0, 0.34); background: rgba(255, 184, 0, 0.06); }
+.app-root .app-uw-health-card[data-status="approved"],
+.app-root .app-uw-health-card[data-status="completed"] { border-color: rgba(53, 212, 125, 0.32); background: rgba(53, 212, 125, 0.055); }
+.app-root .app-uw-health-card[data-status="failed"] { border-color: rgba(255, 88, 96, 0.36); background: rgba(255, 88, 96, 0.06); }
+.app-root .app-uw-health-card[data-status="locked"] { opacity: 0.78; }
+
+.app-root .app-uw-health-failure {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin: 16px 30px 0;
+  padding: 16px;
+  border: 1px solid rgba(255, 88, 96, 0.34);
+  border-radius: 14px;
+  background: rgba(255, 88, 96, 0.07);
+}
+
+.app-root .app-uw-health-failure strong {
+  display: block;
+  color: #ff6870;
+  font-size: 13px;
+}
+
+.app-root .app-uw-health-failure p {
+  margin: 6px 0 0;
+  color: #ededf2;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.app-root .app-uw-health-failure small {
+  display: block;
+  margin-top: 8px;
+  color: #9b9bac;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.app-root .app-uw-health-failure code {
+  flex: 0 0 auto;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 88, 96, 0.28);
+  border-radius: 999px;
+  background: rgba(10, 10, 16, 0.55);
+  color: #ffd5d8;
+  font-size: 11px;
+}
+
+.app-root .app-uw-ready-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  padding: 22px 30px 30px;
+}
+
+.app-root .app-uw-ready-item {
+  display: flex;
+  gap: 11px;
+  min-height: 92px;
+  padding: 13px;
+  border: 1px solid rgba(112, 112, 125, 0.16);
+  border-radius: 13px;
+  background: rgba(23, 23, 33, 0.68);
+}
+
+.app-root .app-uw-ready-item > span {
+  flex: 0 0 auto;
+  height: 24px;
+  min-width: 44px;
+  padding: 0 8px;
+  border: 1px solid rgba(255, 184, 0, 0.28);
+  border-radius: 999px;
+  color: #ffbf2f;
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 23px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.app-root .app-uw-ready-item[data-complete="true"] > span {
+  border-color: rgba(53, 212, 125, 0.28);
+  color: #35d47d;
+}
+
+.app-root .app-uw-ready-item strong {
+  display: block;
+  color: #ececf1;
+  font-size: 11px;
+}
+
+.app-root .app-uw-ready-item p {
+  margin: 5px 0 0;
+  color: #7f7f90;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+@media (max-width: 1180px) {
+  .app-root .app-uw-ready-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 760px) {
+  .app-root .app-uw-health-header,
+  .app-root .app-uw-health-failure { flex-direction: column; }
+  .app-root .app-uw-health-header > strong { max-width: none; text-align: left; }
+  .app-root .app-uw-health-cards,
+  .app-root .app-uw-ready-list { grid-template-columns: 1fr; }
+}
