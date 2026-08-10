@@ -5,6 +5,7 @@ import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+const read = (file) => fs.readFileSync(path.join(ROOT, file), 'utf8')
 const route = fs.readFileSync(path.join(ROOT, 'app/api/cron/underwriting/route.ts'), 'utf8')
 const preflight = fs.readFileSync(path.join(ROOT, 'lib/actions/underwriting-room.ts'), 'utf8')
 const full = fs.readFileSync(path.join(ROOT, 'lib/actions/full-underwrite.ts'), 'utf8')
@@ -33,4 +34,18 @@ test('background processing uses a non-serializable internal capability', () => 
   assert.match(full, /workerContext === INTERNAL_UNDERWRITING_WORKER/)
   assert.match(route, /processNextUnderwritingStep\(runId, INTERNAL_UNDERWRITING_WORKER\)/)
   assert.match(route, /processNextFullUnderwriteStep\(runId, INTERNAL_UNDERWRITING_WORKER\)/)
+})
+test('platform admins can monitor and requeue underwriting runs', () => {
+  const adminPage = read('app/admin/underwriting/page.tsx')
+  const monitor = read('components/admin/UnderwritingOpsMonitor.tsx')
+  const platformAdmin = read('lib/actions/platform-admin.ts')
+
+  assert.match(adminPage, /UnderwritingOpsMonitor/)
+  assert.match(adminPage, /Underwriting Early Access/)
+  assert.match(monitor, /Underwriting operations/)
+  assert.match(monitor, /runNeedsAttention/)
+  assert.match(monitor, /Requeue run/)
+  assert.match(platformAdmin, /requeueUnderwritingRun/)
+  assert.match(platformAdmin, /ADMIN_REQUEUED_STALE/)
+  assert.match(platformAdmin, /eq\('run_id', runId\)/)
 })

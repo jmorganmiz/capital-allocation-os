@@ -110,3 +110,16 @@ test('deal records expose Yardi-ready export readiness', async () => {
   assert.match(route, /eq\('firm_id', profile\.firm_id\)/)
   assert.match(route, /Content-Type': 'text\/csv; charset=utf-8'/)
 })
+test('underwriting is presented as Early Access instead of beta', async () => {
+  const [settingsCard, dealPage, pricing] = await Promise.all([
+    read('components/settings/UnderwritingAccessCard.tsx'),
+    read('app/(app)/deals/[id]/page.tsx'),
+    read('components/Pricing.tsx'),
+  ])
+
+  assert.match(settingsCard, /Early Access/)
+  assert.match(settingsCard, /Limited release/)
+  assert.match(dealPage, /Early Access/)
+  assert.match(pricing, /Early Access/)
+  assert.doesNotMatch(settingsCard, /Beta access|Private beta|Request beta access/)
+})

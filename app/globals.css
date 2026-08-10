@@ -6519,6 +6519,178 @@ body {
 .app-root .app-actuals-history em[data-tone='green'] { color: #4ade80; }
 .app-root .app-actuals-history em[data-tone='red'] { color: #ff747b; }
 .app-root .app-actuals-history small { grid-column: 1 / -1; }
+
+.app-root .app-admin-section-gap {
+  height: 22px;
+}
+
+.app-root .app-admin-ops {
+  border: 1px solid var(--app-border);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(30,30,42,0.86), rgba(23,23,33,0.58));
+  box-shadow: var(--app-shadow);
+  padding: 22px;
+}
+
+.app-root .app-admin-ops-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.app-root .app-admin-ops-header h2 {
+  color: var(--app-text);
+  font-size: 20px;
+  font-weight: 780;
+  letter-spacing: -0.05em;
+  margin-top: 4px;
+}
+
+.app-root .app-admin-ops-header span,
+.app-root .app-admin-ops-header strong {
+  display: block;
+  color: var(--app-muted);
+  font-size: 12px;
+  line-height: 1.45;
+  margin-top: 6px;
+}
+
+.app-root .app-admin-ops-header strong {
+  border: 1px solid rgba(82,102,235,0.24);
+  border-radius: 999px;
+  background: rgba(82,102,235,0.1);
+  color: var(--app-text);
+  padding: 8px 12px;
+  white-space: nowrap;
+}
+
+.app-root .app-admin-ops-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.app-root .app-admin-ops-stats article {
+  border: 1px solid rgba(112,112,125,0.16);
+  border-radius: 14px;
+  background: rgba(12,12,20,0.24);
+  padding: 14px;
+}
+
+.app-root .app-admin-ops-stats article[data-tone="danger"] {
+  border-color: rgba(255,88,96,0.3);
+  background: rgba(255,88,96,0.08);
+}
+
+.app-root .app-admin-ops-stats article[data-tone="amber"] {
+  border-color: rgba(255,184,0,0.3);
+  background: rgba(255,184,0,0.08);
+}
+
+.app-root .app-admin-ops-stats b {
+  display: block;
+  color: var(--app-blue);
+  font-size: 28px;
+  letter-spacing: -0.06em;
+}
+
+.app-root .app-admin-ops-stats span {
+  color: var(--app-faint);
+  font-size: 11px;
+}
+
+.app-root .app-admin-run-list {
+  display: grid;
+  gap: 10px;
+}
+
+.app-root .app-admin-run-list article {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 360px minmax(220px, 1fr) 120px;
+  gap: 16px;
+  align-items: center;
+  border: 1px solid rgba(112,112,125,0.14);
+  border-radius: 14px;
+  background: rgba(12,12,20,0.22);
+  padding: 14px;
+}
+
+.app-root .app-admin-run-list article[data-attention="true"] {
+  border-color: rgba(255,184,0,0.3);
+}
+
+.app-root .app-admin-run-list small {
+  color: var(--app-blue);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.app-root .app-admin-run-list h3 {
+  color: var(--app-text);
+  font-size: 14px;
+  font-weight: 760;
+  margin-top: 5px;
+}
+
+.app-root .app-admin-run-list p {
+  color: var(--app-faint);
+  font-size: 11px;
+  line-height: 1.45;
+  margin-top: 4px;
+}
+
+.app-root .app-admin-run-list dl {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.app-root .app-admin-run-list dl div {
+  border: 1px solid rgba(112,112,125,0.12);
+  border-radius: 10px;
+  background: rgba(30,30,42,0.6);
+  padding: 9px;
+}
+
+.app-root .app-admin-run-list dt {
+  color: var(--app-faint);
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.app-root .app-admin-run-list dd {
+  color: var(--app-text);
+  font-size: 11px;
+  margin-top: 3px;
+}
+
+.app-root .app-admin-run-error span {
+  color: var(--app-muted);
+  font-size: 11px;
+  font-weight: 760;
+}
+
+.app-root .app-admin-run-list button {
+  border: 1px solid rgba(82,102,235,0.32);
+  border-radius: 999px;
+  background: rgba(82,102,235,0.16);
+  color: var(--app-text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  min-height: 34px;
+}
+
+.app-root .app-admin-run-list button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
 .app-root .app-admin-queue { display: flex; flex-direction: column; gap: 12px; }
 .app-root .app-admin-queue article { display: grid; grid-template-columns: minmax(0,1fr) 340px 220px; gap: 24px; align-items: center; padding: 22px; border: 1px solid var(--app-border); border-radius: 12px; background: var(--app-card); }
 .app-root .app-admin-queue article[data-status='declined'] { opacity: .5; }

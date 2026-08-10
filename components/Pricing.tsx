@@ -19,7 +19,7 @@ const plans = [
     name: 'Underwriting Pro',
     price: '399',
     description: 'Evidence-backed underwriting from first pencil to IC package.',
-    badge: 'Private beta',
+    badge: 'Early Access',
     features: [
       'Everything in Deal Memory',
       'Unlimited deterministic Quick Pencils',
@@ -28,7 +28,7 @@ const plans = [
       'Cited document extraction and approvals',
       'Sensitivity tables and IC memo PDF',
     ],
-    action: <a className="btn-primary-full" href="mailto:hello@getdealstash.com?subject=Underwriting%20Pro%20beta">Request beta access →</a>,
+    action: <a className="btn-primary-full" href="mailto:hello@getdealstash.com?subject=Underwriting%20Pro%20Early%20Access">Request Early Access →</a>,
   },
 ]
 
