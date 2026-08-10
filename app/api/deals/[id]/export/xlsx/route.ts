@@ -1,6 +1,6 @@
 import ExcelJS from 'exceljs'
 import { NextResponse } from 'next/server'
-import { buildYardiReadiness } from '@/lib/yardi-readiness'
+import { buildExportReadiness } from '@/lib/export-readiness'
 import { createClient } from '@/lib/supabase/server'
 
 export const runtime = 'nodejs'
@@ -162,7 +162,7 @@ export async function GET(_request: Request, { params }: Props) {
     events: events ?? [],
     scoreDetails: scores ?? [],
   }
-  const readiness = buildYardiReadiness(readinessInput)
+  const readiness = buildExportReadiness(readinessInput)
 
   const workbook = new ExcelJS.Workbook()
   workbook.creator = 'Dealstash'

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { can, getInternalContext } from '@/lib/internal/auth'
-import { getPilotAnalytics, pilotFirmRows, toCsv, yardiReadyRows } from '@/lib/pilot-analytics'
+import { getPilotAnalytics, pilotFirmRows, toCsv, exportReadyRows } from '@/lib/pilot-analytics'
 
 export async function GET(request: Request) {
   const context = await getInternalContext()
@@ -11,9 +11,9 @@ export async function GET(request: Request) {
 
   const mode = new URL(request.url).searchParams.get('mode')
   const analytics = await getPilotAnalytics(createAdminClient())
-  const rows = mode === 'yardi' ? yardiReadyRows(analytics) : pilotFirmRows(analytics)
+  const rows = mode === 'export' || mode === 'yardi' ? exportReadyRows(analytics) : pilotFirmRows(analytics)
   const csv = toCsv(rows)
-  const filename = mode === 'yardi' ? 'dealstash-export-ready-records.csv' : 'dealstash-pilot-summary.csv'
+  const filename = mode === 'export' || mode === 'yardi' ? 'dealstash-export-ready-records.csv' : 'dealstash-pilot-summary.csv'
 
   return new NextResponse(csv, {
     headers: {

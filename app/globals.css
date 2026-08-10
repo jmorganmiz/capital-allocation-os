@@ -3885,11 +3885,11 @@ body {
 }
 
 
-.app-root .app-yardi-card[data-ready="true"] {
+.app-root .app-export-ready-card[data-ready="true"] {
   border-color: rgba(44,210,132,0.26);
 }
 
-.app-root .app-yardi-meter {
+.app-root .app-export-ready-meter {
   height: 6px;
   border-radius: 999px;
   background: rgba(112,112,125,0.14);
@@ -3897,25 +3897,25 @@ body {
   margin: 8px 0 12px;
 }
 
-.app-root .app-yardi-meter div {
+.app-root .app-export-ready-meter div {
   height: 100%;
   border-radius: inherit;
   background: linear-gradient(90deg, var(--app-blue), #7e8cff);
 }
 
-.app-root .app-yardi-summary {
+.app-root .app-export-ready-summary {
   color: var(--app-muted);
   font-size: 12px;
   line-height: 1.45;
   margin-bottom: 14px;
 }
 
-.app-root .app-yardi-list {
+.app-root .app-export-ready-list {
   display: grid;
   gap: 8px;
 }
 
-.app-root .app-yardi-list > div {
+.app-root .app-export-ready-list > div {
   display: grid;
   grid-template-columns: 24px 1fr;
   gap: 10px;
@@ -3926,7 +3926,7 @@ body {
   padding: 10px;
 }
 
-.app-root .app-yardi-list > div > span {
+.app-root .app-export-ready-list > div > span {
   display: inline-grid;
   place-items: center;
   width: 22px;
@@ -3938,12 +3938,12 @@ body {
   font-weight: 900;
 }
 
-.app-root .app-yardi-list > div[data-complete="true"] > span {
+.app-root .app-export-ready-list > div[data-complete="true"] > span {
   background: rgba(44,210,132,0.12);
   color: #2cd284;
 }
 
-.app-root .app-yardi-list strong {
+.app-root .app-export-ready-list strong {
   display: block;
   color: var(--app-text);
   font-size: 12px;
@@ -3951,7 +3951,7 @@ body {
   letter-spacing: -0.02em;
 }
 
-.app-root .app-yardi-list small {
+.app-root .app-export-ready-list small {
   display: block;
   color: var(--app-faint);
   font-size: 11px;
@@ -3959,7 +3959,7 @@ body {
   margin-top: 3px;
 }
 
-.app-root .app-yardi-export {
+.app-root .app-export-ready-action {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -4012,14 +4012,14 @@ body {
   align-items: center;
 }
 
-.app-root .app-yardi-export-secondary {
+.app-root .app-export-ready-action-secondary {
   min-width: 52px;
   padding: 0 12px;
   background: rgba(112,112,125,0.08);
   border-color: rgba(112,112,125,0.22);
   color: var(--app-muted);
 }
-.app-root .app-yardi-export:hover {
+.app-root .app-export-ready-action:hover {
   background: rgba(82,102,235,0.2);
 }
 .app-root .app-similar-empty {

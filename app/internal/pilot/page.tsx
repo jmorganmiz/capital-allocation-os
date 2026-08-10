@@ -33,13 +33,13 @@ export default async function InternalPilotPage() {
   const headlineCards = [
     { label: 'Pilot firms active', value: analytics.headline.firms },
     { label: `Deals processed (${analytics.windowDays}d)`, value: analytics.headline.dealsProcessed },
-    { label: 'Avg email ? parsed', value: formatMinutes(analytics.headline.avgEmailParseMinutes) },
+    { label: 'Avg email → parsed', value: formatMinutes(analytics.headline.avgEmailParseMinutes) },
     { label: 'Decision capture', value: pct(analytics.headline.decisionCaptureRate) },
-    { label: 'Export-ready records', value: pct(analytics.headline.yardiReadyRate) },
+    { label: 'Export-ready records', value: pct(analytics.headline.exportReadyRate) },
   ]
 
-  const readyDeals = analytics.yardiReadyDeals.filter((deal) => deal.ready).length
-  const blockedDeals = analytics.yardiReadyDeals.length - readyDeals
+  const readyDeals = analytics.exportReadyDeals.filter((deal) => deal.ready).length
+  const blockedDeals = analytics.exportReadyDeals.length - readyDeals
 
   return (
     <div className="space-y-8">
@@ -54,7 +54,7 @@ export default async function InternalPilotPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <a className="rounded-full border px-3 py-2 text-sm font-semibold" style={{ borderColor: 'rgba(82,102,235,0.5)', color: '#dfe3ff' }} href="/api/internal/pilot/export?mode=summary">Export summary CSV</a>
-          <a className="rounded-full px-3 py-2 text-sm font-semibold" style={{ background: '#5266eb', color: '#fff' }} href="/api/internal/pilot/export?mode=yardi">Export-ready CSV</a>
+          <a className="rounded-full px-3 py-2 text-sm font-semibold" style={{ background: '#5266eb', color: '#fff' }} href="/api/internal/pilot/export?mode=export">Export-ready CSV</a>
         </div>
       </div>
 
@@ -107,7 +107,7 @@ export default async function InternalPilotPage() {
                   <td className="px-4 py-3" style={{ color: '#c3c3d0' }}>{pct(firm.scoredDealsRate)}</td>
                   <td className="px-4 py-3" style={{ color: '#c3c3d0' }}>{pct(firm.decisionCaptureRate)}</td>
                   <td className="px-4 py-3" style={{ color: '#c3c3d0' }}>{pct(firm.fieldAcceptanceProxy)}</td>
-                  <td className="px-4 py-3" style={{ color: '#c3c3d0' }}>{pct(firm.yardiReadyRate)}</td>
+                  <td className="px-4 py-3" style={{ color: '#c3c3d0' }}>{pct(firm.exportReadyRate)}</td>
                   <td className="px-4 py-3" style={{ color: '#c3c3d0' }}>{firm.quickPencils30d} / {firm.fullUnderwrites30d}</td>
                 </tr>
               ))}
@@ -129,7 +129,7 @@ export default async function InternalPilotPage() {
         <div className="rounded-xl border p-5" style={cardStyle}>
           <p className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: '#8b8b9a' }}>Biggest blockers</p>
           <div className="mt-4 space-y-3">
-            {analytics.yardiReadyDeals.filter((deal) => !deal.ready).slice(0, 8).map((deal) => (
+            {analytics.exportReadyDeals.filter((deal) => !deal.ready).slice(0, 8).map((deal) => (
               <div key={deal.dealId} className="rounded-lg border p-3" style={{ borderColor: 'rgba(112,112,125,0.15)', background: 'rgba(0,0,0,0.12)' }}>
                 <div className="flex items-start justify-between gap-3">
                   <div>

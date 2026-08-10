@@ -96,13 +96,13 @@ test('navigation and public copy match the released inbox workflow', async () =>
 test('deal records expose export-ready deal records', async () => {
   const [dealPage, card, helper, route, xlsxRoute] = await Promise.all([
     read('app/(app)/deals/[id]/page.tsx'),
-    read('components/deal/YardiReadyCard.tsx'),
-    read('lib/yardi-readiness.ts'),
+    read('components/deal/ExportReadyCard.tsx'),
+    read('lib/export-readiness.ts'),
     read('app/api/deals/[id]/export/route.ts'),
     read('app/api/deals/[id]/export/xlsx/route.ts'),
   ])
 
-  assert.match(dealPage, /YardiReadyCard/)
+  assert.match(dealPage, /ExportReadyCard/)
   assert.match(card, /Export-ready record/)
   assert.match(card, /Export XLSX/)
   assert.match(card, /Workbook preview/)

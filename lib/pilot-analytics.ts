@@ -88,7 +88,7 @@ type ScoreRow = { firm_id: string | null; deal_id: string; score: number; update
 type FileRow = { firm_id: string; deal_id: string; filename: string; created_at: string }
 type RunRow = { firm_id: string; deal_id: string; run_type: string; status: string; assumption_status: string; created_at: string; completed_at: string | null; approved_at: string | null; credits_settled: number }
 
-export type YardiReadyDeal = {
+export type ExportReadyDeal = {
   firmId: string
   firmName: string
   dealId: string
@@ -122,7 +122,7 @@ export type PilotFirmMetrics = {
   emailFailed30d: number
   scoredDealsRate: number
   decisionCaptureRate: number
-  yardiReadyRate: number
+  exportReadyRate: number
   fieldAcceptanceProxy: number | null
   quickPencils30d: number
   fullUnderwrites30d: number
@@ -136,11 +136,11 @@ export type PilotAnalytics = {
     dealsProcessed: number
     avgEmailParseMinutes: number | null
     decisionCaptureRate: number
-    yardiReadyRate: number
+    exportReadyRate: number
     fieldAcceptanceProxy: number | null
   }
   firms: PilotFirmMetrics[]
-  yardiReadyDeals: YardiReadyDeal[]
+  exportReadyDeals: ExportReadyDeal[]
 }
 
 export async function getPilotAnalytics(admin: AdminClient): Promise<PilotAnalytics> {
@@ -222,7 +222,7 @@ export async function getPilotAnalytics(admin: AdminClient): Promise<PilotAnalyt
     }
   }
 
-  const yardiReadyDeals: YardiReadyDeal[] = dealRows.map((deal) => {
+  const exportReadyDeals: ExportReadyDeal[] = dealRows.map((deal) => {
     const firmName = firmRows.find((firm) => firm.id === deal.firm_id)?.name ?? 'Unknown firm'
     const stage = deal.stage_id ? stageById.get(deal.stage_id) : null
     const latestSnapshot = latestSnapshotByDeal.get(deal.id)
@@ -283,7 +283,7 @@ export async function getPilotAnalytics(admin: AdminClient): Promise<PilotAnalyt
     const dealCreatedEvents = firmUsage.filter((event) => event.event_type === 'deal_created')
     const firmEmails = inboundRows.filter((event) => event.firm_id === firm.id)
     const firmRuns = runRows.filter((run) => run.firm_id === firm.id)
-    const firmYardiDeals = yardiReadyDeals.filter((deal) => deal.firmId === firm.id)
+    const firmExportDeals = exportReadyDeals.filter((deal) => deal.firmId === firm.id)
     const firmScores = new Set(scoreRows.filter((score) => score.firm_id === firm.id).map((score) => score.deal_id))
     const firmKilled = firmDeals.filter((deal) => deal.is_archived)
     const decisionReady = firmKilled.filter((deal) => {
@@ -322,7 +322,7 @@ export async function getPilotAnalytics(admin: AdminClient): Promise<PilotAnalyt
       emailFailed30d: firmEmails.filter((event) => event.status === 'failed').length,
       scoredDealsRate: pct(firmScores.size, firmDeals.length),
       decisionCaptureRate: pct(decisionReady.length, firmKilled.length),
-      yardiReadyRate: pct(firmYardiDeals.filter((deal) => deal.ready).length, firmYardiDeals.length),
+      exportReadyRate: pct(firmExportDeals.filter((deal) => deal.ready).length, firmExportDeals.length),
       fieldAcceptanceProxy: parsedDeals.size ? pct(parsedDeals.size - editedParsedDeals.size, parsedDeals.size) : null,
       quickPencils30d: firmRuns.filter((run) => run.run_type === 'quick_pencil').length,
       fullUnderwrites30d: firmRuns.filter((run) => run.run_type === 'full_underwrite').length,
@@ -333,7 +333,7 @@ export async function getPilotAnalytics(admin: AdminClient): Promise<PilotAnalyt
   const allEmailMinutes = metrics.map((firm) => firm.avgEmailParseMinutes).filter((value): value is number => value !== null)
   const weightedKilled = metrics.reduce((sum, firm) => sum + firm.killedDeals, 0)
   const weightedDecision = metrics.reduce((sum, firm) => sum + Math.round((firm.decisionCaptureRate / 100) * firm.killedDeals), 0)
-  const yardiDeals = yardiReadyDeals.filter((deal) => deal.decision !== 'In review')
+  const exportDeals = exportReadyDeals.filter((deal) => deal.decision !== 'In review')
   const fieldProxyValues = metrics.map((firm) => firm.fieldAcceptanceProxy).filter((value): value is number => value !== null)
 
   return {
@@ -344,11 +344,11 @@ export async function getPilotAnalytics(admin: AdminClient): Promise<PilotAnalyt
       dealsProcessed: metrics.reduce((sum, firm) => sum + firm.dealsProcessed30d, 0),
       avgEmailParseMinutes: avg(allEmailMinutes),
       decisionCaptureRate: pct(weightedDecision, weightedKilled),
-      yardiReadyRate: pct(yardiDeals.filter((deal) => deal.ready).length, yardiDeals.length),
+      exportReadyRate: pct(exportDeals.filter((deal) => deal.ready).length, exportDeals.length),
       fieldAcceptanceProxy: avg(fieldProxyValues),
     },
     firms: metrics.sort((a, b) => b.dealsProcessed30d - a.dealsProcessed30d),
-    yardiReadyDeals,
+    exportReadyDeals,
   }
 }
 
@@ -365,15 +365,15 @@ export function pilotFirmRows(analytics: PilotAnalytics) {
     email_failed_30d: firm.emailFailed30d,
     scored_deals_rate_pct: firm.scoredDealsRate,
     decision_capture_rate_pct: firm.decisionCaptureRate,
-    yardi_ready_rate_pct: firm.yardiReadyRate,
+    export_ready_rate_pct: firm.exportReadyRate,
     field_acceptance_proxy_pct: firm.fieldAcceptanceProxy ?? '',
     quick_pencils_30d: firm.quickPencils30d,
     full_underwrites_30d: firm.fullUnderwrites30d,
   }))
 }
 
-export function yardiReadyRows(analytics: PilotAnalytics) {
-  return analytics.yardiReadyDeals.map((deal) => ({
+export function exportReadyRows(analytics: PilotAnalytics) {
+  return analytics.exportReadyDeals.map((deal) => ({
     firm: deal.firmName,
     property: deal.property,
     market: deal.market,
@@ -388,7 +388,7 @@ export function yardiReadyRows(analytics: PilotAnalytics) {
     decision_rationale: deal.rationale,
     supporting_docs: deal.hasSupportingDocs ? 'yes' : 'no',
     review_history: deal.hasReviewHistory ? 'yes' : 'no',
-    yardi_ready: deal.ready ? 'yes' : 'no',
+    export_ready: deal.ready ? 'yes' : 'no',
     missing_fields: deal.missing.join('; '),
     deal_id: deal.dealId,
   }))

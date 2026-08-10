@@ -68,7 +68,7 @@ function pct(value: number | null | undefined) {
   return `${Math.abs(n) <= 1 ? (n * 100).toFixed(2) : n.toFixed(2)}%`
 }
 
-export function buildYardiReadiness(input: BuildInput): ExportReadiness {
+export function buildExportReadiness(input: BuildInput): ExportReadiness {
   const events = input.events ?? []
   const notes = input.notes ?? []
   const files = input.files ?? []
@@ -167,8 +167,8 @@ export function buildYardiReadiness(input: BuildInput): ExportReadiness {
   }
 }
 
-export function yardiDealCsvRow(input: BuildInput & { dealId: string; firmName?: string | null }) {
-  const readiness = buildYardiReadiness(input)
+export function exportDealCsvRow(input: BuildInput & { dealId: string; firmName?: string | null }) {
+  const readiness = buildExportReadiness(input)
   const noteBySection = (section: string) => input.notes?.find((note) => note.section === section)?.content?.trim() ?? ''
   const scoreDetails = input.scoreDetails ?? []
   const averageScore = scoreDetails.length

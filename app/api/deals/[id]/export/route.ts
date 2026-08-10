@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { rowsToCsv, yardiDealCsvRow } from '@/lib/yardi-readiness'
+import { rowsToCsv, exportDealCsvRow } from '@/lib/export-readiness'
 import { createClient } from '@/lib/supabase/server'
 
 interface Props {
@@ -44,7 +44,7 @@ export async function GET(_request: Request, { params }: Props) {
     ? Math.round(scoreValues.reduce((sum, score) => sum + score, 0) / scoreValues.length * 20)
     : null
 
-  const row = yardiDealCsvRow({
+  const row = exportDealCsvRow({
     dealId: deal.id,
     firmName: firm?.name ?? null,
     title: deal.title,

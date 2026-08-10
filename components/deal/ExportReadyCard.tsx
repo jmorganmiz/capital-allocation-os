@@ -1,11 +1,11 @@
-import { buildYardiReadiness } from '@/lib/yardi-readiness'
+import { buildExportReadiness } from '@/lib/export-readiness'
 
-type Props = Parameters<typeof buildYardiReadiness>[0] & {
+type Props = Parameters<typeof buildExportReadiness>[0] & {
   dealId: string
 }
 
-export default function YardiReadyCard(props: Props) {
-  const readiness = buildYardiReadiness(props)
+export default function ExportReadyCard(props: Props) {
+  const readiness = buildExportReadiness(props)
   const includedSheets = [
     'Deal Summary',
     'Financials',
@@ -16,7 +16,7 @@ export default function YardiReadyCard(props: Props) {
   ]
 
   return (
-    <div className="app-deal-rail-card app-yardi-card" data-ready={readiness.ready}>
+    <div className="app-deal-rail-card app-export-ready-card" data-ready={readiness.ready}>
       <div className="app-deal-rail-header">
         <div>
           <p>Export readiness</p>
@@ -25,17 +25,17 @@ export default function YardiReadyCard(props: Props) {
         <span>{readiness.score}%</span>
       </div>
 
-      <div className="app-yardi-meter" aria-label={`${readiness.completeCount} of ${readiness.totalCount} export-ready fields complete`}>
+      <div className="app-export-ready-meter" aria-label={`${readiness.completeCount} of ${readiness.totalCount} export-ready fields complete`}>
         <div style={{ width: `${readiness.score}%` }} />
       </div>
 
-      <p className="app-yardi-summary">
+      <p className="app-export-ready-summary">
         {readiness.ready
           ? 'Clean export record. This deal has the core fields, decision context, documents, and review trail.'
           : `${readiness.completeCount} of ${readiness.totalCount} fields complete. Finish the missing items before calling this export-ready.`}
       </p>
 
-      <div className="app-yardi-list">
+      <div className="app-export-ready-list">
         {readiness.items.map((item) => (
           <div key={item.key} data-complete={item.complete}>
             <span>{item.complete ? '\u2713' : '!'}</span>
@@ -54,10 +54,10 @@ export default function YardiReadyCard(props: Props) {
       </div>
 
       <div className="app-export-actions">
-        <a className="app-yardi-export" href={`/api/deals/${props.dealId}/export/xlsx`}>
+        <a className="app-export-ready-action" href={`/api/deals/${props.dealId}/export/xlsx`}>
           Export XLSX
         </a>
-        <a className="app-yardi-export app-yardi-export-secondary" href={`/api/deals/${props.dealId}/export`}>
+        <a className="app-export-ready-action app-export-ready-action-secondary" href={`/api/deals/${props.dealId}/export`}>
           CSV
         </a>
       </div>
