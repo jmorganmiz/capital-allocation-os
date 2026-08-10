@@ -6,6 +6,14 @@ type Props = Parameters<typeof buildYardiReadiness>[0] & {
 
 export default function YardiReadyCard(props: Props) {
   const readiness = buildYardiReadiness(props)
+  const includedSheets = [
+    'Deal Summary',
+    'Financials',
+    'Scoring',
+    'Notes & Risks',
+    'Files & Activity',
+    'Readiness',
+  ]
 
   return (
     <div className="app-deal-rail-card app-yardi-card" data-ready={readiness.ready}>
@@ -30,7 +38,7 @@ export default function YardiReadyCard(props: Props) {
       <div className="app-yardi-list">
         {readiness.items.map((item) => (
           <div key={item.key} data-complete={item.complete}>
-            <span>{item.complete ? '✓' : '!'}</span>
+            <span>{item.complete ? '\u2713' : '!'}</span>
             <div>
               <strong>{item.label}</strong>
               <small>{item.complete ? item.value || 'Captured' : item.help}</small>
@@ -39,9 +47,20 @@ export default function YardiReadyCard(props: Props) {
         ))}
       </div>
 
-      <a className="app-yardi-export" href={`/api/deals/${props.dealId}/export`}>
-        Export record CSV
-      </a>
+      <div className="app-export-preview">
+        <strong>Workbook preview</strong>
+        <p>{includedSheets.length} tabs: {includedSheets.join(', ')}.</p>
+        <small>{readiness.missing.length ? `Missing before fully ready: ${readiness.missing.join(', ')}.` : 'No readiness gaps detected.'}</small>
+      </div>
+
+      <div className="app-export-actions">
+        <a className="app-yardi-export" href={`/api/deals/${props.dealId}/export/xlsx`}>
+          Export XLSX
+        </a>
+        <a className="app-yardi-export app-yardi-export-secondary" href={`/api/deals/${props.dealId}/export`}>
+          CSV
+        </a>
+      </div>
     </div>
   )
 }

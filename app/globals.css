@@ -1410,7 +1410,7 @@ body {
   background: var(--deep-space);
 }
 
-/* ── NAV ── */
+/* â”€â”€ NAV â”€â”€ */
 .landing-page > nav {
   position: fixed;
   top: 0; left: 0; right: 0;
@@ -1470,7 +1470,7 @@ body {
 
 .nav-btn:hover { background: rgba(205,221,255,0.2); }
 
-/* ── HERO ── */
+/* â”€â”€ HERO â”€â”€ */
 .hero {
   position: relative;
   width: 100%;
@@ -1618,7 +1618,7 @@ body {
   letter-spacing: 0.02em;
 }
 
-/* ── CARDS SHOWCASE ── */
+/* â”€â”€ CARDS SHOWCASE â”€â”€ */
 .cards-showcase {
   background: #0d0d14;
   border-top: 1px solid rgba(112,112,125,0.1);
@@ -1710,7 +1710,7 @@ body {
   line-height: 1.5;
 }
 
-/* ── SCROLL INDICATOR ── */
+/* â”€â”€ SCROLL INDICATOR â”€â”€ */
 .scroll-hint {
   position: absolute;
   bottom: 36px;
@@ -1738,7 +1738,7 @@ body {
   0%,100% { opacity:0.3; } 50% { opacity:0.9; }
 }
 
-/* ── SECTIONS ── */
+/* â”€â”€ SECTIONS â”€â”€ */
 .section {
   max-width: 1200px;
   margin: 0 auto;
@@ -1773,7 +1773,7 @@ body {
   line-height: 1.65;
 }
 
-/* ── WORKFLOW ── */
+/* â”€â”€ WORKFLOW â”€â”€ */
 .workflow {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
@@ -1804,7 +1804,7 @@ body {
 .wf-label { font-weight: 600; font-size: 12px; color: var(--starlight); margin-bottom: 6px; }
 .wf-desc { font-size: 11px; color: var(--lead); line-height: 1.5; }
 
-/* ── PRODUCT DEMO ── */
+/* â”€â”€ PRODUCT DEMO â”€â”€ */
 .demo-section .sec-title { margin-bottom: 10px; }
 .demo-section .sec-sub { margin-bottom: 36px; }
 
@@ -1939,7 +1939,7 @@ body {
 .prompt-row button { background: #1e1e2a; border: 1px solid rgba(112,112,125,0.24); border-radius: 999px; color: var(--silver); cursor: pointer; font-family: inherit; font-size: 12px; padding: 9px 13px; transition: border-color 0.2s, color 0.2s, background 0.2s; }
 .prompt-row button:hover { background: rgba(82,102,235,0.12); border-color: rgba(82,102,235,0.45); color: var(--starlight); }
 
-/* ── DEAL DETAIL ── */
+/* â”€â”€ DEAL DETAIL â”€â”€ */
 .deal-detail { animation: demoFade 0.2s ease; display: flex; flex-direction: column; }
 .deal-back { background: none; border: none; color: var(--silver); cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 500; padding: 0 0 14px; display: inline-flex; align-items: center; gap: 4px; transition: color 0.15s; letter-spacing: 0.01em; }
 .deal-back:hover { color: var(--starlight); }
@@ -2017,7 +2017,7 @@ body {
 .ghost-btn-sm { background: transparent; border: 1px solid rgba(112,112,125,0.25); border-radius: 999px; color: var(--silver); cursor: pointer; font-family: inherit; font-size: 12px; padding: 7px 14px; transition: border-color 0.2s, color 0.2s; }
 .ghost-btn-sm:hover { border-color: rgba(82,102,235,0.4); color: var(--starlight); }
 
-/* ── INTAKE PANEL ── */
+/* â”€â”€ INTAKE PANEL â”€â”€ */
 .intake-panel { display: flex; flex-direction: column; gap: 0; }
 .intake-inbox-box { background: #1e1e2a; border: 1px solid rgba(112,112,125,0.2); border-radius: 6px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; margin-top: 4px; }
 .intake-email { color: var(--starlight); font-size: 12px; font-weight: 500; font-family: monospace; }
@@ -2036,7 +2036,7 @@ body {
 .intake-time { color: var(--lead); font-size: 11px; white-space: nowrap; }
 .tq { background: rgba(112,112,125,0.15); color: var(--silver); border: 1px solid rgba(112,112,125,0.25); }
 
-/* ── GRAVEYARD FILTERS ── */
+/* â”€â”€ GRAVEYARD FILTERS â”€â”€ */
 .graveyard-filters { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
 .filter-pills { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
 .filter-pill { background: #272735; border: 1px solid rgba(112,112,125,0.2); border-radius: 999px; color: var(--silver); cursor: pointer; font-family: inherit; font-size: 11px; font-weight: 500; padding: 5px 10px; transition: background 0.15s, color 0.15s, border-color 0.15s; }
@@ -2044,7 +2044,7 @@ body {
 .filter-pill:hover:not(.active) { background: rgba(82,102,235,0.1); border-color: rgba(82,102,235,0.3); color: var(--starlight); }
 .market-dropdown { background: #272735; border: 1px solid rgba(112,112,125,0.2); border-radius: 4px; color: var(--silver); font-family: inherit; font-size: 11px; padding: 5px 10px; cursor: pointer; }
 
-/* ── DASHBOARD PANEL ── */
+/* â”€â”€ DASHBOARD PANEL â”€â”€ */
 .dashboard-panel { display: flex; flex-direction: column; }
 .dash-stat-row { display: flex; gap: 14px; }
 .dash-stat-card { flex: 1; background: #1e1e2a; border: 1px solid rgba(112,112,125,0.18); border-radius: 4px; padding: 24px; }
@@ -2058,7 +2058,7 @@ body {
 .kill-bar-track { background: #272735; border-radius: 999px; height: 5px; overflow: hidden; }
 .kill-bar-fill { background: var(--mercury-blue); border-radius: inherit; height: 100%; }
 
-/* ── SETTINGS PANEL ── */
+/* â”€â”€ SETTINGS PANEL â”€â”€ */
 .settings-panel { display: flex; flex-direction: column; }
 .settings-section { padding: 20px 0; }
 .settings-section:first-child { padding-top: 0; }
@@ -2080,7 +2080,7 @@ body {
 .settings-link-muted { color: var(--lead); font-size: 11px; text-decoration: none; }
 .settings-link-muted:hover { color: var(--silver); }
 
-/* ── BENTO ── */
+/* â”€â”€ BENTO â”€â”€ */
 .bento {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -2174,14 +2174,14 @@ body {
   border-bottom-left-radius: 2px;
 }
 
-/* ── DIVIDER ── */
+/* â”€â”€ DIVIDER â”€â”€ */
 .divider {
   border: none;
   border-top: 1px solid rgba(112,112,125,0.15);
   margin: 0 48px;
 }
 
-/* ── PRICING ── */
+/* â”€â”€ PRICING â”€â”€ */
 .price-wrap { text-align: center; }
 .price-wrap .sec-title { margin: 0 auto 14px; }
 .price-wrap .sec-sub { margin: 0 auto 48px; }
@@ -2224,7 +2224,7 @@ body {
   border-bottom: 1px solid rgba(112,112,125,0.12);
 }
 .pfeatures li:last-child { border-bottom: none; padding-bottom: 0; }
-.pfeatures li::before { content: '✓'; color: #4ade80; font-weight: 700; font-size: 12px; margin-top: 2px; flex-shrink: 0; }
+.pfeatures li::before { content: 'âœ“'; color: #4ade80; font-weight: 700; font-size: 12px; margin-top: 2px; flex-shrink: 0; }
 
 .btn-primary-full {
   width: 100%;
@@ -2359,7 +2359,7 @@ body {
 .price-description { min-height: 48px; margin: -16px 0 24px; color: var(--silver); font-size: 12px; line-height: 1.6; }
 .pricing-footnote { max-width: 760px; margin: 24px auto 0; color: var(--lead); font-size: 11px; line-height: 1.6; }
 
-/* ── FOOTER CTA ── */
+/* â”€â”€ FOOTER CTA â”€â”€ */
 .footer-cta {
   text-align: center;
   padding: 96px 48px;
@@ -2379,7 +2379,7 @@ body {
 .footer-cta p { color: var(--silver); font-size: 16px; margin-bottom: 36px; line-height: 1.6; }
 .footer-cta .footer-primary { font-size:15px; padding:15px 36px; }
 
-/* ── REVEAL ── */
+/* â”€â”€ REVEAL â”€â”€ */
 
 /* SOCIAL PROOF / TRUST / FOOTER */
 .social-proof { max-width: 1200px; margin: 0 auto; padding: 56px 48px 24px; }
@@ -2662,7 +2662,7 @@ body {
 
 /* App modal dark surface normalization */
 
-/* ── AUTHENTICATED APP DESIGN SYSTEM ── */
+/* â”€â”€ AUTHENTICATED APP DESIGN SYSTEM â”€â”€ */
 .app-root {
   --app-bg: #0c0c14;
   --app-panel: #171721;
@@ -2966,7 +2966,7 @@ body {
 }
 
 .app-root .app-detail-meta-dot::before {
-  content: '·';
+  content: 'Â·';
   color: var(--app-faint);
   margin-right: 9px;
 }
@@ -3959,6 +3959,52 @@ body {
   margin-top: 14px;
 }
 
+
+.app-root .app-export-preview {
+  border: 1px solid rgba(112,112,125,0.14);
+  border-radius: 14px;
+  background: rgba(12,12,20,0.28);
+  padding: 12px;
+  margin-top: 12px;
+}
+
+.app-root .app-export-preview strong {
+  display: block;
+  color: var(--app-text);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.app-root .app-export-preview p {
+  color: var(--app-muted);
+  font-size: 11px;
+  line-height: 1.45;
+  margin-top: 5px;
+}
+
+.app-root .app-export-preview small {
+  display: block;
+  color: var(--app-faint);
+  font-size: 10px;
+  line-height: 1.4;
+  margin-top: 7px;
+}
+
+.app-root .app-export-actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.app-root .app-yardi-export-secondary {
+  min-width: 52px;
+  padding: 0 12px;
+  background: rgba(112,112,125,0.08);
+  border-color: rgba(112,112,125,0.22);
+  color: var(--app-muted);
+}
 .app-root .app-yardi-export:hover {
   background: rgba(82,102,235,0.2);
 }
@@ -8198,19 +8244,19 @@ body {
 .reveal-stagger.visible > *:nth-child(4) { opacity:1; transform:none; transition-delay:0.24s; }
 .reveal-stagger.visible > *:nth-child(5) { opacity:1; transform:none; transition-delay:0.32s; }
 
-/* ══════════════════════════════════════════════════════════════════════════
-   MERCURY DARK SYSTEM — plain (unlayered) CSS overrides all Tailwind layers
-   ══════════════════════════════════════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   MERCURY DARK SYSTEM â€” plain (unlayered) CSS overrides all Tailwind layers
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-/* ── Page & surface backgrounds ── */
+/* â”€â”€ Page & surface backgrounds â”€â”€ */
 .bg-white          { background-color: #1e1e2a; }
 .bg-gray-50        { background-color: #171721; }
 .bg-gray-100       { background-color: #272735; }
 .bg-gray-200       { background-color: #333344; }
 .bg-gray-800       { background-color: #272735; }
-.bg-gray-900       { background-color: #5266eb; }  /* Total Active badge → Mercury Blue */
+.bg-gray-900       { background-color: #5266eb; }  /* Total Active badge â†’ Mercury Blue */
 
-/* ── Text colors ── */
+/* â”€â”€ Text colors â”€â”€ */
 .text-gray-950,
 .text-gray-900 { color: #ededf3; }
 .text-gray-800 { color: #ededf3; }
@@ -8223,7 +8269,7 @@ body {
 .bg-gray-900 .text-gray-400 { color: rgba(255,255,255,0.65); }
 .bg-gray-900 p   { color: rgba(255,255,255,0.65); }
 
-/* ── Blue → Mercury Blue ── */
+/* â”€â”€ Blue â†’ Mercury Blue â”€â”€ */
 .text-blue-900,
 .text-blue-800 { color: #ededf3; }
 .text-blue-700,
@@ -8232,42 +8278,42 @@ body {
 .bg-blue-50    { background-color: rgba(82,102,235,0.1); }
 .bg-blue-50\/30 { background-color: rgba(82,102,235,0.07); }
 
-/* ── Red/error — dark tints ── */
+/* â”€â”€ Red/error â€” dark tints â”€â”€ */
 .bg-red-50     { background-color: rgba(239,68,68,0.08); }
-.bg-red-400    { background-color: #5266eb; }  /* kill breakdown bars → Mercury Blue */
+.bg-red-400    { background-color: #5266eb; }  /* kill breakdown bars â†’ Mercury Blue */
 .text-red-700,
 .text-red-600  { color: #f87171; }
 .border-red-200 { border-color: rgba(239,68,68,0.2); }
 
-/* ── Green/success ── */
+/* â”€â”€ Green/success â”€â”€ */
 .bg-green-50   { background-color: rgba(34,197,94,0.08); }
 .text-green-700 { color: #4ade80; }
 .border-green-200 { border-color: rgba(34,197,94,0.2); }
 
-/* ── Amber/warning ── */
+/* â”€â”€ Amber/warning â”€â”€ */
 .bg-amber-50   { background-color: rgba(245,158,11,0.08); }
 .text-amber-800,
 .text-amber-600 { color: #fbbf24; }
 .border-amber-200 { border-color: rgba(245,158,11,0.2); }
 
-/* ── Borders ── */
+/* â”€â”€ Borders â”€â”€ */
 .border-gray-200  { border-color: rgba(112,112,125,0.28); }
 .border-gray-100  { border-color: rgba(112,112,125,0.15); }
-.border-gray-900  { border-color: #5266eb; }  /* DealTabs active underline → Mercury Blue */
+.border-gray-900  { border-color: #5266eb; }  /* DealTabs active underline â†’ Mercury Blue */
 .border-blue-300  { border-color: rgba(82,102,235,0.4); }
 
-/* ── Purple (lender/contact type badges) ── */
+/* â”€â”€ Purple (lender/contact type badges) â”€â”€ */
 .bg-purple-50  { background-color: rgba(147,51,234,0.08); }
 .text-purple-700 { color: #c084fc; }
 .border-purple-200 { border-color: rgba(147,51,234,0.2); }
 
-/* ── Progress bar track ── */
+/* â”€â”€ Progress bar track â”€â”€ */
 .bg-white\/60 { background-color: rgba(39,39,53,0.7); }
 
-/* ── Divide (table row separators) ── */
+/* â”€â”€ Divide (table row separators) â”€â”€ */
 .divide-gray-100 > * + * { border-color: rgba(112,112,125,0.12); }
 
-/* ── Hover states ── */
+/* â”€â”€ Hover states â”€â”€ */
 .hover\:bg-gray-50:hover,
 .hover\:bg-gray-100:hover  { background-color: #272735; }
 .hover\:bg-gray-200:hover  { background-color: #333344; }
@@ -8279,38 +8325,38 @@ body {
 .hover\:text-blue-600:hover { color: #5266eb; }
 .hover\:border-gray-400:hover { border-color: rgba(112,112,125,0.45); }
 
-/* ── Ring (drop targets, focus) ── */
+/* â”€â”€ Ring (drop targets, focus) â”€â”€ */
 .ring-blue-200  { --tw-ring-color: rgba(82,102,235,0.3); }
 .focus\:ring-blue-500:focus { --tw-ring-color: rgba(82,102,235,0.4); }
 
-/* ── Elevation: subtle card shadows for dark surfaces ── */
+/* â”€â”€ Elevation: subtle card shadows for dark surfaces â”€â”€ */
 .shadow-sm  { box-shadow: 0 1px 3px rgba(0,0,0,0.45); }
 .shadow-md  { box-shadow: 0 2px 6px rgba(0,0,0,0.5); }
 .shadow-lg  { box-shadow: 0 4px 12px rgba(0,0,0,0.55); }
 
-/* ── Select / option elements ── */
+/* â”€â”€ Select / option elements â”€â”€ */
 select.border-gray-200 { background-color: #272735; color: #ededf3; }
 select option { background-color: #272735; color: #ededf3; }
 
-/* ── Card elevation for the app shell ── */
+/* â”€â”€ Card elevation for the app shell â”€â”€ */
 /* bg-white = midnight-slate cards; bg-gray-100 = graphite cards */
 .bg-white,
 .bg-gray-100 {
   box-shadow: 0 1px 3px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.03) inset;
 }
 
-/* ── Active nav item left accent ── */
+/* â”€â”€ Active nav item left accent â”€â”€ */
 .ds-nav-active {
   border-left: 2px solid #5266eb !important;
   padding-left: calc(0.75rem - 2px) !important;
   border-radius: 0 0.375rem 0.375rem 0 !important;
 }
 
-/* ── Pipeline page title area ── */
+/* â”€â”€ Pipeline page title area â”€â”€ */
 .pipeline-header h1 { font-size: 24px; font-weight: 600; color: #ededf3; }
 .pipeline-header p  { font-size: 13px; color: #70707d; margin-top: 2px; }
 
-/* ── Inline edit inputs that don't use input-base (DealInfo, DealHeader) ── */
+/* â”€â”€ Inline edit inputs that don't use input-base (DealInfo, DealHeader) â”€â”€ */
 input.border-blue-300,
 select.border-blue-300 {
   background-color: #272735;

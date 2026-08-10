@@ -94,16 +94,18 @@ test('navigation and public copy match the released inbox workflow', async () =>
   assert.match(proxy, /'\/import'/)
 })
 test('deal records expose export-ready deal records', async () => {
-  const [dealPage, card, helper, route] = await Promise.all([
+  const [dealPage, card, helper, route, xlsxRoute] = await Promise.all([
     read('app/(app)/deals/[id]/page.tsx'),
     read('components/deal/YardiReadyCard.tsx'),
     read('lib/yardi-readiness.ts'),
     read('app/api/deals/[id]/export/route.ts'),
+    read('app/api/deals/[id]/export/xlsx/route.ts'),
   ])
 
   assert.match(dealPage, /YardiReadyCard/)
   assert.match(card, /Export-ready record/)
-  assert.match(card, /Export record CSV/)
+  assert.match(card, /Export XLSX/)
+  assert.match(card, /Workbook preview/)
   assert.match(helper, /Property \/ market/)
   assert.match(helper, /Decision rationale/)
   assert.match(helper, /export_ready/)
@@ -112,6 +114,10 @@ test('deal records expose export-ready deal records', async () => {
   assert.match(route, /-export-record\.csv/)
   assert.match(route, /eq\('firm_id', profile\.firm_id\)/)
   assert.match(route, /Content-Type': 'text\/csv; charset=utf-8'/)
+  assert.match(xlsxRoute, /exceljs/)
+  assert.match(xlsxRoute, /Deal Summary/)
+  assert.match(xlsxRoute, /application\/vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet/)
+  assert.match(xlsxRoute, /-export-record\.xlsx/)
 })
 test('underwriting is presented as Early Access instead of beta', async () => {
   const [settingsCard, dealPage, pricing] = await Promise.all([

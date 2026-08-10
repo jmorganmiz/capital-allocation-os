@@ -10,7 +10,7 @@ import DealInfo from '@/components/deal/DealInfo'
 import ContactsSection from '@/components/deal/ContactsSection'
 import ScoringSection from '@/components/deal/ScoringSection'
 import SimilarDeals from '@/components/deal/SimilarDeals'
-import YardiReadyCard from '@/components/deal/YardiReadyCard'
+import ExportReadyCard from '@/components/deal/YardiReadyCard'
 import QuickPencil from '@/components/deal/QuickPencil'
 import UnderwritingRoom from '@/components/deal/UnderwritingRoom'
 import FullUnderwriteExecution from '@/components/deal/FullUnderwriteExecution'
@@ -200,7 +200,7 @@ export default async function DealPage({ params }: Props) {
   const dealScoreValues = (dealScoresResult.scores ?? [])
     .map((score) => Number(score.score))
     .filter((score) => Number.isFinite(score))
-  const yardiBuyBoxScore = dealScoreValues.length
+  const exportBuyBoxScore = dealScoreValues.length
     ? Math.round((dealScoreValues.reduce((sum, score) => sum + score, 0) / dealScoreValues.length) * 20)
     : null
   const purchasePrice = Number(latestSnapshot?.purchase_price ?? deal.asking_price ?? 0)
@@ -327,7 +327,7 @@ export default async function DealPage({ params }: Props) {
         </div>
 
         <aside id="section-similar" className="app-deal-rail">
-          <YardiReadyCard
+          <ExportReadyCard
             dealId={deal.id}
             title={deal.title}
             market={deal.market}
@@ -335,12 +335,27 @@ export default async function DealPage({ params }: Props) {
             dealType={deal.deal_type}
             sourceName={deal.source_name}
             askingPrice={deal.asking_price}
+            dealStructure={deal.deal_structure}
+            financingType={deal.financing_type}
+            propertySize={deal.property_size}
             stage={currentStage ? { name: currentStage.name, position: currentStage.position, is_terminal: currentStage.is_terminal } : null}
             isArchived={deal.is_archived}
             purchasePrice={latestSnapshot?.purchase_price ?? null}
             noi={latestSnapshot?.noi ?? null}
             capRate={latestSnapshot?.cap_rate ?? null}
-            buyBoxScore={yardiBuyBoxScore}
+            debtRate={latestSnapshot?.debt_rate ?? null}
+            ltv={latestSnapshot?.ltv ?? null}
+            irr={latestSnapshot?.irr ?? null}
+            squareFootage={latestSnapshot?.square_footage ?? null}
+            yearBuilt={latestSnapshot?.year_built ?? null}
+            numUnits={latestSnapshot?.num_units ?? null}
+            occupancyRate={latestSnapshot?.occupancy_rate ?? null}
+            currentRent={latestSnapshot?.current_rent ?? null}
+            marketRent={latestSnapshot?.market_rent ?? null}
+            vacancyRate={latestSnapshot?.vacancy_rate ?? null}
+            propertyTaxes={latestSnapshot?.property_taxes ?? null}
+            insurance={latestSnapshot?.insurance ?? null}
+            buyBoxScore={exportBuyBoxScore}
             notes={(notes ?? []).map((note) => ({ section: note.section, content: note.content }))}
             files={files ?? []}
             events={(events ?? []).map((event) => ({
@@ -348,6 +363,11 @@ export default async function DealPage({ params }: Props) {
               notes: event.notes,
               kill_reason_id: event.kill_reason_id,
               kill_reasons: event.kill_reasons,
+            }))}
+            scoreDetails={(dealScoresResult.scores ?? []).map((score: any) => ({
+              score: score.score,
+              notes: score.notes,
+              scoring_criteria: score.scoring_criteria,
             }))}
           />
           <div className="app-deal-rail-card">
