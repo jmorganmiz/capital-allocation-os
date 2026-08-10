@@ -12,19 +12,19 @@ export default function YardiReadyCard(props: Props) {
       <div className="app-deal-rail-header">
         <div>
           <p>Export readiness</p>
-          <h3>Yardi-ready record</h3>
+          <h3>Export-ready record</h3>
         </div>
         <span>{readiness.score}%</span>
       </div>
 
-      <div className="app-yardi-meter" aria-label={`${readiness.completeCount} of ${readiness.totalCount} Yardi-ready fields complete`}>
+      <div className="app-yardi-meter" aria-label={`${readiness.completeCount} of ${readiness.totalCount} export-ready fields complete`}>
         <div style={{ width: `${readiness.score}%` }} />
       </div>
 
       <p className="app-yardi-summary">
         {readiness.ready
           ? 'Clean export record. This deal has the core fields, decision context, documents, and review trail.'
-          : `${readiness.completeCount} of ${readiness.totalCount} fields complete. Finish the missing items before calling this Yardi-ready.`}
+          : `${readiness.completeCount} of ${readiness.totalCount} fields complete. Finish the missing items before calling this export-ready.`}
       </p>
 
       <div className="app-yardi-list">
@@ -39,8 +39,8 @@ export default function YardiReadyCard(props: Props) {
         ))}
       </div>
 
-      <a className="app-yardi-export" href={`/api/deals/${props.dealId}/yardi-export`}>
-        Export deal CSV
+      <a className="app-yardi-export" href={`/api/deals/${props.dealId}/export`}>
+        Export record CSV
       </a>
     </div>
   )

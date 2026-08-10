@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   const analytics = await getPilotAnalytics(createAdminClient())
   const rows = mode === 'yardi' ? yardiReadyRows(analytics) : pilotFirmRows(analytics)
   const csv = toCsv(rows)
-  const filename = mode === 'yardi' ? 'dealstash-yardi-ready-records.csv' : 'dealstash-pilot-summary.csv'
+  const filename = mode === 'yardi' ? 'dealstash-export-ready-records.csv' : 'dealstash-pilot-summary.csv'
 
   return new NextResponse(csv, {
     headers: {

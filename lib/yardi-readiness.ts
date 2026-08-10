@@ -1,4 +1,4 @@
-export type YardiReadinessItem = {
+export type ExportReadinessItem = {
   key: string
   label: string
   complete: boolean
@@ -6,12 +6,12 @@ export type YardiReadinessItem = {
   help: string
 }
 
-export type YardiReadiness = {
+export type ExportReadiness = {
   score: number
   completeCount: number
   totalCount: number
   ready: boolean
-  items: YardiReadinessItem[]
+  items: ExportReadinessItem[]
   missing: string[]
   decision: string
   rationale: string
@@ -25,16 +25,32 @@ type BuildInput = {
   address?: string | null
   dealType?: string | null
   sourceName?: string | null
+  dealStructure?: string | null
+  financingType?: string | null
+  propertySize?: string | null
   askingPrice?: number | null
   stage?: StageLike
   isArchived?: boolean | null
   purchasePrice?: number | null
   noi?: number | null
   capRate?: number | null
+  debtRate?: number | null
+  ltv?: number | null
+  irr?: number | null
+  squareFootage?: number | null
+  yearBuilt?: number | null
+  numUnits?: number | null
+  occupancyRate?: number | null
+  currentRent?: number | null
+  marketRent?: number | null
+  vacancyRate?: number | null
+  propertyTaxes?: number | null
+  insurance?: number | null
   buyBoxScore?: number | null
   notes?: Array<{ section?: string | null; content?: string | null }>
-  files?: Array<unknown>
-  events?: Array<{ event_type?: string | null; notes?: string | null; kill_reason_id?: string | null; kill_reasons?: { name?: string | null } | Array<{ name?: string | null }> | null }>
+  files?: Array<{ filename?: string | null; size_bytes?: number | null } | unknown>
+  events?: Array<{ event_type?: string | null; notes?: string | null; created_at?: string | null; kill_reason_id?: string | null; kill_reasons?: { name?: string | null } | Array<{ name?: string | null }> | null }>
+  scoreDetails?: Array<{ score?: number | null; notes?: string | null; scoring_criteria?: { name?: string | null } | Array<{ name?: string | null }> | null }>
 }
 
 function hasText(value: string | null | undefined) {
@@ -52,7 +68,7 @@ function pct(value: number | null | undefined) {
   return `${Math.abs(n) <= 1 ? (n * 100).toFixed(2) : n.toFixed(2)}%`
 }
 
-export function buildYardiReadiness(input: BuildInput): YardiReadiness {
+export function buildYardiReadiness(input: BuildInput): ExportReadiness {
   const events = input.events ?? []
   const notes = input.notes ?? []
   const files = input.files ?? []
@@ -69,7 +85,7 @@ export function buildYardiReadiness(input: BuildInput): YardiReadiness {
         : 'In review'
 
   const purchasePrice = input.askingPrice ?? input.purchasePrice ?? null
-  const items: YardiReadinessItem[] = [
+  const items: ExportReadinessItem[] = [
     {
       key: 'property',
       label: 'Property / market',
@@ -153,22 +169,64 @@ export function buildYardiReadiness(input: BuildInput): YardiReadiness {
 
 export function yardiDealCsvRow(input: BuildInput & { dealId: string; firmName?: string | null }) {
   const readiness = buildYardiReadiness(input)
+  const noteBySection = (section: string) => input.notes?.find((note) => note.section === section)?.content?.trim() ?? ''
+  const scoreDetails = input.scoreDetails ?? []
+  const averageScore = scoreDetails.length
+    ? Math.round(scoreDetails.reduce((sum, item) => sum + Number(item.score ?? 0), 0) / scoreDetails.length * 20)
+    : input.buyBoxScore ?? ''
+  const criteriaSummary = scoreDetails.map((item) => {
+    const criteria = Array.isArray(item.scoring_criteria) ? item.scoring_criteria[0] : item.scoring_criteria
+    return [criteria?.name ?? 'Criterion', item.score ? `${item.score}/5` : null, item.notes].filter(Boolean).join(': ')
+  }).filter(Boolean).join(' | ')
+  const latestEvent = input.events?.[0]
+  const fileNames = (input.files ?? []).map((file) => {
+    if (!file || typeof file !== 'object') return ''
+    return 'filename' in file ? String(file.filename ?? '') : ''
+  }).filter(Boolean)
+
   return {
     deal_id: input.dealId,
     firm: input.firmName ?? '',
     property: input.title ?? '',
-    market: input.market || input.address || '',
+    address: input.address ?? '',
+    market: input.market ?? '',
     asset_type: input.dealType ?? '',
     sponsor_broker: input.sourceName ?? '',
-    purchase_price: input.askingPrice ?? input.purchasePrice ?? '',
-    noi: input.noi ?? '',
-    cap_rate: input.capRate ?? '',
     stage: input.stage?.name ?? '',
-    buy_box_score: input.buyBoxScore ?? '',
     decision: readiness.decision,
     decision_rationale: readiness.rationale,
-    yardi_ready: readiness.ready ? 'yes' : 'no',
+    export_ready: readiness.ready ? 'yes' : 'no',
+    export_readiness_score: readiness.score,
     missing_fields: readiness.missing.join('; '),
+    asking_price: input.askingPrice ?? '',
+    purchase_price: input.purchasePrice ?? input.askingPrice ?? '',
+    noi: input.noi ?? '',
+    cap_rate: input.capRate ?? '',
+    debt_rate: input.debtRate ?? '',
+    ltv: input.ltv ?? '',
+    projected_irr: input.irr ?? '',
+    property_size: input.propertySize ?? '',
+    square_footage: input.squareFootage ?? '',
+    units: input.numUnits ?? '',
+    year_built: input.yearBuilt ?? '',
+    occupancy_rate: input.occupancyRate ?? '',
+    vacancy_rate: input.vacancyRate ?? '',
+    current_rent: input.currentRent ?? '',
+    market_rent: input.marketRent ?? '',
+    property_taxes: input.propertyTaxes ?? '',
+    insurance: input.insurance ?? '',
+    deal_structure: input.dealStructure ?? '',
+    financing_type: input.financingType ?? '',
+    buy_box_score: averageScore,
+    scoring_summary: criteriaSummary,
+    overview: noteBySection('overview'),
+    risks: noteBySection('risks'),
+    notes: noteBySection('notes'),
+    file_count: input.files?.length ?? 0,
+    file_names: fileNames.join('; '),
+    event_count: input.events?.length ?? 0,
+    latest_event_type: latestEvent?.event_type ?? '',
+    latest_event_notes: latestEvent?.notes ?? '',
   }
 }
 

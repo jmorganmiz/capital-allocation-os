@@ -35,7 +35,7 @@ export default async function InternalPilotPage() {
     { label: `Deals processed (${analytics.windowDays}d)`, value: analytics.headline.dealsProcessed },
     { label: 'Avg email ? parsed', value: formatMinutes(analytics.headline.avgEmailParseMinutes) },
     { label: 'Decision capture', value: pct(analytics.headline.decisionCaptureRate) },
-    { label: 'Yardi-ready records', value: pct(analytics.headline.yardiReadyRate) },
+    { label: 'Export-ready records', value: pct(analytics.headline.yardiReadyRate) },
   ]
 
   const readyDeals = analytics.yardiReadyDeals.filter((deal) => deal.ready).length
@@ -54,7 +54,7 @@ export default async function InternalPilotPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <a className="rounded-full border px-3 py-2 text-sm font-semibold" style={{ borderColor: 'rgba(82,102,235,0.5)', color: '#dfe3ff' }} href="/api/internal/pilot/export?mode=summary">Export summary CSV</a>
-          <a className="rounded-full px-3 py-2 text-sm font-semibold" style={{ background: '#5266eb', color: '#fff' }} href="/api/internal/pilot/export?mode=yardi">Export Yardi-ready CSV</a>
+          <a className="rounded-full px-3 py-2 text-sm font-semibold" style={{ background: '#5266eb', color: '#fff' }} href="/api/internal/pilot/export?mode=yardi">Export-ready CSV</a>
         </div>
       </div>
 
@@ -62,7 +62,7 @@ export default async function InternalPilotPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: '#8b8b9a' }}>Case-study target</p>
         <p className="mt-3 text-lg leading-7" style={{ color: '#f4f4f8' }}>
           “Across three pilot teams and 150 deals, Dealstash reduced initial screening time by 65%,
-          captured structured kill reasons on 92% of rejected deals, and produced Yardi-ready records for
+          captured structured kill reasons on 92% of rejected deals, and produced Export-ready records for
           85% of advanced opportunities.”
         </p>
         <p className="mt-3 text-xs" style={{ color: '#8b8b9a' }}>
@@ -91,7 +91,7 @@ export default async function InternalPilotPage() {
           <table className="w-full min-w-[980px] text-sm">
             <thead>
               <tr style={{ background: 'rgba(255,255,255,0.035)' }}>
-                {['Firm', 'Deals 30d', 'Users 14d', 'Email fail', 'Parsed speed', 'Scored', 'Decisions', 'Field acceptance', 'Yardi-ready', 'QP / Full'].map((h) => (
+                {['Firm', 'Deals 30d', 'Users 14d', 'Email fail', 'Parsed speed', 'Scored', 'Decisions', 'Field acceptance', 'Export-ready', 'QP / Full'].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase" style={{ color: '#8b8b9a', letterSpacing: '0.06em' }}>{h}</th>
                 ))}
               </tr>
@@ -118,7 +118,7 @@ export default async function InternalPilotPage() {
 
       <section className="grid gap-4 lg:grid-cols-[1fr_1.2fr]">
         <div className="rounded-xl border p-5" style={cardStyle}>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: '#8b8b9a' }}>Yardi-ready definition</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: '#8b8b9a' }}>Export-ready definition</p>
           <h2 className="mt-1 text-lg font-semibold" style={{ color: '#f4f4f8' }}>{readyDeals} ready · {blockedDeals} blocked</h2>
           <ul className="mt-4 space-y-2 text-sm" style={{ color: '#c3c3d0' }}>
             {['Property / market', 'Asset type', 'Sponsor or broker', 'Purchase price, NOI, cap rate', 'Stage and buy-box score', 'Decision rationale', 'Supporting docs', 'Source / review history'].map((item) => (

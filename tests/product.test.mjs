@@ -93,20 +93,23 @@ test('navigation and public copy match the released inbox workflow', async () =>
   assert.match(proxy, /'\/intake'/)
   assert.match(proxy, /'\/import'/)
 })
-test('deal records expose Yardi-ready export readiness', async () => {
+test('deal records expose export-ready deal records', async () => {
   const [dealPage, card, helper, route] = await Promise.all([
     read('app/(app)/deals/[id]/page.tsx'),
     read('components/deal/YardiReadyCard.tsx'),
     read('lib/yardi-readiness.ts'),
-    read('app/api/deals/[id]/yardi-export/route.ts'),
+    read('app/api/deals/[id]/export/route.ts'),
   ])
 
   assert.match(dealPage, /YardiReadyCard/)
-  assert.match(card, /Yardi-ready record/)
-  assert.match(card, /Export deal CSV/)
+  assert.match(card, /Export-ready record/)
+  assert.match(card, /Export record CSV/)
   assert.match(helper, /Property \/ market/)
   assert.match(helper, /Decision rationale/)
-  assert.match(helper, /yardiDealCsvRow/)
+  assert.match(helper, /export_ready/)
+  assert.match(helper, /scoring_summary/)
+  assert.match(route, /filename, size_bytes/)
+  assert.match(route, /-export-record\.csv/)
   assert.match(route, /eq\('firm_id', profile\.firm_id\)/)
   assert.match(route, /Content-Type': 'text\/csv; charset=utf-8'/)
 })
