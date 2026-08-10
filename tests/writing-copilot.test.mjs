@@ -21,10 +21,15 @@ test('evidence drafting is scoped, rate limited, and forced through a structured
   assert.match(action, /tool_choice: \{ type: 'tool', name: 'draft_decision_field' \}/)
   assert.match(action, /Never invent a market fact, comparable, assumption, or source/)
   assert.match(action, /validIds = new Set/)
+  assert.match(action, /WritingIntent = 'draft' \\| 'improve' \\| 'mitigations'/)
+  assert.match(action, /Focus specifically on practical mitigants/)
 })
 
 test('writing UI requires explicit insertion and preserves the saved edit', () => {
   assert.match(component, /No text is changed until you insert the draft/)
+  assert.match(component, /Draft thesis/)
+  assert.match(component, /Clean up/)
+  assert.match(component, /Mitigants/)
   assert.match(component, /markDecisionDraftInserted/)
   assert.match(component, /Append draft/)
   assert.match(notes, /activeDraftIdRef/)

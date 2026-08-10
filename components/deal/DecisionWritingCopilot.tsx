@@ -6,6 +6,7 @@ import {
   markDecisionDraftInserted,
   type DecisionSection,
   type WritingEvidence,
+  type WritingIntent,
   type WritingMode,
 } from '@/lib/actions/writing-copilot'
 
@@ -36,6 +37,18 @@ const sectionTitles: Record<DecisionSection, string> = {
   notes: 'Capture analyst notes',
 }
 
+const triggerLabels: Record<DecisionSection, string> = {
+  overview: 'Draft thesis',
+  risks: 'Draft risks',
+  notes: 'Draft notes',
+}
+
+const intentLabels: Record<WritingIntent, string> = {
+  draft: 'Draft from evidence',
+  improve: 'Clean this up',
+  mitigations: 'Suggest mitigations',
+}
+
 interface Props {
   dealId: string
   section: DecisionSection
@@ -46,6 +59,7 @@ interface Props {
 export default function DecisionWritingCopilot({ dealId, section, currentText, onInsert }: Props) {
   const [open, setOpen] = useState(false)
   const [mode, setMode] = useState<WritingMode>('evidence')
+  const [intent, setIntent] = useState<WritingIntent>('draft')
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [draft, setDraft] = useState('')
   const [draftId, setDraftId] = useState('')
@@ -55,10 +69,16 @@ export default function DecisionWritingCopilot({ dealId, section, currentText, o
   const [error, setError] = useState('')
   const [pending, startTransition] = useTransition()
 
+  function setIntentAndOpen(nextIntent: WritingIntent) {
+    setIntent(nextIntent)
+    setMode('evidence')
+    setOpen(true)
+  }
+
   function generate() {
     setError('')
     startTransition(async () => {
-      const result = await generateDecisionDraft({ dealId, section, mode, currentText, answers })
+      const result = await generateDecisionDraft({ dealId, section, mode, intent, currentText, answers })
       if (result.error || !result.draft || !result.draftId) {
         setError(result.error ?? 'Could not create draft')
         return
@@ -87,19 +107,32 @@ export default function DecisionWritingCopilot({ dealId, section, currentText, o
 
   return (
     <div className="app-writing-copilot">
-      <button type="button" className="app-writing-trigger" onClick={() => setOpen(value => !value)}>
-        {open ? 'Close writing help' : 'Help me write'}
-      </button>
+      <div className="app-writing-trigger-group">
+        <button type="button" className="app-writing-trigger" onClick={() => setIntentAndOpen('draft')}>
+          {triggerLabels[section]}
+        </button>
+        {currentText.trim() && (
+          <button type="button" className="app-writing-trigger secondary" onClick={() => setIntentAndOpen('improve')}>
+            Clean up
+          </button>
+        )}
+        {section === 'risks' && (
+          <button type="button" className="app-writing-trigger secondary" onClick={() => setIntentAndOpen('mitigations')}>
+            Mitigants
+          </button>
+        )}
+      </div>
       {open && (
         <div className="app-writing-panel">
           <div className="app-writing-panel-head">
             <div>
-              <p>Decision writing copilot</p>
+              <p>Decision writing assistant</p>
               <h3>{sectionTitles[section]}</h3>
             </div>
             <div className="app-writing-modes" role="tablist" aria-label="Writing mode">
-              <button type="button" data-active={mode === 'evidence'} onClick={() => setMode('evidence')}>Draft from evidence</button>
-              <button type="button" data-active={mode === 'guided'} onClick={() => setMode('guided')}>Guided builder</button>
+              <button type="button" data-active={mode === 'evidence'} onClick={() => setMode('evidence')}>Evidence</button>
+              <button type="button" data-active={mode === 'guided'} onClick={() => setMode('guided')}>Guided</button>
+              <button type="button" onClick={() => setOpen(false)} aria-label="Close writing assistant">Close</button>
             </div>
           </div>
 
@@ -114,14 +147,14 @@ export default function DecisionWritingCopilot({ dealId, section, currentText, o
             </div>
           ) : (
             <div className="app-writing-grounded-note">
-              <strong>Firm evidence only</strong>
-              <span>Uses the deal record, latest financial snapshot, scoring, buy box, and completed underwriting. Missing facts become questions—not guesses.</span>
+              <strong>{intentLabels[intent]}</strong>
+              <span>Uses the deal record, latest financial snapshot, scoring, buy box, and completed underwriting. Missing facts become questions, not guesses.</span>
             </div>
           )}
 
           <div className="app-writing-action-row">
             <span>No text is changed until you insert the draft.</span>
-            <button type="button" onClick={generate} disabled={pending}>{pending ? 'Building…' : mode === 'guided' ? 'Build draft' : 'Generate grounded draft'}</button>
+            <button type="button" onClick={generate} disabled={pending}>{pending ? 'Building...' : mode === 'guided' ? 'Build draft' : intentLabels[intent]}</button>
           </div>
           {error && <p className="app-writing-error" role="alert">{error}</p>}
 
@@ -145,7 +178,7 @@ export default function DecisionWritingCopilot({ dealId, section, currentText, o
               )}
               <div className="app-writing-action-row final">
                 <span>{currentText.trim() ? 'This will append below your existing text.' : 'You can edit it in the field after insertion.'}</span>
-                <button type="button" onClick={insert} disabled={pending}>{pending ? 'Inserting…' : currentText.trim() ? 'Append draft' : 'Insert draft'}</button>
+                <button type="button" onClick={insert} disabled={pending}>{pending ? 'Inserting...' : currentText.trim() ? 'Append draft' : 'Insert draft'}</button>
               </div>
             </div>
           )}

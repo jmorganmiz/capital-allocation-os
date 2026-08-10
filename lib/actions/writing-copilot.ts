@@ -8,6 +8,7 @@ import type { Json } from '@/lib/types/database'
 
 export type DecisionSection = 'overview' | 'risks' | 'notes'
 export type WritingMode = 'guided' | 'evidence'
+export type WritingIntent = 'draft' | 'improve' | 'mitigations'
 
 export interface WritingEvidence {
   id: string
@@ -21,6 +22,7 @@ interface DraftInput {
   dealId: string
   section: DecisionSection
   mode: WritingMode
+  intent?: WritingIntent
   currentText?: string
   answers?: Record<string, string>
 }
@@ -97,6 +99,8 @@ async function membership(dealId: string) {
 export async function generateDecisionDraft(input: DraftInput): Promise<DraftOutput> {
   if (!['overview', 'risks', 'notes'].includes(input.section)) return { error: 'Unsupported section' }
   if (!['guided', 'evidence'].includes(input.mode)) return { error: 'Unsupported writing mode' }
+  const allowedIntents: WritingIntent[] = ['draft', 'improve', 'mitigations']
+  const intent: WritingIntent = input.intent && allowedIntents.includes(input.intent) ? input.intent : 'draft'
   const context = await membership(input.dealId)
   if ('error' in context) return { error: context.error }
   const answers = Object.fromEntries(Object.entries(input.answers ?? {}).map(([key, value]) => [key, clean(value, 900)]))
@@ -115,7 +119,7 @@ export async function generateDecisionDraft(input: DraftInput): Promise<DraftOut
       user_id: context.user.id,
       section: input.section,
       mode: input.mode,
-      prompt_answers: answers as Json,
+      prompt_answers: { ...answers, __intent: intent } as Json,
       input_text: currentText || null,
       draft_text: draft,
       missing_questions: missingQuestions,
@@ -160,7 +164,7 @@ export async function generateDecisionDraft(input: DraftInput): Promise<DraftOut
     add('Market rent', money(snapshot.market_rent), 'Latest financial snapshot')
   }
   for (const row of (scores ?? []) as any[]) {
-    add(`${row.scoring_criteria?.name ?? 'Criterion'} score`, `${row.score}/5${row.notes ? ` — ${clean(row.notes, 240)}` : ''}`, 'Firm scoring', .8)
+    add(`${row.scoring_criteria?.name ?? 'Criterion'} score`, `${row.score}/5${row.notes ? ` - ${clean(row.notes, 240)}` : ''}`, 'Firm scoring', .8)
   }
   const matchingBuyBox = (buyBoxes ?? []).find(box => box.asset_type?.toLowerCase() === context.deal.deal_type?.toLowerCase()) ?? buyBoxes?.[0]
   if (matchingBuyBox) {
@@ -176,11 +180,17 @@ export async function generateDecisionDraft(input: DraftInput): Promise<DraftOut
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) return { error: 'AI drafting is not configured.' }
   const client = new Anthropic({ apiKey, timeout: 25_000 })
-  const sectionInstruction = input.section === 'overview'
+  const baseInstruction = input.section === 'overview'
     ? 'Write a concise investment thesis: opportunity, strategy, fit, and the conditions required for success.'
     : input.section === 'risks'
       ? 'Write a concise risk narrative: principal risks, potential impact, existing mitigants, and unresolved diligence.'
       : 'Write concise analyst notes: key observations, open questions, next diligence steps, and decision context the firm should remember later.'
+  const intentInstruction = intent === 'improve'
+    ? 'Improve the current text without changing its meaning. Remove fluff, tighten wording, and flag unsupported claims instead of repeating them as fact.'
+    : intent === 'mitigations'
+      ? 'Focus specifically on practical mitigants and remaining diligence steps. Do not minimize the risk; pair each mitigation with what still needs to be verified.'
+      : 'Create a fresh draft from the evidence.'
+  const sectionInstruction = baseInstruction + ' ' + intentInstruction
   const prompt = `You are an institutional CRE decision-writing assistant. ${sectionInstruction}
 
 Hard rules:
@@ -230,7 +240,7 @@ ${evidence.map(item => `${item.id} | ${item.label}: ${item.value} | source: ${it
     user_id: context.user.id,
     section: input.section,
     mode: input.mode,
-    prompt_answers: answers as Json,
+    prompt_answers: { ...answers, __intent: intent } as Json,
     input_text: currentText || null,
     draft_text: draft,
     evidence: usedEvidence as unknown as Json,
