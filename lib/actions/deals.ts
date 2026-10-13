@@ -891,13 +891,16 @@ export async function updateDealFields(
   const accessError = await assertFirmAccess(supabase, profile.firm_id)
   if (accessError) return { error: accessError }
 
-  const { error } = await supabase
+  const { data: updatedDeal, error } = await supabase
     .from('deals')
     .update(fields)
     .eq('id', dealId)
     .eq('firm_id', profile.firm_id)
+    .select('id')
+    .maybeSingle()
 
   if (error) return { error: error.message }
+  if (!updatedDeal) return { error: 'Deal not found or no longer accessible. Refresh and try again.' }
 
   await supabase.from('deal_events').insert({
     firm_id: profile.firm_id,

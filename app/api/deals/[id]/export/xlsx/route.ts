@@ -1,4 +1,5 @@
 import ExcelJS from 'exceljs'
+import { calculateOverallScore } from '@/lib/workflow.mjs'
 import { NextResponse } from 'next/server'
 import { buildExportReadiness } from '@/lib/export-readiness'
 import { createClient } from '@/lib/supabase/server'
@@ -27,6 +28,8 @@ function safe(value: unknown) {
 }
 
 function asNumber(value: unknown) {
+  if (value == null || (typeof value === 'string' && !value.trim())) return null
+  if (typeof value !== 'number' && typeof value !== 'string') return null
   const parsed = Number(value)
   return Number.isFinite(parsed) ? parsed : null
 }
@@ -125,9 +128,7 @@ export async function GET(_request: Request, { params }: Props) {
   const latestSnapshot = snapshots?.[0] ?? null
   const stage = (stages ?? []).find((item: any) => item.id === deal.stage_id) ?? null
   const scoreValues = (scores ?? []).map((score: any) => Number(score.score)).filter((score: number) => Number.isFinite(score))
-  const buyBoxScore = scoreValues.length
-    ? Math.round(scoreValues.reduce((sum: number, score: number) => sum + score, 0) / scoreValues.length * 20)
-    : null
+  const buyBoxScore = calculateOverallScore(scoreValues)
 
   const readinessInput = {
     title: deal.title,

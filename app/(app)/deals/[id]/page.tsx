@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import { calculateOverallScore } from '@/lib/workflow.mjs'
 import DealHeader from '@/components/deal/DealHeader'
 import DealTabs from '@/components/deal/DealTabs'
 import StageChecklist from '@/components/deal/StageChecklist'
@@ -200,9 +201,7 @@ export default async function DealPage({ params }: Props) {
   const dealScoreValues = (dealScoresResult.scores ?? [])
     .map((score) => Number(score.score))
     .filter((score) => Number.isFinite(score))
-  const exportBuyBoxScore = dealScoreValues.length
-    ? Math.round((dealScoreValues.reduce((sum, score) => sum + score, 0) / dealScoreValues.length) * 20)
-    : null
+  const exportBuyBoxScore = calculateOverallScore(dealScoreValues)
   const purchasePrice = Number(latestSnapshot?.purchase_price ?? deal.asking_price ?? 0)
   const totalUnits = Number(latestSnapshot?.num_units ?? 0)
   const statedNoi = Number(latestSnapshot?.noi ?? 0)

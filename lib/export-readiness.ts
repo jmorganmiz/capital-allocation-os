@@ -1,3 +1,5 @@
+import { calculateOverallScore } from './workflow.mjs'
+
 export type ExportReadinessItem = {
   key: string
   label: string
@@ -171,9 +173,7 @@ export function exportDealCsvRow(input: BuildInput & { dealId: string; firmName?
   const readiness = buildExportReadiness(input)
   const noteBySection = (section: string) => input.notes?.find((note) => note.section === section)?.content?.trim() ?? ''
   const scoreDetails = input.scoreDetails ?? []
-  const averageScore = scoreDetails.length
-    ? Math.round(scoreDetails.reduce((sum, item) => sum + Number(item.score ?? 0), 0) / scoreDetails.length * 20)
-    : input.buyBoxScore ?? ''
+  const averageScore = calculateOverallScore(scoreDetails.map(item => item.score)) ?? input.buyBoxScore ?? ''
   const criteriaSummary = scoreDetails.map((item) => {
     const criteria = Array.isArray(item.scoring_criteria) ? item.scoring_criteria[0] : item.scoring_criteria
     return [criteria?.name ?? 'Criterion', item.score ? `${item.score}/5` : null, item.notes].filter(Boolean).join(': ')

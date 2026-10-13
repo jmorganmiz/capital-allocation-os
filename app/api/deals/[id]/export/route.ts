@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { calculateOverallScore } from '@/lib/workflow.mjs'
 import { rowsToCsv, exportDealCsvRow } from '@/lib/export-readiness'
 import { createClient } from '@/lib/supabase/server'
 
@@ -40,9 +41,7 @@ export async function GET(_request: Request, { params }: Props) {
   const latestSnapshot = snapshots?.[0] ?? null
   const stage = (stages ?? []).find((item) => item.id === deal.stage_id) ?? null
   const scoreValues = (scores ?? []).map((score) => Number(score.score)).filter((score) => Number.isFinite(score))
-  const buyBoxScore = scoreValues.length
-    ? Math.round(scoreValues.reduce((sum, score) => sum + score, 0) / scoreValues.length * 20)
-    : null
+  const buyBoxScore = calculateOverallScore(scoreValues)
 
   const row = exportDealCsvRow({
     dealId: deal.id,

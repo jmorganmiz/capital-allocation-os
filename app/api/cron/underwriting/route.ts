@@ -74,10 +74,13 @@ export async function GET(request: Request) {
     }
   }
 
-  const [{ data: queued }, { data: retryable }] = await Promise.all([
-    admin.from('underwriting_steps').select('run_id').eq('status', 'queued').order('created_at').limit(80),
-    admin.from('underwriting_steps').select('run_id').eq('status', 'failed').lt('attempts', 3).order('created_at').limit(40),
+  const [{ data: queued, error: queuedError }, { data: retryable, error: retryableError }] = await Promise.all([
+    admin.from('underwriting_steps').select('run_id, underwriting_runs!inner(status)').in('underwriting_runs.status', ['running', 'failed']).eq('status', 'queued').order('created_at').limit(80),
+    admin.from('underwriting_steps').select('run_id, underwriting_runs!inner(status)').in('underwriting_runs.status', ['running', 'failed']).eq('status', 'failed').lt('attempts', 3).order('created_at').limit(40),
   ])
+  if (queuedError || retryableError) {
+    return NextResponse.json({ error: 'Unable to load pending underwriting work.' }, { status: 500 })
+  }
   const runIds = [...new Set([...(queued ?? []), ...(retryable ?? [])].map((step) => step.run_id))].slice(0, MAX_RUNS_PER_SWEEP)
 
   for (const runId of runIds) {
