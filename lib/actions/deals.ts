@@ -338,26 +338,28 @@ export async function upsertDealNote(
   const accessError = await assertFirmAccess(supabase, profile.firm_id)
   if (accessError) return { error: accessError }
 
-  const { data: existing } = await supabase
+  const { data: existing, error: lookupError } = await supabase
     .from('deal_notes')
-    .select('id')
+    .select('id, created_by')
     .eq('deal_id', dealId)
     .eq('section', section)
     .eq('firm_id', profile.firm_id)
     .maybeSingle()
 
-  if (existing) {
-    const { error } = await supabase
-      .from('deal_notes')
-      .update({ content, updated_by: user.id })
-      .eq('id', existing.id)
-      .eq('firm_id', profile.firm_id)
-    if (error) return { error: error.message }
-  } else {
-    const { error } = await supabase
-      .from('deal_notes')
-      .insert({ deal_id: dealId, firm_id: profile.firm_id, section, content, created_by: user.id })
-    if (error) return { error: error.message }
+  if (lookupError) return { error: lookupError.message }
+
+  const { error: saveError } = await supabase.from('deal_notes').upsert({
+    ...(existing ? { id: existing.id } : {}),
+    created_by: existing?.created_by ?? user.id,
+    deal_id: dealId,
+    firm_id: profile.firm_id,
+    section,
+    content,
+    updated_by: user.id,
+  }, { onConflict: 'deal_id,section' })
+  if (saveError) return { error: saveError.message }
+
+  if (!existing) {
 
     await supabase.from('deal_events').insert({
       firm_id:       profile.firm_id,

@@ -22,16 +22,31 @@ export default function NotesSection({ dealId, section, title, initialContent, p
   const contentRef = useRef(initialContent)
   const lastSavedRef = useRef(initialContent)
   const activeDraftIdRef = useRef<string | undefined>(undefined)
+  const saveQueueRef = useRef<Promise<void>>(Promise.resolve())
+  const queuedSavesRef = useRef(0)
 
   const save = useCallback((value: string) => {
     clearTimeout(debounceRef.current)
-    if (value === lastSavedRef.current) {
+    if (value === lastSavedRef.current && queuedSavesRef.current === 0) {
       setSaved(true)
       return
     }
     setError('')
+    queuedSavesRef.current += 1
     startTransition(async () => {
-      const result = await upsertDealNote(dealId, section, value, activeDraftIdRef.current)
+      const draftId = activeDraftIdRef.current
+      const request = saveQueueRef.current.then(() => upsertDealNote(dealId, section, value, draftId))
+      saveQueueRef.current = request.then(() => undefined, () => undefined)
+      let result
+      try {
+        result = await request
+      } catch {
+        setError('Could not save. Please try again.')
+        setSaved(false)
+        return
+      } finally {
+        queuedSavesRef.current -= 1
+      }
       if (result.error) {
         setError(result.error)
         setSaved(false)
@@ -44,7 +59,7 @@ export default function NotesSection({ dealId, section, title, initialContent, p
 
   useEffect(() => {
     const warnBeforeLeaving = (event: BeforeUnloadEvent) => {
-      if (saved || isPending) return
+      if (saved && !isPending) return
       event.preventDefault()
     }
     window.addEventListener('beforeunload', warnBeforeLeaving)

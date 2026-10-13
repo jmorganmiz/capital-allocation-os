@@ -33,7 +33,10 @@ test('writing UI requires explicit insertion and preserves the saved edit', () =
   assert.match(component, /markDecisionDraftInserted/)
   assert.match(component, /Append draft/)
   assert.match(notes, /activeDraftIdRef/)
-  assert.match(notes, /upsertDealNote\(dealId, section, value, activeDraftIdRef\.current\)/)
+  assert.match(notes, /const draftId = activeDraftIdRef\.current/)
+  assert.match(notes, /upsertDealNote\(dealId, section, value, draftId\)/)
+  assert.match(notes, /saveQueueRef\.current\.then/)
+  assert.match(notes, /if \(saved && !isPending\) return/)
 })
 
 test('copilot supports analyst notes without bypassing explicit insertion', () => {

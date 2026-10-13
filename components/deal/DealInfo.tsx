@@ -195,6 +195,7 @@ function EditablePrice({
 
 export default function DealInfo({ deal, propertySizeFallback = null }: Props) {
   const [isPending, startTransition] = useTransition()
+  const [error, setError] = useState('')
   const [fields, setFields] = useState({
     asking_price: deal.asking_price,
     deal_structure: deal.deal_structure,
@@ -203,10 +204,18 @@ export default function DealInfo({ deal, propertySizeFallback = null }: Props) {
   })
 
   function save(patch: Partial<typeof fields>) {
-    const updated = { ...fields, ...patch }
-    setFields(updated)
+    setError('')
     startTransition(async () => {
-      await updateDealFields(deal.id, patch)
+      try {
+        const result = await updateDealFields(deal.id, patch)
+        if (result.error) {
+          setError(result.error)
+          return
+        }
+        setFields(previous => ({ ...previous, ...patch }))
+      } catch {
+        setError('Could not save. Please try again.')
+      }
     })
   }
 
@@ -218,6 +227,7 @@ export default function DealInfo({ deal, propertySizeFallback = null }: Props) {
           <h2>Deal Info</h2>
         </div>
         {isPending && <span>Saving...</span>}
+        {error && <span role="alert">Save failed: {error}</span>}
       </div>
 
       <div className="app-deal-metric-grid four">

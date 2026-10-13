@@ -15,7 +15,7 @@ export function Hero() {
             <Link className="btn-primary" href="/signup">Start free — no credit card</Link>
             <a className="btn-ghost" href="#demo">Explore interactive demo</a>
           </div>
-          <p className="hero-proof">Deal Memory from $149 / mo · Underwriting Pro in private beta</p>
+          <p className="hero-proof">Deal Memory from $149 / mo · Underwriting Pro in Early Access</p>
         </div>
 
         <div className="scroll-hint" aria-hidden="true">

@@ -25,7 +25,7 @@ const FAQS = [
   },
   {
     q: 'How many users are included?',
-    a: 'Deal Memory is priced per firm rather than by AI tokens. Underwriting Pro is currently offered through a private beta while we validate team size, completed-underwrite allowances, and workflow fit with design partners.',
+    a: 'Deal Memory is $149 per firm per month. Underwriting Pro is $399 per firm per month through Early Access, including 25 completed Full Underwrites each month and two included revisions per underwrite. Unlimited deterministic Quick Pencils are included with Underwriting Pro.',
   },
   {
     q: 'Does AI calculate the underwriting returns?',
