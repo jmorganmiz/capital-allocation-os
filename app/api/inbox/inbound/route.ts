@@ -334,7 +334,6 @@ async function processAttachment({
     .eq('inbound_intake_key', intakeKey)
     .maybeSingle()
   if (existingDealError) throw existingDealError
-  if (existingDeal) return existingDeal
 
   // Decode base64 attachment content
   const buffer = Buffer.from(attachment.content, 'base64')
@@ -360,7 +359,7 @@ async function processAttachment({
   if (parsedData) {
     console.log('[inbox] parse succeeded via:', 'via' in parseResult && parseResult.via === 'vision' ? 'vision' : 'text')
   } else {
-    console.warn('[inbox] parse failed or returned no data — deal will still be created with available info')
+    throw new Error('OM parsing failed. Intake remains retryable.')
   }
 
   // Derive deal title: parsed address → email subject → filename
@@ -379,7 +378,9 @@ async function processAttachment({
   const brokerCompany = parsedData?.brokerage || null
 
   // Create the deal
-  const { data: deal, error: dealErr } = await supabase
+  let deal = existingDeal
+  if (!deal) {
+  const { data: insertedDeal, error: dealErr } = await supabase
     .from('deals')
     .insert({
       firm_id:       firmId,
@@ -396,7 +397,7 @@ async function processAttachment({
       owner_user_id: actorId,
       inbound_intake_key: intakeKey,
     })
-    .select('id')
+    .select('id, title')
     .single()
 
   if (dealErr) {
@@ -407,14 +408,19 @@ async function processAttachment({
         .eq('firm_id', firmId)
         .eq('inbound_intake_key', intakeKey)
         .single()
-      if (duplicate) return duplicate
+      if (duplicate) deal = duplicate
     }
-    throw dealErr
+    if (!deal) throw dealErr
+  } else {
+    deal = insertedDeal
   }
+  }
+  if (!deal) throw new Error('Unable to persist intake deal.')
 
   const dealId = deal.id
 
   // Audit: deal_created event
+  if (!existingDeal) {
   await supabase.from('deal_events').insert({
     deal_id:       dealId,
     firm_id:       firmId,
@@ -435,13 +441,20 @@ async function processAttachment({
       filename: attachment.filename ?? safeFilename,
     },
   })
+  }
 
   // Financial snapshot — only if at least one numeric field was extracted
   if (parsedData) {
     const { asking_price, noi, cap_rate, irr, square_footage, year_built, num_units, occupancy_rate } = parsedData
-    if (asking_price !== null || noi !== null || cap_rate !== null || irr !== null ||
-        square_footage !== null || year_built !== null || num_units !== null || occupancy_rate !== null) {
-      const { error: snapErr } = await supabase.from('deal_financial_snapshots').insert({
+    if ([asking_price, noi, cap_rate, irr, square_footage, year_built, num_units, occupancy_rate,
+      parsedData.current_rent, parsedData.market_rent, parsedData.vacancy_rate,
+      parsedData.property_taxes, parsedData.insurance].some(value => value != null)) {
+      const { data: priorSnapshot, error: snapshotLookupError } = await supabase.from('deal_financial_snapshots')
+        .select('id').eq('deal_id', dealId).eq('firm_id', firmId).limit(1).maybeSingle()
+      if (snapshotLookupError) throw snapshotLookupError
+      if (!priorSnapshot) {
+      const { error: snapErr } = await supabase.from('deal_financial_snapshots').upsert({
+        id: intakeRecordId(intakeKey, 'snapshot'),
         deal_id:        dealId,
         firm_id:        firmId,
         purchase_price: asking_price,
@@ -452,16 +465,25 @@ async function processAttachment({
         year_built,
         num_units,
         occupancy_rate,
+        current_rent: parsedData.current_rent,
+        market_rent: parsedData.market_rent,
+        vacancy_rate: parsedData.vacancy_rate,
+        property_taxes: parsedData.property_taxes,
+        insurance: parsedData.insurance,
         created_by:     actorId,
-      })
-      if (snapErr) {
-        console.error('[inbox] snapshot insert failed:', snapErr.message)
+      }, { onConflict: 'id', ignoreDuplicates: true })
+      if (snapErr) throw snapErr
       }
     }
   }
 
   // Record uploaded file
-  await supabase.from('deal_files').insert({
+  const { data: priorFile, error: fileLookupError } = await supabase.from('deal_files')
+    .select('id').eq('deal_id', dealId).eq('firm_id', firmId).eq('storage_path', storagePath).limit(1).maybeSingle()
+  if (fileLookupError) throw fileLookupError
+  if (!priorFile) {
+  const { error: fileError } = await supabase.from('deal_files').upsert({
+    id: intakeRecordId(intakeKey, 'file'),
     deal_id:      dealId,
     firm_id:      firmId,
     storage_path: storagePath,
@@ -469,7 +491,8 @@ async function processAttachment({
     mime_type:    'application/pdf',
     size_bytes:   buffer.length,
     uploaded_by:  actorId,
-  })
+  }, { onConflict: 'id', ignoreDuplicates: true })
+  if (fileError) throw fileError
 
   await supabase.from('deal_events').insert({
     deal_id:       dealId,
@@ -478,9 +501,10 @@ async function processAttachment({
     event_type:    'file_added',
     notes:         attachment.filename ?? safeFilename,
   })
+  }
 
   // Create or reuse broker contact and link as source
-  if (brokerName) {
+  if (brokerName && !existingDeal) {
     const { data: existing } = await supabase
       .from('contacts')
       .select('id')
@@ -523,7 +547,12 @@ async function processAttachment({
     console.log('[inbox] automatic scores created:', scoreResult.scoresWritten)
   }
 
-  return { id: dealId, title: dealTitle }
+  return { id: dealId, title: deal.title }
+}
+
+function intakeRecordId(intakeKey: string, kind: string) {
+  const hex = createHash('sha256').update(`${intakeKey}:${kind}`).digest('hex')
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`
 }
 
 // ── Notification email to firm members ───────────────────────────────────────

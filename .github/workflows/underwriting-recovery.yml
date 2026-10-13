@@ -1,0 +1,30 @@
+name: Underwriting recovery
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: underwriting-recovery
+  cancel-in-progress: false
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Resume pending underwriting
+        env:
+          CRON_SECRET: ${{ secrets.DEALSTASH_CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo 'Configure DEALSTASH_CRON_SECRET to match the production Vercel CRON_SECRET.' >&2
+            exit 1
+          fi
+          curl --fail-with-body --silent --show-error --max-time 90 \
+            --header "Authorization: Bearer $CRON_SECRET" \
+            https://getdealstash.com/api/cron/underwriting > recovery.json
+          node -e 'const r = require("./recovery.json"); if (!r.ok || r.errors?.length) { console.error("Underwriting recovery reported failures."); process.exit(1) } console.log(`Visited ${r.runsVisited} runs; processed ${r.stepsProcessed} steps.`)'

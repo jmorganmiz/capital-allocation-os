@@ -17,5 +17,5 @@ test('Excel financial cells distinguish missing data from a genuine zero', () =>
   assert.equal(percentCell(0), 0)
   assert.equal(moneyCell('1375000'), 1375000)
   assert.equal(percentCell(0.0628), 0.0628)
-  assert.equal(percentCell(6.28), 0.0628)
+  assert.ok(Math.abs(percentCell(6.28) - 0.0628) < 1e-12)
 })

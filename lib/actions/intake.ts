@@ -45,9 +45,9 @@ export async function retryInboundEmail(eventId: string) {
   const messageId = `retry_${randomUUID()}`
   const timestamp = new Date()
   const signature = new Webhook(webhookSecret).sign(messageId, timestamp, body)
-  const deploymentUrl = process.env.VERCEL_URL
+  const deploymentUrl = process.env.NEXT_PUBLIC_APP_URL ?? (process.env.VERCEL_URL
     ? `https://${process.env.VERCEL_URL}`
-    : (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000')
+    : 'http://localhost:3000')
 
   try {
     const response = await fetch(`${deploymentUrl.replace(/\/$/, '')}/api/inbox/inbound`, {

@@ -103,16 +103,7 @@ export async function GET(_request: Request, { params }: Props) {
   const { data: profile } = await supabase.from('profiles').select('firm_id').eq('id', user.id).maybeSingle()
   if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
 
-  const [
-    { data: deal },
-    { data: firm },
-    { data: stages },
-    { data: snapshots },
-    { data: notes },
-    { data: files },
-    { data: events },
-    { data: scores },
-  ] = await Promise.all([
+  const results = await Promise.all([
     supabase.from('deals').select('*').eq('id', id).eq('firm_id', profile.firm_id).maybeSingle(),
     supabase.from('firms').select('name').eq('id', profile.firm_id).maybeSingle(),
     supabase.from('deal_stages').select('id, name, position, is_terminal').eq('firm_id', profile.firm_id),
@@ -122,6 +113,12 @@ export async function GET(_request: Request, { params }: Props) {
     supabase.from('deal_events').select('event_type, notes, kill_reason_id, created_at, kill_reasons(name)').eq('deal_id', id).eq('firm_id', profile.firm_id).order('created_at', { ascending: false }),
     supabase.from('deal_scores').select('score, notes, scoring_criteria(name)').eq('deal_id', id).eq('firm_id', profile.firm_id),
   ])
+
+  if (results.some(result => result.error)) {
+    return NextResponse.json({ error: 'Could not load the complete export. Please try again.' }, { status: 503 })
+  }
+  const [{ data: deal }, { data: firm }, { data: stages }, { data: snapshots },
+    { data: notes }, { data: files }, { data: events }, { data: scores }] = results
 
   if (!deal) return NextResponse.json({ error: 'Deal not found' }, { status: 404 })
 
